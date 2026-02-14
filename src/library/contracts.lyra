@@ -1,0 +1,17 @@
+interface Iterator<T> {
+	public hasNext(): boolean;
+
+	public next(): void;
+
+	public previous(): void;
+
+	public key(): number;
+
+	public current(): T;
+
+	public rewind(): void;
+}
+
+interface Iterable<T> {
+	public iterator(): Iterator<T>;
+}

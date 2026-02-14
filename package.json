@@ -1,0 +1,20 @@
+{
+  "name": "lyrascript",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lyra:build": "bun build ./src/lyrascript.ts --outfile ./dist/lyrascript.js --sourcemap=inline",
+    "lyra:build:watch": "bun build --watch ./src/lyrascript.ts --outfile ./dist/lyrascript.js --sourcemap=inline"
+  },
+  "dependencies": {
+    "ts-migrate": "^0.1.35"
+  }
+}

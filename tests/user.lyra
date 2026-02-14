@@ -1,0 +1,27 @@
+open class Person {
+    private name: string;
+    private age: number;
+
+    constructor(name: string, age: number) {
+       this.name = name;
+       this.age = age;
+    }
+
+    public getName(): string {
+       return this.name;
+    }
+
+    public getAge(): number {
+       return this.age;
+    }
+}
+
+class User extends Person {
+    constructor(name: string, age: number) {
+        super(name, age);
+    }
+
+    public static getCount(): number {
+        return 1;
+    }
+}

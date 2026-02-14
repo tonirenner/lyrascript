@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Lyra Scratchpad</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: monospace;
+            background: #0f1115;
+            color: #e6e6e6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 10px 16px;
+            background: #161a22;
+            border-bottom: 1px solid #2a2f3a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        button {
+            background: #2d6cdf;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        button:hover {
+            background: #3a7bfd;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .editor {
+            border-right: 1px solid #2a2f3a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor textarea {
+            flex: 1;
+            background: #0f1115;
+            color: #e6e6e6;
+            border: none;
+            padding: 12px;
+            resize: none;
+            outline: none;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .output {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel {
+            flex: 1;
+            padding: 10px;
+            overflow: auto;
+            border-bottom: 1px solid #2a2f3a;
+        }
+
+        .panel:last-child {
+            border-bottom: none;
+        }
+
+        .panel h2 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .stdout {
+            white-space: pre-wrap;
+            color: #c6f68d;
+        }
+
+        .stderr {
+            white-space: pre-wrap;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Lyra Scratchpad</h1>
+    <button id="runBtn">Run (Ctrl + Enter)</button>
+</header>
+
+<main>
+    <div class="editor">
+		<textarea aria-label="editor" id="editor" spellcheck="false">
+import System;
+
+class App {
+
+    public run(): void {
+        System.print("Hello from App.run()");
+        System.print({ a: number, b: number -> number : a + b }(39, 3));
+    }
+
+}
+
+let app: App = new App();
+
+app.run();
+
+		</textarea>
+    </div>
+
+    <div class="output">
+        <div class="panel">
+            <h2>Output</h2>
+            <div class="stdout" id="stdout"></div>
+        </div>
+        <div class="panel">
+            <h2>Errors</h2>
+            <div class="stderr" id="stderr"></div>
+        </div>
+        <div class="panel">
+            <h2>AST</h2>
+            <div id="ast"></div>
+        </div>
+        <div class="panel">
+            <h2>Tokens</h2>
+            <pre id="tokens"></pre>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+	import {Parser} from "./src/core/parser.js";
+	import {runFromSource} from "./src/lyrascript.ts";
+	import {ScratchpadOutput, wrapConsole} from "./scratchpad/scratchpad_output.js";
+	import {Source} from "./src/core/parser_source.js";
+
+	wrapConsole(
+		args => output.log(args),
+		args => output.error(args)
+	);
+
+	/** @type {HTMLTextAreaElement} */
+	const editor   = document.getElementById('editor');
+	const stdoutEl = document.getElementById('stdout');
+	const tokensEl = document.getElementById('tokens');
+	const astEl    = document.getElementById('ast');
+	const stderrEl = document.getElementById('stderr');
+	const runBtn   = document.getElementById('runBtn');
+
+	const output = new ScratchpadOutput();
+
+	window.addEventListener('error', e => {
+		output.error(e.error?.stack || e.message);
+	});
+
+	window.addEventListener('unhandledrejection', e => {
+		output.error(e.reason?.stack || e.reason);
+	});
+
+	function render() {
+		stdoutEl.innerText = output.stdout.join("\n");
+		stderrEl.innerText = output.stderr.join("\n");
+	}
+
+
+	function run() {
+		output.clear();
+		render();
+
+		output.log("> Running...\n");
+
+		try {
+			const source = new Source(editor.value);
+
+			renderTokens(source.getTokenizer()
+			                   .tokenize());
+
+			astEl.innerHTML = '';
+			renderASTTree(new Parser(source).parse(), astEl);
+
+			runFromSource(source)
+				.catch(error => {
+					output.error(error.stack || error.message);
+					render();
+				})
+				.then(() => output.log('\n> Done.'))
+				.then(() => render());
+		}
+		catch (error) {
+			output.error(error.stack || error.message);
+		}
+		finally {
+			render();
+		}
+	}
+
+	runBtn.onclick = run;
+
+	document.addEventListener('keydown', e => {
+		if (e.ctrlKey && e.key === 'Enter') {
+			run();
+		}
+	});
+
+	/**
+	 * @param {Token[]} tokens
+	 */
+	function renderTokens(tokens) {
+		tokensEl.textContent = tokens
+			.map(token => `${token.type.padEnd(12)} ${JSON.stringify(token.value)}`)
+			.join("\n");
+	}
+
+	/**
+	 * @param {ASTNode|ASTCallNode|ASTIndexNode|ASTBinaryNode|ASTIfNode|ASTMatchCaseNode|ASTExpressionNode|ASTMethodNode} node
+	 * @param {HTMLElement} container
+	 */
+	function renderASTTree(node, container) {
+		const wrapper            = document.createElement("div");
+		wrapper.style.marginLeft = "12px";
+
+		const header        = document.createElement("div");
+		header.textContent  = describeNode(node);
+		header.style.cursor = "pointer";
+		header.style.color  = "#9cdcfe";
+
+		wrapper.appendChild(header);
+
+		const body            = document.createElement("div");
+		body.style.display    = "none";
+		body.style.marginLeft = "12px";
+		wrapper.appendChild(body);
+
+		header.onclick = () => {
+			body.style.display = body.style.display === "none" ? "block" : "none";
+		};
+
+		// 👇 explizite Properties (nicht children!)
+		renderProperty("callee", node.callee, body);
+		renderProperty("object", node.object, body);
+		renderProperty("index", node.index, body);
+		renderProperty("left", node.left, body);
+		renderProperty("right", node.right, body);
+		renderProperty("test", node.test, body);
+		renderProperty("expression", node.expr, body);
+
+		if (node.parameters?.length) {
+			const element       = document.createElement("div");
+			element.textContent = "parameters:";
+			body.appendChild(element);
+
+			for (const param of node.parameters) {
+				const element            = document.createElement("div");
+				element.textContent      = `${param.name}: ${param.type ?? 'mixed'}`;
+				element.style.marginLeft = "12px";
+				body.appendChild(element);
+			}
+		}
+
+		if (node.children?.length) {
+			const element       = document.createElement("div");
+			element.textContent = "children:";
+			body.appendChild(element);
+
+			for (const child of node.children) {
+				renderASTTree(child, body);
+			}
+		}
+
+		container.appendChild(wrapper);
+	}
+
+	/**
+	 * @param {ASTNode|ASTUnaryNode|ASTLambdaNode} node
+	 * @return {string}
+	 */
+	function describeNode(node) {
+		const details = [];
+
+		if (node.name) {
+			details.push(`name="${node.name}"`);
+		}
+		if (node.value) {
+			details.push(`value="${node.value}"`);
+		}
+		if (node.operator) {
+			details.push(`op="${node.operator}"`);
+		}
+		if (node.isExpression) {
+			details.push(`expr`);
+		}
+		if (node.returnType) {
+			details.push(`return="${node.returnType.name ?? node.returnType}"`);
+		}
+
+		return node.type + (details.length > 0 ? ` ( ${details.join(', ')} )` : '');
+	}
+
+	/**
+	 * @param {string} label
+	 * @param {any}  value
+	 * @param {HTMLElement} container
+	 */
+	function renderProperty(label, value, container) {
+		if (!value) {
+			return;
+		}
+
+		const element       = document.createElement("div");
+		element.textContent = `${label}:`;
+		container.appendChild(element);
+
+		renderASTTree(value, container);
+	}
+</script>
+
+</body>
+</html>
