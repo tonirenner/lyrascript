@@ -729,6 +729,10 @@ export class TypeChecker {
 			return this.checkInstanceCall(callee, node.arguments, scope);
 		}
 
+		if (callee instanceof ASTLambdaNode) {
+			return this.checkLambdaCall(this.checkLambdaExpression(callee, scope), node.arguments, scope);
+		}
+
 		// Identifier: Variable / Lambda
 		if (callee.type === ASTNodeType.IDENTIFIER) {
 			if (scope.hasType(callee.name)) {
@@ -871,7 +875,6 @@ export class TypeChecker {
 		substitutionMap: Map<string, Type> = new Map()
 	): void {
 		const callScope = new TypeScope(scope);
-
 		let parameterSymbols = this.parametersSymbolsFromCallableSymbol(callableSymbol);
 
 		if (callArguments.length > parameterSymbols.length) {
@@ -883,22 +886,19 @@ export class TypeChecker {
 			const parameterSymbol: ParameterSymbol | null = parameterSymbols[i] || null;
 			const callArgument: ASTNode | null = callArguments[i] || null;
 
-			if (parameterSymbol === null) {
-				this.typeError('Malformed parameter.');
-				break;
-			}
-			const expectedType: Type = substituteType(parameterSymbol.parameterType, substitutionMap);
+			if (parameterSymbol) {
+				const expectedType: Type = substituteType(parameterSymbol.parameterType, substitutionMap);
 
-			if (callArgument) {
-				actualType = this.checkExpression(callArgument, callScope, expectedType);
-			} else if (parameterSymbol.defaultType) {
-				actualType = parameterSymbol.defaultType;
-			} else {
-				this.typeError(`Missing argument ${parameterSymbol.name}`, callArgument);
-				return;
-			}
+				if (callArgument) {
+					actualType = this.checkExpression(callArgument, callScope, expectedType);
+				} else if (parameterSymbol.defaultType) {
+					actualType = parameterSymbol.defaultType;
+				} else {
+					this.typeError(`Missing argument ${parameterSymbol.name}`, callArgument);
+				}
 
-			this.checkAssignable(expectedType, actualType, callArguments[i]);
+				this.checkAssignable(expectedType, actualType, callArguments[i]);
+			}
 		}
 	}
 
@@ -924,8 +924,7 @@ export class TypeChecker {
 			return;
 		}
 
-// @ts-expect-error TS(2339): Property 'span' does not exist on type 'never'.
-		this.typeError(`Type mismatch: ${expectedType} <> ${actualType}`, node?.span);
+		this.typeError(`Type mismatch: ${expectedType} <> ${actualType}`, node);
 	}
 
 	checkBody(children: ASTNode[], scope: TypeScope): Type {

@@ -117,7 +117,7 @@ class App {
 
     public run(): void {
         System.print("Hello from App.run()");
-        System.print({ a: number, b: number -> number : a + b }(39, 3));
+        System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
     }
 
 }
@@ -150,10 +150,8 @@ app.run();
 </main>
 
 <script type="module">
-	import {Parser} from "./src/core/parser.js";
-	import {runFromSource} from "./src/lyrascript.ts";
+	import {Source, astFromSource, tokensFromSource, runFromSource} from "./dist/language.js";
 	import {ScratchpadOutput, wrapConsole} from "./scratchpad/src/scratchpad_output.js";
-	import {Source} from "./src/core/parser_source.js";
 
 	wrapConsole(
 		args => output.log(args),
@@ -161,12 +159,12 @@ app.run();
 	);
 
 	/** @type {HTMLTextAreaElement} */
-	const editor   = document.getElementById('editor');
+	const editor = document.getElementById('editor');
 	const stdoutEl = document.getElementById('stdout');
 	const tokensEl = document.getElementById('tokens');
-	const astEl    = document.getElementById('ast');
+	const astEl = document.getElementById('ast');
 	const stderrEl = document.getElementById('stderr');
-	const runBtn   = document.getElementById('runBtn');
+	const runBtn = document.getElementById('runBtn');
 
 	const output = new ScratchpadOutput();
 
@@ -193,11 +191,10 @@ app.run();
 		try {
 			const source = new Source(editor.value);
 
-			renderTokens(source.getTokenizer()
-			                   .tokenize());
+			renderTokens(tokensFromSource(source));
 
 			astEl.innerHTML = '';
-			renderASTTree(new Parser(source).parse(), astEl);
+			renderASTTree(astFromSource(source), astEl);
 
 			runFromSource(source)
 				.catch(error => {
@@ -237,18 +234,18 @@ app.run();
 	 * @param {HTMLElement} container
 	 */
 	function renderASTTree(node, container) {
-		const wrapper            = document.createElement("div");
+		const wrapper = document.createElement("div");
 		wrapper.style.marginLeft = "12px";
 
-		const header        = document.createElement("div");
-		header.textContent  = describeNode(node);
+		const header = document.createElement("div");
+		header.textContent = describeNode(node);
 		header.style.cursor = "pointer";
-		header.style.color  = "#9cdcfe";
+		header.style.color = "#9cdcfe";
 
 		wrapper.appendChild(header);
 
-		const body            = document.createElement("div");
-		body.style.display    = "none";
+		const body = document.createElement("div");
+		body.style.display = "none";
 		body.style.marginLeft = "12px";
 		wrapper.appendChild(body);
 
@@ -266,20 +263,20 @@ app.run();
 		renderProperty("expression", node.expr, body);
 
 		if (node.parameters?.length) {
-			const element       = document.createElement("div");
+			const element = document.createElement("div");
 			element.textContent = "parameters:";
 			body.appendChild(element);
 
 			for (const param of node.parameters) {
-				const element            = document.createElement("div");
-				element.textContent      = `${param.name}: ${param.type ?? 'mixed'}`;
+				const element = document.createElement("div");
+				element.textContent = `${param.name}: ${param.type ?? 'mixed'}`;
 				element.style.marginLeft = "12px";
 				body.appendChild(element);
 			}
 		}
 
 		if (node.children?.length) {
-			const element       = document.createElement("div");
+			const element = document.createElement("div");
 			element.textContent = "children:";
 			body.appendChild(element);
 
@@ -327,7 +324,7 @@ app.run();
 			return;
 		}
 
-		const element       = document.createElement("div");
+		const element = document.createElement("div");
 		element.textContent = `${label}:`;
 		container.appendChild(element);
 

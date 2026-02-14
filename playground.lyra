@@ -170,3 +170,17 @@ foreach (item in a) {
 //        return vdom <b>Hello World</b>;
 //    }
 //}
+
+
+class App {
+
+    public run(): void {
+        System.print("Hello from App.run()");
+        System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
+    }
+
+}
+
+let app: App = new App();
+
+app.run();

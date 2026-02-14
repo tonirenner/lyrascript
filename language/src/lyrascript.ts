@@ -8,9 +8,13 @@ import {FetchFileLoader} from "./core/loaders";
 import {TestSuites} from "./core/testsuites";
 import {throwDependencyError, wrapJsError} from "./core/errors";
 import {Source} from "./core/parser_source";
-import type {ASTNode} from "./core/ast.ts";
-import {Tokenizer} from "./core/tokenizer.ts";
-import type {Token} from "./core/grammar.ts";
+import type {ASTNode} from "./core/ast";
+import {Tokenizer} from "./core/tokenizer";
+import type {Token} from "./core/grammar";
+
+export {Tokenizer} from "./core/tokenizer";
+export {Parser} from "./core/parser";
+export {Source} from "./core/parser_source";
 
 export class LyraScript {
 	private globalEnv: Environment = new Environment();
@@ -164,9 +168,17 @@ export async function testFromString(code: string, isDebug: boolean = false): Pr
 }
 
 export async function tokens(url: string): Promise<Token[]> {
-	return new Tokenizer(await fetchSource(url)).tokenize();
+	return tokensFromSource(await fetchSource(url));
+}
+
+export function tokensFromSource(source: Source): Token[] {
+	return new Tokenizer(source).tokenize();
 }
 
 export async function ast(url: string): Promise<ASTNode> {
-	return new Parser(await fetchSource(url)).parse();
+	return astFromSource(await fetchSource(url));
+}
+
+export function astFromSource(source: Source): ASTNode {
+	return new Parser(source).parse();
 }
