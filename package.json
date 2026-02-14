@@ -11,8 +11,8 @@
   "scripts": {
     "test": "bun test",
     "check": "tsc --noEmit",
-    "lyra:build": "bun build ./src/lyrascript.ts --outfile ./dist/lyrascript.js --sourcemap=inline",
-    "lyra:build:watch": "bun build --watch ./src/lyrascript.ts --outfile ./dist/lyrascript.js --sourcemap=inline"
+    "lyra:build": "bun build ./engine/src/lyrascript.ts --outfile ./dist/engine.js --sourcemap=inline",
+    "lyra:build:watch": "bun build --watch ./engine/src/lyrascript.ts --outfile ./dist/engine.js --sourcemap=inline"
   },
   "dependencies": {
     "ts-migrate": "^0.1.35"
