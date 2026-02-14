@@ -55,7 +55,6 @@ export class AbstractFunctionCall {
 			return this.node;
 		}
 		throwRuntimeError(`Invalid native function call ${this.node.type}.`, this.node.span);
-		return null// never reached
 	}
 
 	/**
@@ -66,7 +65,6 @@ export class AbstractFunctionCall {
 			return this.node;
 		}
 		throwRuntimeError(`Invalid lambda call ${this.node.type}.`, this.node.span);
-		return null; // never reached
 	}
 }
 
@@ -552,7 +550,6 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 	if (expr.callee.type === ASTNodeType.IDENTIFIER && expr.callee.name === GRAMMAR.SUPER) {
 		if (!thisValue || !thisValue.__classDef?.superClass) {
 			throwRuntimeError('super() used outside of subclass constructor');
-			return null; // never reached
 		}
 
 		const superClassDef = objectRegistry.classes.get(thisValue.__classDef.superClass);
@@ -730,7 +727,6 @@ export function bindMethodParameters(
 
 		if (!parameter) {
 			throwRuntimeError('Missing parameter name in method call.');
-			break; // never reached
 		}
 
 		let rawValue;
@@ -764,14 +760,15 @@ export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegis
 		});
 	}
 
+	let moduleName: string = 'unknown';
+	let methodName: string = 'unknown';
+
 	if (node.callee instanceof ASTMemberNode) {
-		const moduleName = node.callee.object.name;
-		const methodName = node.callee.property;
-
-		throwRuntimeError(`Unknown function ${moduleName}.${methodName}`, node.span);
+		moduleName = node.callee.object.name;
+		methodName = node.callee.property;
 	}
-
-	return []; // never reached
+	
+	throwRuntimeError(`Unknown function ${moduleName}.${methodName}`, node.span);
 }
 
 function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: ASTParameterNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any[] {

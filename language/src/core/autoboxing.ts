@@ -1,5 +1,6 @@
 import {ClassRefType, Type, Types} from "./type_objects.ts";
 import {ObjectRegistry} from "./interpreter_registry.ts";
+import {throwRuntimeError} from "./errors.ts";
 
 export class AutoboxedTypes {
 	static NUMBER: string = 'Number';
@@ -15,7 +16,7 @@ export class AutoboxedTypes {
 	static getClassName(key: string): string {
 		const className = AutoboxedTypes.CLASSNAME_MAP[key];
 		if (!className) {
-			throw new Error(`No class found for primitive type ${key}.`);
+			throwRuntimeError(`No class found for primitive type ${key}.`);
 		}
 		return className;
 	}

@@ -6,7 +6,7 @@ import {TypeChecker} from "./core/typechecker";
 import {Linker} from "./core/linker";
 import {FetchFileLoader} from "./core/loaders";
 import {TestSuites} from "./core/testsuites";
-import {wrapJsError} from "./core/errors";
+import {throwDependencyError, wrapJsError} from "./core/errors";
 import {Source} from "./core/parser_source";
 import type {ASTNode} from "./core/ast.ts";
 import {Tokenizer} from "./core/tokenizer.ts";
@@ -89,7 +89,7 @@ export class LyraScript {
 export async function fetchSource(url: string): Promise<Source> {
 	const response = await fetch(url);
 	if (!response.ok) {
-		throw new Error(`Failed to load script: ${url}`);
+		throwDependencyError(`Failed to load script: ${url}`);
 	}
 
 	return new Source(await response.text());

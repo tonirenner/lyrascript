@@ -361,7 +361,6 @@ export class TypeChecker {
 
 			if (elementType === null) {
 				this.typeError('Array in foreach must have exactly one type argument.', node.iterable);
-				return Types.NULL;
 			}
 
 			const loopScope = new TypeScope(scope);
@@ -372,13 +371,11 @@ export class TypeChecker {
 		}
 
 		this.typeError(`foreach expects Array<T>, got ${iterableType.toString()}`, node.iterable);
-		return Types.NULL;
 	}
 
 	checkExpression(expr: ASTNode | null, scope: TypeScope, expectedType: Type | null = null): Type {
 		if (expr === null) {
 			this.typeError('Expression expected, got null.', expr);
-			return Types.NULL;
 		}
 
 		switch (expr.type) {
@@ -430,7 +427,7 @@ export class TypeChecker {
 			}
 
 			case ASTNodeType.THIS: {
-				return this.checkThisExpression(scope);
+				return this.checkThisExpression(expr, scope);
 			}
 
 			case ASTNodeType.IDENTIFIER:
@@ -505,7 +502,6 @@ export class TypeChecker {
 		}
 
 		this.typeError(`Invalid binary operation`, expr);
-		return Types.NULL;
 	}
 
 	checkFieldAccess(node: ASTMemberNode, classSymbol: ClassSymbol, fieldSymbol: FieldSymbol, scope: TypeScope): void {
@@ -591,14 +587,13 @@ export class TypeChecker {
 		}
 
 		this.typeError("Cannot access member of non-object", node);
-		return Types.NULL;
 	}
 
-	checkThisExpression(scope: TypeScope): ClassRefType {
+	checkThisExpression(node: ASTNode, scope: TypeScope): ClassRefType {
 		if (scope.currentObjectSymbol instanceof ClassSymbol) {
 			return new ClassRefType(scope.currentObjectSymbol);
 		}
-		throw new Error('this outside of class');
+		this.typeError('this outside of class', node);
 	}
 
 	checkIdentifierExpression(node: ASTNode, scope: TypeScope): Type {
@@ -609,7 +604,6 @@ export class TypeChecker {
 			return new ClassRefType(this.objectRegistry.types.getClassSymbol(node.name));
 		}
 		this.typeError(`Undefined identifier ${node.name}`, node);
-		return Types.NULL;
 	}
 
 	checkNewExpression(node: ASTNewNode, scope: TypeScope, expectedType: Type | null = null): ClassRefType {
@@ -665,7 +659,7 @@ export class TypeChecker {
 		} else if (node.elements[0]) {
 			expectedTypeOfItem = this.checkExpression(node.elements[0], scope, expectedType);
 		} else {
-			throw new Error('Array expression must have at least one element');
+			this.typeError('Array expression must have at least one element', node);
 		}
 
 		for (const item of node.elements) {
@@ -691,7 +685,6 @@ export class TypeChecker {
 			this.typeError(`Unary '!' requires boolean, got ${operand.name}`, node);
 		}
 		this.typeError(`Invalid unary operator ${op}`, node);
-		return Types.NULL;
 	}
 
 	checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
@@ -708,7 +701,7 @@ export class TypeChecker {
 			return new LambdaType(parameters, this.checkExpression(node.children[0], lambdaScope));
 		}
 
-		throw new Error('Lambda expression must have a return type');
+		this.typeError('Lambda expression must have a return type', node);
 	}
 
 	checkCallExpression(node: ASTCallNode, scope: TypeScope): Type {
@@ -758,12 +751,10 @@ export class TypeChecker {
 
 		if (!(currentClass instanceof ClassSymbol)) {
 			this.typeError('super() used outside of class', node);
-			return Types.NULL;
 		}
 
 		if (!currentClass.superClass) {
 			this.typeError('super() used outside of class hierarchy', node);
-			return Types.NULL;
 		}
 
 		const superSymbol: ClassSymbol = this.objectRegistry.types.getClassSymbol(currentClass.superClass);
@@ -812,7 +803,6 @@ export class TypeChecker {
 
 			if (owner === null) {
 				this.typeError(`Cannot call method on non-object`, callee);
-				return Types.NULL;
 			}
 
 			const substitutionMap: Map<string, Type> = buildTypeSubstitutionMap(
@@ -826,7 +816,6 @@ export class TypeChecker {
 		}
 
 		this.typeError(`Cannot call method on non-object`, callee);
-		return Types.NULL;
 	}
 
 	checkStaticCall(className: string, methodName: string, callArguments: ASTNode[], scope: TypeScope): Type {
@@ -835,7 +824,6 @@ export class TypeChecker {
 		const methodSymbol: MethodSymbol | null = classSymbol.staticMethodSymbols.get(methodName) || null;
 		if (!methodSymbol) {
 			this.typeError(`Unknown static method ${className}.${methodName}`);
-			return Types.NULL;
 		}
 
 		this.checkStaticMethodAccess(classSymbol, methodSymbol, scope)
@@ -855,7 +843,6 @@ export class TypeChecker {
 	checkFunctionCall(name: string, callArguments: ASTNode[], scope: TypeScope): Type {
 		if (!globalFunctionTypeRegistry.has(name)) {
 			this.typeError(`Unknown function ${name}`);
-			return Types.NULL;
 		}
 
 		const nativeFunction: NativeFunction = globalFunctionTypeRegistry.get(name);
@@ -983,7 +970,7 @@ export class TypeChecker {
 		);
 
 		if (!methodSymbol) {
-			throw new Error(`Unknown method ${classSymbol.name}.${methodName}`);
+			this.typeError(`Unknown method ${classSymbol.name}.${methodName}`, classSymbol.node);
 		}
 
 		return methodSymbol;
@@ -1012,7 +999,7 @@ export class TypeChecker {
 		const className: string | null = PrimitiveClassTypes.getClassRefName(PrimitiveClassTypes.ARRAY);
 
 		if (className === null) {
-			throw new Error('Internal error: Cannot find class name for array type.');
+			this.typeError('Internal error: Cannot find class name for array type.');
 		}
 
 		return new ClassRefType(this.objectRegistry.types.getClassSymbol(className), [elementType]);
@@ -1193,10 +1180,7 @@ export class TypeChecker {
 		}
 	}
 
-	/**
-	 * @throws {Error}
-	 */
-	typeError(message: string, node: ASTNode | null = null): void {
+	typeError(message: string, node: ASTNode | null = null): never {
 		throwTypeError(message, node?.span);
 	}
 }

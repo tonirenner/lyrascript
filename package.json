@@ -12,7 +12,7 @@
     "test": "bun test",
     "check": "tsc --noEmit",
     "lyra:build": "bun build ./language/src/lyrascript.ts --outfile ./dist/language.js --sourcemap=inline",
-    "lyra:build:watch": "bun build --watch ./engine/src/lyrascript.ts --outfile ./dist/engine.js --sourcemap=inline"
+    "lyra:build:watch": "bun build --watch ./language/src/lyrascript.ts --outfile ./dist/language.js --sourcemap=inline"
   },
   "dependencies": {
     "ts-migrate": "^0.1.35"

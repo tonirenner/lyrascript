@@ -145,7 +145,6 @@ export class Types {
 	static getType(name: string): Type {
 		if (!Object.hasOwnProperty.call(PrimitiveTypes, name.toUpperCase())) {
 			throwTypeError(`Unknown primitive type ${name}.`);
-			return Types.NULL; // never reached
 		}
 
 		const types: { [index: string]: any } = Types;
@@ -489,8 +488,6 @@ export function wrapType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, 
 	}
 
 	throwTypeError(`Could not resolve type ${typeNode.name}.`, typeNode.span);
-
-	return Types.NULL; // never reached
 }
 
 export function resolveBaseType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, scope: TypeScope | null = null): Type {
@@ -526,8 +523,6 @@ export function resolveBaseType(typeNode: ASTTypeNode, objectRegistry: ObjectReg
 			);
 		}
 	}
-
-	return Types.NULL; // never reached
 }
 
 export function resolveRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry): ClassRefType | InterfaceRefType | Type {
@@ -544,8 +539,6 @@ export function resolveRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegi
 	}
 
 	throwTypeError(`Unknown class or interface ${typeNode.name}.`, typeNode.span);
-
-	return Types.NULL; // never reached
 }
 
 export function resolveGenericRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry): ClassRefType | InterfaceRefType | Type {
@@ -564,8 +557,6 @@ export function resolveGenericRefType(typeNode: ASTTypeNode, objectRegistry: Obj
 	}
 
 	throwTypeError(`Unknown class or interface ${typeNode.name}.`, typeNode.span);
-
-	return Types.NULL; // never reached
 }
 
 export function resolvePrimitiveType(typeNode: ASTTypeNode): Type {

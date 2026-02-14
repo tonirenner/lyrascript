@@ -1,5 +1,6 @@
 import {ASTParameterNode, ASTTypeNode} from "../core/ast";
 import {TYPE_ENUM} from "../core/grammar.ts";
+import {throwNativeError} from "../core/errors.ts";
 
 export class NativeFunction {
 	name: string;
@@ -23,7 +24,7 @@ export class NativeFunctionTypeRegistry {
 	get(name: string): NativeFunction {
 		const nativeFunction: NativeFunction | undefined = this.functions.get(name);
 		if (!nativeFunction) {
-			throw new Error(`Function ${name} not found.`);
+			throwNativeError(`Function ${name} not found.`);
 		}
 		return nativeFunction;
 	}
