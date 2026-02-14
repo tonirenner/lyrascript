@@ -20,7 +20,7 @@ export class LyraScript {
 	private interpreter: Interpreter = new Interpreter(this.globalEnv, this.globalObjectRegistry);
 	private testSuite: TestSuites = new TestSuites(this.globalEnv, this.globalObjectRegistry);
 
-	private isDebug: boolean = false;
+	private readonly isDebug: boolean = false;
 	private startTime: number = 0;
 
 	constructor(isDebug: boolean = false) {

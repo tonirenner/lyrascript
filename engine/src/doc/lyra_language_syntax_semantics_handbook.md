@@ -330,7 +330,7 @@ let b2: Box<string> = new Box<string>("hello");
 
 #### Regeln
 
-- Generics sind **kompilierzeitlich** und existieren nicht zur Laufzeit
+- Generics sind **kompilier-zeitlich** und existieren nicht zur Laufzeit
 - Typparameter können:
     - als Feldtypen
     - als Parametertypen

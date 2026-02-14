@@ -74,7 +74,7 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 	evalCall(thisValue: Instance | null, ...args: any[]): any {
 		const node = this.getASTLambdaNode();
 		if (node === null) {
-			throw new Error("Invalid function call.");
+			throwRuntimeError("Invalid function call.");
 		}
 
 		const closureEnv = new Environment(this.functionEnv);
@@ -95,7 +95,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 	evalCall(thisValue: Instance | null, ...args: any[]): any {
 		const callNode: ASTCallNode | null = this.getASTCallNode();
 		if (callNode === null) {
-			throw new Error("Invalid function call.");
+			throwRuntimeError('Invalid function call.');
 		}
 
 		let result: any = this.resolveCall(thisValue)[callNode.callee.name](...args);
@@ -121,7 +121,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 	resolveCall(thisValue: Instance | null): any {
 		const node: ASTCallNode | null = this.getASTCallNode();
 		if (node === null) {
-			throw new Error("Invalid function call.");
+			throwRuntimeError("Invalid function call.");
 		}
 
 		return evalExpression(node.callee, this.objectRegistry, this.functionEnv, thisValue);
@@ -133,7 +133,7 @@ export function registerNativeClasses(objectRegistry: ObjectRegistry, environmen
 		if (nativeClass.isAutoloadAble) {
 			const classDef = nativeClass.getClassDefinition();
 			if (classDef === null) {
-				throw new Error("Class definition is null.");
+				throwRuntimeError("Class definition is null.");
 			}
 			objectRegistry.classes.set(nativeClass.name, classDef);
 			environment.define(nativeClass.name, classDef);
@@ -145,7 +145,7 @@ export function registerNativeFunctions(environment: Environment): void {
 	for (const name in globalFunctions) {
 		const globalFunction: any = globalFunctions[name];
 		if (!globalFunction) {
-			throw new Error("Global function is null.");
+			throwRuntimeError("Global function is null.");
 		}
 		environment.define(name, globalFunctions);
 	}
@@ -265,7 +265,7 @@ export function evalNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, 
 	constructorEnv.define(GRAMMAR.THIS, instance);
 
 	if (classDef.nativeInstance === null) {
-		throw new Error("Class has no native instance");
+		throwRuntimeError('Class has no native instance');
 	}
 
 	const nativeInstance = new classDef.nativeInstance(...constructorArgs.map(fromLyraValue));
@@ -986,7 +986,7 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 		const argument: any = args[i] || null;
 
 		if (!parameter) {
-			throw new Error("Method parameter is null");
+			throwRuntimeError('Method parameter is null.');
 		}
 
 		let value;

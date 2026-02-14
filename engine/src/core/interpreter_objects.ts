@@ -5,10 +5,10 @@ import {
 	ASTInterfaceNode,
 	ASTMethodNode,
 	ASTNode,
-	ASTNodeType,
 	ASTParameterNode,
 	ASTTypeNode
 } from "./ast";
+import {throwRuntimeError} from "./errors.ts";
 
 export class Environment {
 	parent: Environment | null;
@@ -30,7 +30,7 @@ export class Environment {
 		if (this.parent) {
 			return this.parent.get(name);
 		}
-		throw new Error(`Undefined variable ${name}`);
+		throwRuntimeError(`Undefined variable ${name}`);
 	}
 
 	set(name: string, value: any): void {
@@ -42,7 +42,7 @@ export class Environment {
 			this.parent.set(name, value);
 			return;
 		}
-		throw new Error(`Undefined variable ${name}`);
+		throwRuntimeError(`Undefined variable ${name}`);
 	}
 
 	has(name: string): boolean {
@@ -176,7 +176,7 @@ export class ClassDefinition {
 			return node;
 		}
 
-		throw new Error(`Method ${name} not found in class ${this.name}.`);
+		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
 	}
 
 	static constructFromAST(node: ASTClassNode): ClassDefinition {
@@ -187,55 +187,38 @@ export class ClassDefinition {
 		let constructorMethod: ClassMethodDefinition | null = null;
 
 		for (const child of node.children) {
-			switch (child.type) {
-				case ASTNodeType.FIELD: {
-					if (child instanceof ASTFieldNode) {
-						const field = new ClassFieldDefinition(
-							child.name,
-							child.fieldType
-								? child.fieldType.name
-								: null,
-							child.modifiers,
-							child.init
-						);
+			if (child instanceof ASTFieldNode) {
+				const field = new ClassFieldDefinition(
+					child.name,
+					child.fieldType
+						? child.fieldType.name
+						: null,
+					child.modifiers,
+					child.init
+				);
 
-						if (field.modifiers.static) {
-							staticFields.push(field);
-						} else {
-							instanceFields.push(field);
-						}
-
-						break;
-					} else {
-						throw new Error(`Invalid field node ${child.type}.`);
-					}
+				if (field.modifiers.static) {
+					staticFields.push(field);
+				} else {
+					instanceFields.push(field);
 				}
-				case ASTNodeType.CONSTRUCTOR:
-				case ASTNodeType.METHOD: {
-					if (child instanceof ASTMethodNode) {
-						const method = new ClassMethodDefinition(
-							child.name,
-							child.parameters,
-							child.returnType,
-							child.modifiers,
-							child.children
-						);
-						if (method.isConstructor) {
-							constructorMethod = method;
-						} else if (method.modifiers.static) {
-							staticMethods[method.name] = method;
-						} else {
-							instanceMethods[method.name] = method;
-						}
-
-						break;
-					} else {
-						throw new Error(`Invalid method node ${child.type}.`);
-					}
+			} else if (child instanceof ASTMethodNode) {
+				const method = new ClassMethodDefinition(
+					child.name,
+					child.parameters,
+					child.returnType,
+					child.modifiers,
+					child.children
+				);
+				if (method.isConstructor) {
+					constructorMethod = method;
+				} else if (method.modifiers.static) {
+					staticMethods[method.name] = method;
+				} else {
+					instanceMethods[method.name] = method;
 				}
-				default: {
-					throw new Error(`Unhandled node ${child.type}.`);
-				}
+			} else {
+				throwRuntimeError(`Unhandled node ${child.type}.`);
 			}
 		}
 
@@ -275,43 +258,29 @@ export class InterfaceDefinition {
 		const instanceMethods: { [index: string]: ClassMethodDefinition } = {};
 
 		for (const child of node.children) {
-			switch (child.type) {
-				case ASTNodeType.FIELD: {
-					if (child instanceof ASTFieldNode) {
-						const field = new ClassFieldDefinition(
-							child.name,
-							child.fieldType
-								? child.fieldType.name
-								: null,
-							child.modifiers,
-							child.init ?? null
-						);
+			if (child instanceof ASTFieldNode) {
+				const field = new ClassFieldDefinition(
+					child.name,
+					child.fieldType
+						? child.fieldType.name
+						: null,
+					child.modifiers,
+					child.init ?? null
+				);
 
-						staticFields.push(field);
-						break;
-					} else {
-						throw new Error(`Invalid field node ${child.type}.`);
-					}
-				}
-				case ASTNodeType.METHOD: {
-					if (child instanceof ASTMethodNode) {
-						const method = new ClassMethodDefinition(
-							child.name,
-							child.parameters,
-							child.returnType,
-							child.modifiers,
-							child.children
-						);
+				staticFields.push(field);
+			} else if (child instanceof ASTMethodNode) {
+				const method = new ClassMethodDefinition(
+					child.name,
+					child.parameters,
+					child.returnType,
+					child.modifiers,
+					child.children
+				);
 
-						instanceMethods[method.name] = method;
-						break;
-					} else {
-						throw new Error(`Invalid method node ${child.type}.`);
-					}
-				}
-				default: {
-					throw new Error(`Unhandled node ${child.type}.`);
-				}
+				instanceMethods[method.name] = method;
+			} else {
+				throwRuntimeError(`Unhandled node ${child.type}.`);
 			}
 		}
 

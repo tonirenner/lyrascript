@@ -23,7 +23,7 @@ export class Parser {
 
 	stream(): TokenStream {
 		if (!this.tokenStream) {
-			throw new Error('Parser has not been parsed yet.');
+			throwParserError('Parser has not been parsed yet.');
 		}
 
 		return this.tokenStream;
@@ -35,13 +35,11 @@ export class Parser {
 			.next();
 
 		if (!token) {
-			throw new Error(`Unexpected end of file. Expected ${tokenType}${keyword ? ' ' + keyword : ''}`);
+			throwParserError(`Unexpected end of file. Expected ${tokenType}${keyword ? ' ' + keyword : ''}`);
 		}
 
 		if (token.type !== tokenType || (keyword && token.value !== keyword)) {
-			throwParserError(
-				`Expected ${tokenType}${keyword ? ' ' + keyword : ''}, got ${token.type} ${token.value}`
-			);
+			throwParserError(`Expected ${tokenType}${keyword ? ' ' + keyword : ''}, got ${token.type} ${token.value}`);
 		}
 
 		return token;
@@ -77,15 +75,15 @@ export class Parser {
 			.next();
 
 		if (!token) {
-			throw new Error(`Unexpected end of file. Expected one of types ${tokenTypes}, got null.`);
+			throwParserError(`Unexpected end of file. Expected one of types ${tokenTypes}, got null.`);
 		}
 
 		if (!tokenTypes.includes(token.type)) {
-			throw new Error(`Expected one of types ${tokenTypes}, got ${token.type}`);
+			throwParserError(`Expected one of types ${tokenTypes}, got ${token.type}`);
 		}
 
 		if (keywords && !keywords.includes(token.value)) {
-			throw new Error(`Expected one of values ${keywords}, got ${token.value}`);
+			throwParserError(`Expected one of values ${keywords}, got ${token.value}`);
 		}
 
 		return token;
@@ -124,7 +122,7 @@ export class Parser {
 			.peek();
 
 		if (token === null) {
-			throw new Error('Unexpected end of file. Expected token, got null.');
+			throwParserError('Unexpected end of file. Expected token, got null.');
 		}
 
 		return token;
@@ -136,7 +134,7 @@ export class Parser {
 			.next();
 
 		if (token === null) {
-			throw new Error('Unexpected end of file. Expected token, got null.');
+			throwParserError('Unexpected end of file. Expected token, got null.');
 		}
 
 		return token;

@@ -4,16 +4,17 @@ import {Source} from "./parser_source";
 import {Parser} from "./parser";
 import {Environment} from "./interpreter_objects";
 import type {AbstractFileLoader} from "./loaders";
+import {throwRuntimeError} from "./errors.ts";
 
 export class Dependency {
 	objectRegistry: ObjectRegistry = new ObjectRegistry();
 	names: string[];
 	url: string;
-	ast: ASTNode | null            = null;
+	ast: ASTNode | null = null;
 
 	constructor(names: string[], url: string) {
 		this.names = names;
-		this.url   = url;
+		this.url = url;
 	}
 }
 
@@ -23,9 +24,9 @@ export class DependencyLoader {
 	fileLoader: AbstractFileLoader;
 
 	constructor(environment: Environment, objectRegistry: ObjectRegistry, fileLoader: AbstractFileLoader) {
-		this.environment    = environment;
+		this.environment = environment;
 		this.objectRegistry = objectRegistry;
-		this.fileLoader     = fileLoader;
+		this.fileLoader = fileLoader;
 	}
 
 	async parseDependency(dependency: Dependency): Promise<void> {
@@ -92,7 +93,7 @@ export class DependencyLoader {
 					}
 					classDependencies.set(node.from, new Dependency(node.names, node.from));
 				} else {
-					throw new Error(`Invalid import node ${node.type}.`);
+					throwRuntimeError(`Invalid import node ${node.type}.`, node?.span);
 				}
 			}
 		}

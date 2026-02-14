@@ -877,12 +877,12 @@ export function parsePrimary(parser: Parser): ASTNode {
 		return expr;
 	}
 
-	throw new Error(`Unexpected token: ${token.type} ${token.value}`);
+	throwParserError(`Unexpected token: ${token.type} ${token.value}`);
 }
 
 export function parsePostfix(parser: Parser, expr: ASTNode | null): ASTNode {
 	if (expr === null) {
-		throw new Error(`Expected expression, got null.`);
+		throwParserError(`Expected expression, got null.`);
 	}
 
 	while (true) {

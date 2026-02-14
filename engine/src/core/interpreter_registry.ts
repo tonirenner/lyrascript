@@ -1,6 +1,7 @@
 import {ASTClassNode, ASTInterfaceNode, ASTNode} from "./ast";
 import {ClassDefinition, InterfaceDefinition} from "./interpreter_objects";
 import {ClassSymbol, InterfaceSymbol} from "../language/type_objects";
+import {throwRuntimeError} from "./errors.ts";
 
 export class ClassRegistry {
 	map: Map<string, ClassDefinition> = new Map();
@@ -20,7 +21,7 @@ export class ClassRegistry {
 	get(name: string): ClassDefinition {
 		const classDef = this.map.get(name);
 		if (!classDef) {
-			throw new Error(`Class ${name} not found.`);
+			throwRuntimeError(`Class ${name} not found.`);
 		}
 		return classDef;
 	}
@@ -73,7 +74,7 @@ export class TypeRegistry {
 	public getClassSymbol(name: string): ClassSymbol {
 		const symbol: ClassSymbol | undefined = this.classSymbols.get(name);
 		if (symbol === undefined) {
-			throw new Error(`Symbol ${name} not found.`);
+			throwRuntimeError(`Symbol ${name} not found.`);
 		}
 		return symbol;
 	}
@@ -81,7 +82,7 @@ export class TypeRegistry {
 	public getInteraceSymbol(name: string): InterfaceSymbol {
 		const symbol: InterfaceSymbol | undefined = this.interfaceSymbols.get(name);
 		if (symbol === undefined) {
-			throw new Error(`Symbol ${name} not found.`);
+			throwRuntimeError(`Symbol ${name} not found.`);
 		}
 		return symbol;
 	}

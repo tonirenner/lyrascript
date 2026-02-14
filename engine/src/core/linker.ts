@@ -5,6 +5,7 @@ import {Environment, InterfaceDefinition} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
 import type {AbstractFileLoader} from "./loaders.ts";
 import type {NativeClass} from "../library/native_class.ts";
+import {throwDependencyError} from "./errors.ts";
 
 const nativeClasses = new NativeClasses();
 
@@ -46,18 +47,18 @@ export class Linker {
 				if (node.from === null) {
 					const className = node.names[0];
 					if (!className) {
-						throw new Error(`Invalid import node ${node.type}.`);
+						throwDependencyError(`Invalid import node ${node.type}.`, node?.span);
 					}
 					const nativeClass: NativeClass | null = nativeClasses.classes.get(className) || null;
 					if (!nativeClass) {
-						throw new Error(`Unknown class ${className}`);
+						throwDependencyError(`Unknown native class ${className}`, node?.span);
 					}
 					const classDef = nativeClass.getClassDefinition();
 					if (!classDef) {
-						throw new Error(`Class ${className} not found.`);
+						throwDependencyError(`Class definition for native class ${className} not found.`, node?.span);
 					}
 					if (this.objectRegistry.classes.has(className)) {
-						return;
+						throwDependencyError(`Could not resolve class ${className}.`, node?.span);
 					}
 					this.objectRegistry.classes.set(className, classDef);
 					this.environment.define(className, classDef);

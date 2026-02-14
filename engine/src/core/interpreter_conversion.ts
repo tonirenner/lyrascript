@@ -2,6 +2,7 @@ import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast";
 import {GRAMMAR, TYPE_ENUM} from "../language/grammar";
 import {ClassDefinition, Instance} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
+import {throwNativeError} from "./errors.ts";
 
 interface SerializationObject {
 	[index: string]: any;
@@ -176,7 +177,7 @@ export function toLyraValue(value: any): ASTNode {
 		return toLyraArray(value);
 	}
 
-	throw new Error(`[NativeError] Cannot convert native object to Lyra value`);
+	throwNativeError('Cannot convert native object to Lyra value');
 }
 
 export function fromLyraValue(value: any): any {
@@ -207,7 +208,7 @@ export function returnValue(value: any): ASTReturnNode {
 
 export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectRegistry: ObjectRegistry): Instance {
 	if (!objectRegistry.classes.has(lyraNativeObject.className)) {
-		throw new Error(`[NativeError] Class ${lyraNativeObject.className} not found.`);
+		throwNativeError(`Class ${lyraNativeObject.className} not found.`);
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get(lyraNativeObject.className);
