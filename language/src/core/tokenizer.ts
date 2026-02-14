@@ -1,4 +1,4 @@
-import {GRAMMAR, Rules, Token, TokenType} from "../language/grammar";
+import {GRAMMAR, Rules, Token, TokenType} from "./grammar.ts";
 import {throwTokenError} from "./errors";
 import type {Source} from "./parser_source.ts";
 

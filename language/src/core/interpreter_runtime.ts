@@ -25,12 +25,12 @@ import {
 	ASTUnaryNode,
 	ASTVariableNode
 } from "./ast";
-import {GRAMMAR, TYPE_ENUM} from "../language/grammar";
+import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
 import {NativeClasses} from "../library/native_classes";
 import {NativeFunction, NativeFunctions} from "../library/native_functions";
 import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "./interpreter_conversion";
 import {throwRuntimeError} from "./errors";
-import {AutoboxedTypes} from "../language/autoboxing";
+import {AutoboxedTypes} from "./autoboxing.ts";
 import {LyraArray} from "../library/classes/array";
 import type {Span} from "./parser_source.ts";
 

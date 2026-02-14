@@ -1,5 +1,5 @@
 import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast";
-import {GRAMMAR, TYPE_ENUM} from "../language/grammar";
+import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
 import {ClassDefinition, Instance} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
 import {throwNativeError} from "./errors.ts";

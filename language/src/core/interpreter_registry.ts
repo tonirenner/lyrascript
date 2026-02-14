@@ -1,6 +1,6 @@
 import {ASTClassNode, ASTInterfaceNode, ASTNode} from "./ast";
 import {ClassDefinition, InterfaceDefinition} from "./interpreter_objects";
-import {ClassSymbol, InterfaceSymbol} from "../language/type_objects";
+import {ClassSymbol, InterfaceSymbol} from "./type_objects.ts";
 import {throwRuntimeError} from "./errors.ts";
 
 export class ClassRegistry {

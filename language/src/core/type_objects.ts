@@ -1,4 +1,4 @@
-import {TYPE_ENUM} from "./grammar";
+import {TYPE_ENUM} from "./grammar.ts";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -7,9 +7,9 @@ import {
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
-} from "../core/ast";
-import {throwTypeError} from "../core/errors";
-import {ObjectRegistry} from "../core/interpreter_registry";
+} from "./ast.ts";
+import {throwTypeError} from "./errors.ts";
+import {ObjectRegistry} from "./interpreter_registry.ts";
 
 export class PrimitiveTypes {
 	static NUMBER: string = TYPE_ENUM.NUMBER;

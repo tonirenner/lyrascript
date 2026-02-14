@@ -1,4 +1,4 @@
-import type {Source} from "../core/parser_source";
+import type {Source} from "./parser_source.ts";
 
 export class GRAMMAR {
 	static IMPORT: string      = 'import';

@@ -1,5 +1,5 @@
-import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "../core/interpreter_registry";
+import {ClassRefType, Type, Types} from "./type_objects.ts";
+import {ObjectRegistry} from "./interpreter_registry.ts";
 
 export class AutoboxedTypes {
 	static NUMBER: string = 'Number';

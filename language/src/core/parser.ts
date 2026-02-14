@@ -1,4 +1,4 @@
-import {Token, TokenType} from "../language/grammar";
+import {Token, TokenType} from "./grammar.ts";
 import {TokenStream} from "./tokenizer";
 import {parseProgram} from "./parser_statments";
 import {throwParserError} from "./errors";

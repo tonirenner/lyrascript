@@ -1,4 +1,4 @@
-import {GRAMMAR} from "../language/grammar";
+import {GRAMMAR} from "./grammar.ts";
 import {
 	ASTClassNode,
 	ASTFieldNode,

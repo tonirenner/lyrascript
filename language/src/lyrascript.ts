@@ -10,7 +10,7 @@ import {wrapJsError} from "./core/errors";
 import {Source} from "./core/parser_source";
 import type {ASTNode} from "./core/ast.ts";
 import {Tokenizer} from "./core/tokenizer.ts";
-import type {Token} from "./language/grammar.ts";
+import type {Token} from "./core/grammar.ts";
 
 export class LyraScript {
 	private globalEnv: Environment = new Environment();

@@ -1,4 +1,4 @@
-import {GRAMMAR, Token, TYPE_ENUM} from "../language/grammar";
+import {GRAMMAR, Token, TYPE_ENUM} from "./grammar.ts";
 import {Modifiers, SuperClass} from "./interpreter_objects";
 import {Span} from "./parser_source";
 
