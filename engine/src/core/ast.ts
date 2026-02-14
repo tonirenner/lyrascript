@@ -130,9 +130,9 @@ export class ASTMemberNode extends ASTNode {
 
 export class ASTUnaryNode extends ASTNode {
 	operator: string;
-	argument: ASTUnaryNode;
+	argument: ASTNode | ASTUnaryNode;
 
-	constructor(operator: string, argument: ASTUnaryNode) {
+	constructor(operator: string, argument: ASTNode | ASTUnaryNode) {
 		super(ASTNodeType.UNARY);
 
 		this.operator = operator;

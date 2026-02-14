@@ -512,7 +512,8 @@ export function parseBlock(parser: Parser): ASTNode[] {
 
 	const children = [];
 	while (parser.peek().value !== GRAMMAR.BRACE_CLOSE) {
-		if (parser.consumeIfComment()) {
+		if (parser.peek().type === TokenType.COMMENT) {
+			parser.next();
 			continue;
 		}
 		const child: ASTNode | null = parseStatement(parser);
@@ -799,24 +800,21 @@ export function parseArguments(parser: Parser): ASTNode[] {
 	return args;
 }
 
-export function parseUnary(parser: Parser): ASTUnaryNode | ASTNode | null {
+export function parseUnary(parser: Parser): ASTNode | ASTUnaryNode {
 	const token = parser.peek();
 
 	if (token && token.value === GRAMMAR.EXCLAMATION_MARK) {
 		parser.next();
 
-		const unaryExpr: ASTNode | ASTUnaryNode | null = parseUnary(parser);
-		if (!(unaryExpr instanceof ASTUnaryNode)) {
-			throw new Error(`Expected unary expression, got ${unaryExpr}`);
-		}
+		const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
 
-		return new ASTUnaryNode(GRAMMAR.EXCLAMATION_MARK, unaryExpr);
+		return new ASTUnaryNode(GRAMMAR.EXCLAMATION_MARK, unary);
 	}
 
 	return parsePrimary(parser);
 }
 
-export function parsePrimary(parser: Parser): ASTNode | null {
+export function parsePrimary(parser: Parser): ASTNode {
 	if (looksLikeLambda(parser)) {
 		return parseLambda(parser);
 	}
@@ -879,9 +877,7 @@ export function parsePrimary(parser: Parser): ASTNode | null {
 		return expr;
 	}
 
-	throwParserError(`Unexpected token in expression: ${token.type} ${token.value}`);
-
-	return null;
+	throw new Error(`Unexpected token: ${token.type} ${token.value}`);
 }
 
 export function parsePostfix(parser: Parser, expr: ASTNode | null): ASTNode {
