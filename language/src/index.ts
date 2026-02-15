@@ -12,15 +12,28 @@ export {Source} from "./core/parser_source";
 export {WebLyraScript} from "./host/engine";
 export {WebApplicationRuntime} from "./host/runtime";
 
-export function Program(isDebug: boolean = false): LyraScriptProgram {
+const Lyra = {
+	Source: Source,
+	Parser: Parser,
+	Tokenizer: Tokenizer,
+	Program: (isDebug: boolean): LyraScriptProgram => Program(isDebug),
+	execute: (source: Source, isDebug: boolean = false): Promise<void> => execute(source, isDebug),
+	executeFromString: (code: string, isDebug: boolean = false): Promise<void> => executeFromString(code, isDebug),
+	executeFromUrl: async (url: string, isDebug: boolean = false): Promise<void> => executeFromUrl(url, isDebug),
+	executeTest: (source: Source, isDebug: boolean = false): Promise<void> => executeTest(source, isDebug),
+	executeTestString: (code: string, isDebug: boolean = false): Promise<void> => executeTestString(code, isDebug),
+	executeTestUrl: (url: string, isDebug: boolean = false): Promise<void> => executeTestUrl(url, isDebug),
+	tokenize: (source: Source): Token[] => tokenize(source),
+	tokenizeUrl: (url: string): Promise<Token[]> => tokenizeUrl(url),
+	parseTree: (source: Source): ASTNode => parseTree(source),
+	parseTreeUrl: (url: string): Promise<ASTNode> => parseTreeUrl(url),
+};
+
+function Program(isDebug: boolean = false): LyraScriptProgram {
 	return new LyraScriptProgram(isDebug);
 }
 
-export async function executeSourceFromUrl(url: string, isDebug: boolean = false): Promise<void> {
-	return await executeSource(await fetchSource(url), isDebug);
-}
-
-export async function executeSource(source: Source, isDebug: boolean = false): Promise<void> {
+async function execute(source: Source, isDebug: boolean = false): Promise<void> {
 	try {
 		return await Program(isDebug)
 			.execute(source);
@@ -33,7 +46,11 @@ export async function executeSource(source: Source, isDebug: boolean = false): P
 	}
 }
 
-export async function executeSourceFromString(code: string, isDebug: boolean = false): Promise<void> {
+async function executeFromUrl(url: string, isDebug: boolean = false): Promise<void> {
+	return await execute(await fetchSource(url), isDebug);
+}
+
+async function executeFromString(code: string, isDebug: boolean = false): Promise<void> {
 	const source = new Source(code);
 
 	try {
@@ -48,11 +65,7 @@ export async function executeSourceFromString(code: string, isDebug: boolean = f
 	}
 }
 
-export async function executeTestFromUrl(url: string, isDebug: boolean = false): Promise<void> {
-	return await executeTestFromSource(await fetchSource(url), isDebug);
-}
-
-export async function executeTestFromSource(source: Source, isDebug = false): Promise<void> {
+async function executeTest(source: Source, isDebug = false): Promise<void> {
 	try {
 		return await Program(isDebug)
 			.executeTest(source);
@@ -65,7 +78,11 @@ export async function executeTestFromSource(source: Source, isDebug = false): Pr
 	}
 }
 
-export async function executeTestFromString(code: string, isDebug: boolean = false): Promise<void> {
+async function executeTestUrl(url: string, isDebug: boolean = false): Promise<void> {
+	return await executeTest(await fetchSource(url), isDebug);
+}
+
+async function executeTestString(code: string, isDebug: boolean = false): Promise<void> {
 	const source = new Source(code);
 
 	try {
@@ -80,18 +97,20 @@ export async function executeTestFromString(code: string, isDebug: boolean = fal
 	}
 }
 
-export async function tokens(url: string): Promise<Token[]> {
-	return tokensFromSource(await fetchSource(url));
-}
-
-export function tokensFromSource(source: Source): Token[] {
+export function tokenize(source: Source): Token[] {
 	return new Tokenizer(source).tokenize();
 }
 
-export async function ast(url: string): Promise<ASTNode> {
-	return astFromSource(await fetchSource(url));
+export async function tokenizeUrl(url: string): Promise<Token[]> {
+	return tokenize(await fetchSource(url));
 }
 
-export function astFromSource(source: Source): ASTNode {
+export function parseTree(source: Source): ASTNode {
 	return new Parser(source).parse();
 }
+
+export async function parseTreeUrl(url: string): Promise<ASTNode> {
+	return parseTree(await fetchSource(url));
+}
+
+export default Lyra;

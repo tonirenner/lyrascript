@@ -150,7 +150,7 @@ app.run();
 </main>
 
 <script type="module">
-	import {Source, astFromSource, tokensFromSource, executeSourceFromString} from "../dist/language.js";
+	import Lyra from "../dist/language.js";
 	import {ScratchpadOutput, wrapConsole} from "./src/scratchpad_output.js";
 
 	wrapConsole(
@@ -189,20 +189,20 @@ app.run();
 		output.log("> Running...\n");
 
 		try {
-			const source = new Source(editor.value);
+			const source = new Lyra.Source(editor.value);
 
-			renderTokens(tokensFromSource(source));
+			renderTokens(Lyra.tokenize(source));
 
 			astEl.innerHTML = '';
-			renderASTTree(astFromSource(source), astEl);
+			renderASTTree(Lyra.parseTree(source), astEl);
 
-			executeSourceFromString(source)
-				.catch(error => {
-					output.error(error.stack || error.message);
-					render();
-				})
-				.then(() => output.log('\n> Done.'))
-				.then(() => render());
+			Lyra.execute(source)
+			    .catch(error => {
+				    output.error(error.stack || error.message);
+				    render();
+			    })
+			    .then(() => output.log('\n> Done.'))
+			    .then(() => render());
 		}
 		catch (error) {
 			output.error(error.stack || error.message);

@@ -66,7 +66,9 @@ bun run lyra:build
 To run in a browser:
 
 ```
-open playground.html
+open playground/index.html
 ```
+
+Or try online: https://lyrascript.github.io/
 
 This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
