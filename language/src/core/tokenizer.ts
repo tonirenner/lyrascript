@@ -3,9 +3,8 @@ import {throwTokenError} from "./errors";
 import type {Source} from "./parser_source.ts";
 
 export class Tokenizer {
-	rules = new Rules();
-
-	source: Source;
+	private readonly rules = new Rules();
+	private readonly source: Source;
 
 	constructor(source: Source) {
 		this.source = source;
@@ -18,8 +17,8 @@ export class Tokenizer {
 	tokenize(): Token[] {
 		const tokens: Token[] = [];
 
-		let i: number      = 0;
-		let line: number   = 1;
+		let i: number = 0;
+		let line: number = 1;
 		let column: number = 0;
 
 		while (i < this.source.length) {
@@ -42,6 +41,15 @@ export class Tokenizer {
 
 				line++;
 				column = 0;
+				continue;
+			}
+
+			const punctuation = this.matchPunctuationAt(i);
+			if (punctuation) {
+				tokens.push(punctuation.withLineAndColumn(line, column));
+				i = punctuation.end + 1;
+
+				column += this.columOffset(punctuation);
 				continue;
 			}
 
@@ -78,15 +86,6 @@ export class Tokenizer {
 				i = operator.end + 1;
 
 				column += this.columOffset(operator);
-				continue;
-			}
-
-			const punctuation = this.matchPunctuationAt(i);
-			if (punctuation) {
-				tokens.push(punctuation.withLineAndColumn(line, column));
-				i = punctuation.end + 1;
-
-				column += this.columOffset(punctuation);
 				continue;
 			}
 
@@ -145,7 +144,7 @@ export class Tokenizer {
 			return null;
 		}
 		let start = i;
-		let j     = i;
+		let j = i;
 		while (this.rules.isAlphaNumeric(this.source.charAt(j))) j++;
 		const value = this.source.slice(start, j);
 
@@ -174,6 +173,11 @@ export class Tokenizer {
 	}
 
 	matchPunctuationAt(i: number): Token | null {
+		const chars = this.source.charAt(i) + this.source.charAt(i + 1);
+		if (Rules.PUNCTUATIONS.has(chars)) {
+			return new Token(TokenType.PUNCTUATION, chars, i, i + 1, this.source);
+		}
+
 		if (!Rules.PUNCTUATIONS.has(this.source.charAt(i))) {
 			return null;
 		}
@@ -195,7 +199,7 @@ export class Tokenizer {
 		}
 
 		let start = i + 1;
-		let j     = i + 1;
+		let j = i + 1;
 		while (this.rules.isAlpha(this.source.charAt(j))) j++;
 		const value = this.source.slice(start, j);
 

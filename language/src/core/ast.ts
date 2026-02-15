@@ -1,10 +1,6 @@
-import {GRAMMAR, Token, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
 import {Modifiers, SuperClass} from "./interpreter_objects";
-import {Span} from "./parser_source";
-
-export function spanFromTokens(startToken: Token, endToken: Token): Span {
-	return new Span(startToken.source, startToken.start, endToken.end);
-}
+import {SourceSpan} from "./parser_source";
 
 export class ASTNodeType {
 	static PROGRAMM = 'program';
@@ -49,7 +45,7 @@ export class ASTNode {
 	isExpression: boolean = false;
 	name: string = '';
 
-	span: Span | null = null;
+	span: SourceSpan | null = null;
 	type: string;
 	value: any | null = null;
 	children: ASTNode[];
@@ -420,19 +416,18 @@ export class ASTTypeNode extends ASTNode {
 	}
 }
 
-interface VDomAttributes {
+interface VDomProperties {
 	[index: string]: ASTNode;
 }
 
-class ASTVDomNode extends ASTNode {
-	tag: string;
-	attributes: VDomAttributes = {};
-	selfClosing: boolean = false;
+export class ASTVDomNode extends ASTNode {
+	readonly tag: string;
+	readonly props: Map<string, ASTNode> = new Map();
 
-	constructor(tag: string, attributes: VDomAttributes, children: ASTNode[] = []) {
+	constructor(tag: string, props: Map<string, ASTNode>, children: ASTNode[] = []) {
 		super(ASTNodeType.VDOM, children);
 		this.tag = tag;
-		this.attributes = attributes;
+		this.props = props;
 	}
 }
 

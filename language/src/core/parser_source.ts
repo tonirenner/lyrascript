@@ -1,5 +1,6 @@
 import {Tokenizer} from "./tokenizer";
-import {throwDependencyError} from "./errors.ts";
+import {throwDependencyError} from "./errors";
+import type {Token} from "./grammar";
 
 export class Source {
 	static NEWLINE = '\n';
@@ -33,7 +34,7 @@ export class Source {
 	}
 }
 
-export class Span {
+export class SourceSpan {
 	source: Source;
 	start: number;
 	end: number;
@@ -57,11 +58,15 @@ export class Span {
 	}
 }
 
+export function spanFrom(startToken: Token, endToken: Token): SourceSpan {
+	return new SourceSpan(startToken.source, startToken.start, endToken.end);
+}
+
 export async function fetchSource(url: string): Promise<Source> {
 	const response = await fetch(url);
 	if (!response.ok) {
 		throwDependencyError(`Failed to load script: ${url}`);
 	}
 
-	return new Source(await response.text());
+	return new Source(await response.text(), url);
 }

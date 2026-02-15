@@ -32,7 +32,7 @@ import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInsta
 import {throwRuntimeError} from "./errors";
 import {AutoboxedTypes} from "./autoboxing.ts";
 import {LyraArray} from "../library/classes/array";
-import type {Span} from "./parser_source.ts";
+import type {SourceSpan} from "./parser_source.ts";
 
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();
@@ -1001,7 +1001,7 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 	return evalBlock(methodNode.children, objectRegistry, methodEnv, instance, methodNode.returnType);
 }
 
-export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span: Span | null = null): Instance {
+export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {
 	if (value instanceof Instance) {
 		return value;
 	}
@@ -1036,7 +1036,7 @@ export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span
 	return value;
 }
 
-export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry, span: Span | null = null): Instance {
+export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {
 	const classDef = objectRegistry.classes.get(className);
 
 	if (!classDef) {

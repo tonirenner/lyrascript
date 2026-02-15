@@ -1,4 +1,4 @@
-import {Source, Span} from "./parser_source";
+import {Source, SourceSpan} from "./parser_source";
 
 class ErrorTypes {
 	static TYPE_ERROR: string = 'TypeError';
@@ -12,13 +12,13 @@ class ErrorTypes {
 
 export class LyraError extends Error {
 	kind: string;
-	span: Span | null = null;
+	span: SourceSpan | null = null;
 	override cause: string | null = null;
 
 	constructor(
 		kind: string,
 		message: string,
-		span: Span | null = null,
+		span: SourceSpan | null = null,
 		cause: string | null = null
 	) {
 		super(message);
@@ -44,7 +44,7 @@ ${" ".repeat(this.span.column)}${"^".repeat(this.span.end - this.span.start)}
 }
 
 export class LyraTokenError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.TOKEN_ERROR,
 			message,
@@ -55,7 +55,7 @@ export class LyraTokenError extends LyraError {
 }
 
 export class LyraTypeError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.TYPE_ERROR,
 			message,
@@ -66,7 +66,7 @@ export class LyraTypeError extends LyraError {
 }
 
 export class LyraParserError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.PARSER_ERROR,
 			message,
@@ -77,7 +77,7 @@ export class LyraParserError extends LyraError {
 }
 
 export class LyraRuntimeError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.RUNTIME_ERROR,
 			message,
@@ -88,7 +88,7 @@ export class LyraRuntimeError extends LyraError {
 }
 
 export class LyraNativeError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.NATIVE_ERROR,
 			message,
@@ -99,7 +99,7 @@ export class LyraNativeError extends LyraError {
 }
 
 export class LyraDependencyError extends LyraError {
-	constructor(message: string, span: Span | null = null, cause: string | null = null) {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
 		super(
 			ErrorTypes.DEPENDENCY_ERROR,
 			message,
@@ -109,27 +109,27 @@ export class LyraDependencyError extends LyraError {
 	}
 }
 
-export function throwTokenError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwTokenError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraTokenError(message, span, cause);
 }
 
-export function throwTypeError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwTypeError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraTypeError(message, span, cause);
 }
 
-export function throwParserError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwParserError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraParserError(message, span, cause);
 }
 
-export function throwRuntimeError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwRuntimeError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraRuntimeError(message, span, cause);
 }
 
-export function throwNativeError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwNativeError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraNativeError(message, span, cause);
 }
 
-export function throwDependencyError(message: string, span: Span | null = null, cause: string | null = null): never {
+export function throwDependencyError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraDependencyError(message, span, cause);
 }
 
@@ -144,6 +144,6 @@ export function wrapJsError(error: Error, source: Source): LyraError {
 	return new LyraError(
 		ErrorTypes.INTERNAL_ERROR,
 		error.message || String(error),
-		new Span(source, 0, source.length)
+		new SourceSpan(source, 0, source.length)
 	);
 }

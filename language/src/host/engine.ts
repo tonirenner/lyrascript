@@ -5,17 +5,18 @@ import {ObjectRegistry} from "../core/interpreter_registry";
 import {callInstanceMethod} from "../core/interpreter_runtime";
 
 export interface Engine {
-	load(url: string): Promise<void>;
+	executeEntryFile(url: string, className: string): Promise<void>;
 
 	createInstance(className: string): Instance;
 
-	callInstanceMethod(instance: Instance, methodName: string, args: Array<any>): any;
+	callInstanceMethod(methodName: string, args: Array<any>): any;
 }
 
 export class WebLyraScript implements Engine {
 	private readonly program: LyraScriptProgram;
 	private objectRegistry: ObjectRegistry = new ObjectRegistry();
 	private environment: Environment = new Environment();
+	private rootInstance: Instance | null = null;
 
 	constructor(isDebug: boolean = false) {
 		this.program = new LyraScriptProgram(isDebug);
@@ -25,21 +26,28 @@ export class WebLyraScript implements Engine {
 		return new Instance(this.objectRegistry.classes.get(className));
 	}
 
-	callInstanceMethod(instance: Instance, methodName: string, args: any[]): any {
+	callInstanceMethod(methodName: string, args: any[]): any {
+		if (this.rootInstance === null) {
+			throw new Error('No root instance available.');
+		}
+
 		return callInstanceMethod(
-			instance,
-			instance.__classDef.findMethod(methodName),
+			this.rootInstance,
+			this.rootInstance.__classDef.findMethod(methodName),
 			args,
 			this.objectRegistry,
 			this.environment
 		);
 	}
 
-	async load(url: string): Promise<void> {
+	async executeEntryFile(url: string, className: string): Promise<void> {
 		return this.program.execute(await fetchSource(url))
 		           .then(() => {
 			           this.objectRegistry = this.program.getGlobalObjectRegistry();
 			           this.environment = this.program.getGlobalEnvironment();
+		           })
+		           .then(() => {
+			           this.rootInstance = this.createInstance(className);
 		           });
 	}
 }

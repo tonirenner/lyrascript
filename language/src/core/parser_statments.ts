@@ -30,9 +30,11 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
-	spanFromTokens
+	ASTVDomNode,
+	ASTVDomTextNode
 } from "./ast";
 import {throwParserError} from "./errors";
+import {spanFrom} from "./parser_source";
 
 export function createMixedType(): ASTTypeNode {
 	return new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, TYPE_ENUM.MIXED);
@@ -273,7 +275,7 @@ export function parseClassDeclaration(parser: Parser): ASTClassNode {
 		children
 	);
 
-	node.span = spanFromTokens(classToken, braceCloseToken);
+	node.span = spanFrom(classToken, braceCloseToken);
 	return node;
 }
 
@@ -331,7 +333,7 @@ export function parseInterfaceDeclaration(parser: Parser): ASTInterfaceNode {
 		children
 	);
 
-	node.span = spanFromTokens(interfaceToken, braceCloseToken);
+	node.span = spanFrom(interfaceToken, braceCloseToken);
 	return node;
 }
 
@@ -412,7 +414,7 @@ export function parseParameters(parser: Parser): ASTParameterNode[] {
 		}
 
 		const node = new ASTParameterNode(nameToken.value, type, defaultValue);
-		node.span = spanFromTokens(typeToken || nameToken, defaultValueToken || nameToken);
+		node.span = spanFrom(typeToken || nameToken, defaultValueToken || nameToken);
 
 		parameters.push(node);
 	} while (parser.consumeIfPunctuation(GRAMMAR.COMMA));
@@ -456,7 +458,7 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 		const semicolonToken = parser.expectPunctuation(GRAMMAR.SEMICOLON);
 
 		const node = new ASTFieldNode(nameToken.value, modifiers, fieldType, init);
-		node.span = spanFromTokens(startToken, semicolonToken);
+		node.span = spanFrom(startToken, semicolonToken);
 		return node;
 	}
 
@@ -492,7 +494,7 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 			children
 		);
 
-		node.span = spanFromTokens(startToken, parenthesesCloseToken);
+		node.span = spanFrom(startToken, parenthesesCloseToken);
 
 		return node;
 	}
@@ -545,7 +547,7 @@ export function parseVariableDeclaration(parser: Parser): ASTVariableNode {
 	const semicolonToken = parser.expectPunctuation(GRAMMAR.SEMICOLON);
 
 	const node = new ASTVariableNode(nameToken.value, typeAnnotation, init);
-	node.span = spanFromTokens(letToken, semicolonToken);
+	node.span = spanFrom(letToken, semicolonToken);
 
 	return node;
 }
@@ -567,7 +569,7 @@ export function parseIfDeclaration(parser: Parser): ASTIfNode {
 		}
 	}
 
-	node.span = spanFromTokens(startToken, parenthesesCloseToken);
+	node.span = spanFrom(startToken, parenthesesCloseToken);
 
 	return node;
 }
@@ -596,7 +598,7 @@ export function parseMatchDeclaration(parser: Parser): ASTMatchNode {
 	const braceCloseToken = parser.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 
 	const node = new ASTMatchNode(expression, matchCases, defaultCase);
-	node.span = spanFromTokens(startToken, braceCloseToken);
+	node.span = spanFrom(startToken, braceCloseToken);
 
 	return node;
 }
@@ -639,7 +641,7 @@ export function parseForeachDeclaration(parser: Parser): ASTForeachNode {
 	const parenthesesCloseToken = parser.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
 
 	const node = new ASTForeachNode(iterator, iterable, parseBlock(parser));
-	node.span = spanFromTokens(startToken, parenthesesCloseToken);
+	node.span = spanFrom(startToken, parenthesesCloseToken);
 
 	return node;
 }
@@ -657,7 +659,7 @@ export function parseArray(parser: Parser): ASTArrayNode {
 
 	const bracketSquareCloseToken = parser.expectPunctuation(GRAMMAR.BRACKET_SQUARE_CLOSE);
 
-	node.span = spanFromTokens(startToken, bracketSquareCloseToken);
+	node.span = spanFrom(startToken, bracketSquareCloseToken);
 
 	return node;
 }
@@ -708,7 +710,7 @@ export function parseLambda(parser: Parser): ASTLambdaNode {
 	const braceCloseToken = parser.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 
 	const node = new ASTLambdaNode(parameters, returnType, children);
-	node.span = spanFromTokens(startToken, braceCloseToken);
+	node.span = spanFrom(startToken, braceCloseToken);
 
 	return node;
 }
@@ -772,7 +774,7 @@ export function parseExpression(parser: Parser, precedence: number = 0): ASTNode
 			const endToken = parser.peek();
 
 			const node = new ASTBinaryNode(expr, right, token.value);
-			node.span = spanFromTokens(startToken, endToken);
+			node.span = spanFrom(startToken, endToken);
 			expr = node;
 			continue;
 		}
@@ -781,6 +783,63 @@ export function parseExpression(parser: Parser, precedence: number = 0): ASTNode
 	}
 
 	return expr;
+}
+
+export function parseVDomExpression(parser: Parser): ASTVDomNode {
+	parser.expectKeyword(GRAMMAR.VDOM);
+	return parseVDomElement(parser);
+}
+
+export function parseVDomElement(parser: Parser): ASTVDomNode {
+
+	const startToken: Token = parser.expectOperator(GRAMMAR.LESS_THAN);
+	const tagToken: Token = parser.expectIdentifier();
+	const tag: string = tagToken.value;
+
+	const props = new Map<string, ASTNode>();
+	while (!parser.peekIs(GRAMMAR.GREATER_THAN) && !parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
+
+		const nameToken: Token = parser.expectIdentifier();
+		parser.expectOperator(GRAMMAR.ASSIGN);
+
+		const value: ASTNode = parseExpression(parser);
+
+		props.set(nameToken.value, value);
+	}
+
+	parser.expectOperator(GRAMMAR.GREATER_THAN);
+
+	const children: ASTNode[] = [];
+
+	while (!parser.peekIs(GRAMMAR.XML_OPEN_CLOSE_TAG)) {
+		if (parser.peekIs(GRAMMAR.LESS_THAN)) {
+			children.push(parseVDomElement(parser));
+		} else {
+			children.push(parseVDomText(parser));
+		}
+	}
+
+	parser.expectPunctuation(GRAMMAR.XML_OPEN_CLOSE_TAG);
+	parser.expectIdentifier();
+	parser.expectOperator(GRAMMAR.GREATER_THAN);
+
+	const node = new ASTVDomNode(tag, props, children);
+	node.span = spanFrom(startToken, parser.peek());
+	return node;
+}
+
+export function parseVDomText(parser: Parser): ASTVDomTextNode {
+	const token: Token = parser.expectOneOf(
+		[
+			TokenType.IDENTIFIER,
+			TokenType.OPERATOR,
+			TokenType.KEYWORD,
+			TokenType.PUNCTUATION
+		]
+	);
+	const node = new ASTVDomTextNode(token.value);
+	node.span = spanFrom(token, token);
+	return node;
 }
 
 export function parseArguments(parser: Parser): ASTNode[] {
@@ -801,9 +860,13 @@ export function parseArguments(parser: Parser): ASTNode[] {
 }
 
 export function parseUnary(parser: Parser): ASTNode | ASTUnaryNode {
-	const token = parser.peek();
+	const token: Token = parser.peek();
 
-	if (token && token.value === GRAMMAR.EXCLAMATION_MARK) {
+	if (token.type === TokenType.KEYWORD && token.value === GRAMMAR.VDOM) {
+		return parseVDomExpression(parser);
+	}
+
+	if (token.value === GRAMMAR.EXCLAMATION_MARK) {
 		parser.next();
 
 		const unary: ASTNode | ASTUnaryNode = parseUnary(parser);

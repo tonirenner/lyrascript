@@ -1,11 +1,6 @@
 import {type Engine, WebLyraScript} from "./engine";
 import {HTMLElementCreator, type VNode} from "./dom";
 
-export interface ExecutionContext {
-	runtime: AbstractApplicationRuntime;
-	phase?: 'render' | 'event';
-}
-
 export abstract class AbstractApplicationRuntime {
 	protected constructor(
 		protected readonly engine: Engine
@@ -13,19 +8,14 @@ export abstract class AbstractApplicationRuntime {
 
 	}
 
-	protected callInstanceMethod(className: string, methodName: string, args: any[] = []): any {
-		return this.engine.callInstanceMethod(
-			this.engine.createInstance(className),
-			methodName,
-			args
-		);
+	protected callMethod(methodName: string, args: any[] = []): any {
+		return this.engine.callInstanceMethod(methodName, args);
 	}
 }
 
 export class WebApplicationRuntime extends AbstractApplicationRuntime {
-
 	private currentVNode: VNode | null = null;
-	private isRendering = false;
+	private isRendering: boolean = false;
 	private renderFunction: (() => VNode) | null = null;
 
 	constructor(private readonly mountPoint: HTMLElement,
@@ -33,21 +23,23 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		super(new WebLyraScript());
 	}
 
-	private render(className: string): any {
-		return this.callInstanceMethod(className, 'render', []) as any;
+	private callRender(): any {
+		return this.callMethod('render', []) as any;
 	}
 
 	async start(url: string, className = 'App'): Promise<void> {
-		await this.engine.load(url);
+		await this.engine.executeEntryFile(url, className);
 
-		this.renderFunction = () => this.render(className);
+		this.renderFunction = () => this.callRender();
 
 		this.performRender();
 	}
 
 	// Wird vom Store aufgerufen
 	requestRender(): void {
-		if (this.isRendering) return;
+		if (this.isRendering) {
+			return;
+		}
 
 		queueMicrotask(() => {
 			this.performRender();
@@ -55,7 +47,9 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	}
 
 	private performRender(): void {
-		if (!this.renderFunction) return;
+		if (!this.renderFunction) {
+			return;
+		}
 
 		this.isRendering = true;
 

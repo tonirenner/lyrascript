@@ -53,8 +53,8 @@ export class Parser {
 		return this.expect(TokenType.ANNOTATION);
 	}
 
-	expectIdentifier(): Token {
-		return this.expect(TokenType.IDENTIFIER);
+	expectIdentifier(keyword: string | null = null): Token {
+		return this.expect(TokenType.IDENTIFIER, keyword);
 	}
 
 	expectKeyword(keyword: string | null = null): Token {
@@ -126,6 +126,10 @@ export class Parser {
 		}
 
 		return token;
+	}
+
+	peekIs(keyword: string): boolean {
+		return this.peek().value === keyword;
 	}
 
 	next(): Token {
