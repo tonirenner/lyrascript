@@ -172,12 +172,12 @@ class App {
         System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
     }
 
-    public render(): VNode {
-        return vdom <span>
-                        <b>Hello World</b>
-                        by LyraScript!
-                    </span>;
-    }
+    //public render(): VNode {
+    //    return vdom <span>
+    //                    <b>Hello World</b>
+    //                    by LyraScript!
+    //                </span>;
+    //}
 }
 
 let app: App = new App();
