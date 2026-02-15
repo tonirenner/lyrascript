@@ -55,7 +55,7 @@ export class LyraScriptProgram {
 		           });
 	}
 
-	private runPipeline(source: Source): Promise<ASTNode> {
+	private async runPipeline(source: Source): Promise<ASTNode> {
 		this.debugMeasureStartTime()
 		const ast: ASTNode = new Parser(source).parse();
 		this.debugMeasureEndTime('parser')
