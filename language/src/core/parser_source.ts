@@ -1,4 +1,5 @@
 import {Tokenizer} from "./tokenizer";
+import {throwDependencyError} from "./errors.ts";
 
 export class Source {
 	static NEWLINE = '\n';
@@ -54,4 +55,13 @@ export class Span {
 	text(): string {
 		return this.source.slice(this.start, this.end);
 	}
+}
+
+export async function fetchSource(url: string): Promise<Source> {
+	const response = await fetch(url);
+	if (!response.ok) {
+		throwDependencyError(`Failed to load script: ${url}`);
+	}
+
+	return new Source(await response.text());
 }

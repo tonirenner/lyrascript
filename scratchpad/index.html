@@ -150,8 +150,8 @@ app.run();
 </main>
 
 <script type="module">
-	import {Source, astFromSource, tokensFromSource, runFromSource} from "./dist/language.js";
-	import {ScratchpadOutput, wrapConsole} from "./scratchpad/src/scratchpad_output.js";
+	import {Source, astFromSource, tokensFromSource, executeSourceFromString} from "../dist/language.js";
+	import {ScratchpadOutput, wrapConsole} from "./src/scratchpad_output.js";
 
 	wrapConsole(
 		args => output.log(args),
@@ -196,7 +196,7 @@ app.run();
 			astEl.innerHTML = '';
 			renderASTTree(astFromSource(source), astEl);
 
-			runFromSource(source)
+			executeSourceFromString(source)
 				.catch(error => {
 					output.error(error.stack || error.message);
 					render();

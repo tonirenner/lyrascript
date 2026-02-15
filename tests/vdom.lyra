@@ -1,0 +1,13 @@
+import System;
+
+class App
+{
+    public render(): string
+    {
+        System.log("Hello World");
+
+
+        return "Hello World";
+    }
+
+}

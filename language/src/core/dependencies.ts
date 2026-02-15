@@ -68,7 +68,7 @@ export class DependencyLoader {
 
 	defaultDependencies(): Map<string, Dependency> {
 		const dependencies = [
-			new Dependency(['Iterator', 'Iterable'], './library/contracts.lyra')
+			new Dependency(['Iterator', 'Iterable'], '/library/contracts.lyra')
 		];
 
 		const map = new Map();

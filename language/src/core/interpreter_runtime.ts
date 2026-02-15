@@ -767,7 +767,7 @@ export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegis
 		moduleName = node.callee.object.name;
 		methodName = node.callee.property;
 	}
-	
+
 	throwRuntimeError(`Unknown function ${moduleName}.${methodName}`, node.span);
 }
 
