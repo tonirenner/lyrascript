@@ -252,7 +252,8 @@ export function parseClassDeclaration(parser: Parser): ASTClassNode {
 
 	const children: ASTNode[] = [];
 	while (parser.peek().value !== GRAMMAR.BRACE_CLOSE) {
-		if (parser.consumeIfComment()) {
+		if (parser.peek().type === TokenType.COMMENT) {
+			parser.next();
 			continue;
 		}
 
