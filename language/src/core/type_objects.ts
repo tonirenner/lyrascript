@@ -12,12 +12,12 @@ import {throwTypeError} from "./errors.ts";
 import {ObjectRegistry} from "./interpreter_registry.ts";
 
 export class PrimitiveTypes {
-	static NUMBER: string = TYPE_ENUM.NUMBER;
-	static STRING: string = TYPE_ENUM.STRING;
-	static BOOLEAN: string = TYPE_ENUM.BOOLEAN;
-	static MIXED: string = TYPE_ENUM.MIXED;
-	static NULL: string = TYPE_ENUM.NULL;
-	static VOID: string = TYPE_ENUM.VOID;
+	static readonly NUMBER: string = TYPE_ENUM.NUMBER;
+	static readonly STRING: string = TYPE_ENUM.STRING;
+	static readonly BOOLEAN: string = TYPE_ENUM.BOOLEAN;
+	static readonly MIXED: string = TYPE_ENUM.MIXED;
+	static readonly NULL: string = TYPE_ENUM.NULL;
+	static readonly VOID: string = TYPE_ENUM.VOID;
 
 	static hasType(type: string): boolean {
 		return Object.hasOwnProperty.call(PrimitiveTypes, type.toUpperCase());
@@ -25,7 +25,7 @@ export class PrimitiveTypes {
 }
 
 export class PrimitiveClassTypes {
-	static ARRAY: string = TYPE_ENUM.ARRAY;
+	static readonly ARRAY: string = TYPE_ENUM.ARRAY;
 
 	static CLASSNAME_MAP: { [s: string]: string; } = {
 		array: 'Array'
@@ -37,7 +37,7 @@ export class PrimitiveClassTypes {
 }
 
 export class Type {
-	name: string;
+	readonly name: string;
 
 	constructor(name: string) {
 		this.name = name;
@@ -99,10 +99,6 @@ export class NullType extends Type {
 	override equals(other: Type): boolean {
 		return other instanceof NullType;
 	}
-
-	override accepts(other: Type): boolean {
-		return other === this;
-	}
 }
 
 export class NullableType extends Type {
@@ -134,13 +130,24 @@ export class NullableType extends Type {
 	}
 }
 
+export class VNodeType extends Type {
+	constructor() {
+		super('vnode');
+	}
+
+	override equals(other: Type): boolean {
+		return other instanceof VoidType;
+	}
+}
+
 export class Types {
-	static NUMBER: PrimitiveType = new PrimitiveType(PrimitiveTypes.NUMBER);
-	static STRING: PrimitiveType = new PrimitiveType(PrimitiveTypes.STRING);
-	static BOOLEAN: PrimitiveType = new PrimitiveType(PrimitiveTypes.BOOLEAN);
-	static MIXED: MixedType = new MixedType();
-	static NULL: NullType = new NullType();
-	static VOID: VoidType = new VoidType();
+	static readonly NUMBER: PrimitiveType = new PrimitiveType(PrimitiveTypes.NUMBER);
+	static readonly STRING: PrimitiveType = new PrimitiveType(PrimitiveTypes.STRING);
+	static readonly BOOLEAN: PrimitiveType = new PrimitiveType(PrimitiveTypes.BOOLEAN);
+	static readonly MIXED: MixedType = new MixedType();
+	static readonly NULL: NullType = new NullType();
+	static readonly VOID: VoidType = new VoidType();
+	static readonly VNODE: VNodeType = new VNodeType();
 
 	static getType(name: string): Type {
 		if (!Object.hasOwnProperty.call(PrimitiveTypes, name.toUpperCase())) {
@@ -168,8 +175,8 @@ export class TypeVariable extends Type {
 }
 
 export class TypeParameterSymbol {
-	name: string;
-	variableType: TypeVariable;
+	readonly name: string;
+	readonly variableType: TypeVariable;
 
 	constructor(name: string) {
 		this.name = name;
@@ -178,13 +185,13 @@ export class TypeParameterSymbol {
 }
 
 export class FieldSymbol {
-	node: ASTFieldNode;
-	name: string;
-	fieldType: Type;
-	isStatic: boolean = false;
-	isPrivate: boolean = false;
-	isPublic: boolean = false;
-	isReadonly: boolean = false;
+	readonly node: ASTFieldNode;
+	readonly name: string;
+	readonly fieldType: Type;
+	readonly isStatic: boolean = false;
+	readonly isPrivate: boolean = false;
+	readonly isPublic: boolean = false;
+	readonly isReadonly: boolean = false;
 	owner: ClassSymbol | InterfaceSymbol | null = null;
 
 	constructor(node: ASTFieldNode, fieldType: Type) {
@@ -199,10 +206,10 @@ export class FieldSymbol {
 }
 
 export class ParameterSymbol {
-	node: ASTParameterNode | null;
-	name: string;
-	parameterType: Type;
-	defaultType: Type | null = null;
+	readonly node: ASTParameterNode | null;
+	readonly name: string;
+	readonly parameterType: Type;
+	readonly defaultType: Type | null = null;
 
 	constructor(name: string, type: Type, defaultValue: Type | null = null, node: ASTParameterNode | null = null) {
 		this.name = name;
@@ -213,14 +220,16 @@ export class ParameterSymbol {
 }
 
 export class MethodSymbol {
-	name: string;
-	node: ASTMethodNode;
+	readonly name: string;
+	readonly node: ASTMethodNode;
+	readonly isStatic: boolean = false;
+	readonly isPrivate: boolean = false;
+	readonly isPublic: boolean = false;
+
 	typeParameterSymbols: TypeParameterSymbol[] = [];
 	parameterSymbols: ParameterSymbol[] = [];
 	returnType: Type = Types.MIXED;
-	isStatic: boolean = false;
-	isPrivate: boolean = false;
-	isPublic: boolean = false;
+
 	owner: ClassSymbol | InterfaceSymbol | null = null;
 
 	constructor(node: ASTMethodNode) {
@@ -244,9 +253,10 @@ export interface ObjectSymbol {
 }
 
 export class ClassSymbol implements ObjectSymbol {
-	node: ASTClassNode;
-	name: string;
-	superClass: string | null = null;
+	readonly node: ASTClassNode;
+	readonly name: string;
+	readonly superClass: string | null = null;
+
 	superClassSymbol: ClassSymbol | null = null;
 	typeParameterSymbols: TypeParameterSymbol[] = [];
 	instanceFieldSymbols: Map<string, FieldSymbol> = new Map();
@@ -288,8 +298,9 @@ export class ClassSymbol implements ObjectSymbol {
 }
 
 export class InterfaceSymbol implements ObjectSymbol {
-	node: ASTInterfaceNode;
-	name: string;
+	readonly node: ASTInterfaceNode;
+	readonly name: string;
+
 	typeParameterSymbols: TypeParameterSymbol[] = [];
 	staticFieldSymbols: Map<string, FieldSymbol> = new Map();
 	instanceMethodSymbols: Map<string, MethodSymbol> = new Map();
@@ -302,8 +313,8 @@ export class InterfaceSymbol implements ObjectSymbol {
 }
 
 export class ClassRefType extends Type {
-	classSymbol: ClassSymbol;
-	typeArguments: Type[];
+	readonly classSymbol: ClassSymbol;
+	readonly typeArguments: Type[];
 
 	constructor(classSymbol: ClassSymbol, typeArguments: Type[] = []) {
 		super(ClassRefType.formatSymbolName(classSymbol.name, typeArguments));
@@ -351,8 +362,8 @@ export class ClassRefType extends Type {
 }
 
 export class InterfaceRefType extends Type {
-	interfaceSymbol: InterfaceSymbol;
-	typeArguments: Type[];
+	readonly interfaceSymbol: InterfaceSymbol;
+	readonly typeArguments: Type[];
 
 	constructor(interfaceSymbol: InterfaceSymbol, typeArguments: Type[] = []) {
 		super(InterfaceRefType.formatSymbolName(interfaceSymbol.name, typeArguments));
@@ -400,8 +411,8 @@ export class InterfaceRefType extends Type {
 }
 
 export class LambdaType extends Type {
-	parameterSymbols: ParameterSymbol[] = [];
-	returnType: Type;
+	readonly parameterSymbols: ParameterSymbol[] = [];
+	readonly returnType: Type;
 
 	constructor(parameters: ParameterSymbol[], returnType: Type) {
 		super(LambdaType.createSignature(parameters, returnType));
@@ -436,9 +447,10 @@ export class LambdaType extends Type {
 }
 
 export class TypeScope {
-	parent: TypeScope | null;
-	types: Map<string, Type> = new Map();
-	typeBindings: Map<string, Type> = new Map();
+	readonly parent: TypeScope | null;
+	readonly types: Map<string, Type> = new Map();
+	readonly typeBindings: Map<string, Type> = new Map();
+
 	currentObjectSymbol: ClassSymbol | InterfaceSymbol | null;
 
 	constructor(parent: TypeScope | null = null) {

@@ -18,7 +18,8 @@ import {
 	ASTReturnNode,
 	ASTTypeNode,
 	ASTUnaryNode,
-	ASTVariableNode
+	ASTVariableNode,
+	ASTVDomNode
 } from './ast';
 import {
 	buildTypeSubstitutionMap,
@@ -110,7 +111,7 @@ export class TypeChecker {
 		this.checkClassesImplements();
 	}
 
-	validateInheritance() {
+	private validateInheritance() {
 		for (const classSymbol of this.objectRegistry.classes.all()) {
 			if (classSymbol.superClass && !this.objectRegistry.types.hasSymbol(classSymbol.superClass)) {
 				this.typeError(`Unknown superclass ${classSymbol.superClass}`, classSymbol.node);
@@ -118,14 +119,14 @@ export class TypeChecker {
 		}
 	}
 
-	checkProgram(ast: ASTNode): void {
+	private checkProgram(ast: ASTNode): void {
 		const scope = new TypeScope();
 		for (const node of ast.children) {
 			this.checkStatement(node, scope);
 		}
 	}
 
-	checkClassesBodies(): void {
+	private checkClassesBodies(): void {
 		for (const objectSymbol of this.objectRegistry.types.allClassSymbols()) {
 			const instanceScope = new TypeScope();
 			instanceScope.currentObjectSymbol = objectSymbol;
@@ -199,7 +200,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkInterfaceBodies(): void {
+	private checkInterfaceBodies(): void {
 		for (const objectSymbol of this.objectRegistry.types.allInterfaceSymbols()) {
 			const instanceScope = new TypeScope();
 			instanceScope.currentObjectSymbol = objectSymbol;
@@ -234,7 +235,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkClassesImplements(): void {
+	private checkClassesImplements(): void {
 		for (const classSymbol of this.objectRegistry.types.allClassSymbols()) {
 			for (const interfaceRefType of classSymbol.implementsInterfaces) {
 				this.checkImplementsInterface(classSymbol, interfaceRefType);
@@ -242,7 +243,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkImplementsInterface(classSymbol: ClassSymbol, interfaceRefType: InterfaceRefType): void {
+	private checkImplementsInterface(classSymbol: ClassSymbol, interfaceRefType: InterfaceRefType): void {
 		const interfaceSymbol = interfaceRefType.interfaceSymbol;
 
 		const substitutionMap = buildTypeSubstitutionMap(
@@ -271,7 +272,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkMethodCompatibility(classMethodSymbol: MethodSymbol, interfaceMethodSymbol: MethodSymbol, substitutionMap: Map<string, Type>): void {
+	private checkMethodCompatibility(classMethodSymbol: MethodSymbol, interfaceMethodSymbol: MethodSymbol, substitutionMap: Map<string, Type>): void {
 		if (classMethodSymbol.parameterSymbols.length !== interfaceMethodSymbol.parameterSymbols.length) {
 			this.typeError(`Method ${classMethodSymbol.name} has wrong parameter count`);
 		}
@@ -300,7 +301,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkStatement(node: ASTNode, scope: TypeScope): StatementResult {
+	private checkStatement(node: ASTNode, scope: TypeScope): StatementResult {
 		switch (node.type) {
 			case ASTNodeType.RETURN:
 				if (node instanceof ASTReturnNode) {
@@ -333,7 +334,7 @@ export class TypeChecker {
 		return StatementResult.noReturn();
 	}
 
-	checkVariable(node: ASTVariableNode, scope: TypeScope): void {
+	private checkVariable(node: ASTVariableNode, scope: TypeScope): void {
 		const declaredType: Type | null = node.typeAnnotation
 			? this.wrapType(node.typeAnnotation, scope)
 			: null;
@@ -347,7 +348,7 @@ export class TypeChecker {
 		scope.defineType(node.name, declaredType ?? actualType);
 	}
 
-	checkForeach(node: ASTForeachNode, scope: TypeScope): Type {
+	private checkForeach(node: ASTForeachNode, scope: TypeScope): Type {
 		let iterableType: Type = this.checkExpression(node.iterable, scope);
 
 		iterableType = Autoboxing.autoboxIfNeeded(iterableType, this.objectRegistry);
@@ -373,7 +374,7 @@ export class TypeChecker {
 		this.typeError(`foreach expects Array<T>, got ${iterableType.toString()}`, node.iterable);
 	}
 
-	checkExpression(expr: ASTNode | null, scope: TypeScope, expectedType: Type | null = null): Type {
+	private checkExpression(expr: ASTNode | null, scope: TypeScope, expectedType: Type | null = null): Type {
 		if (expr === null) {
 			this.typeError('Expression expected, got null.', expr);
 		}
@@ -390,6 +391,13 @@ export class TypeChecker {
 
 			case ASTNodeType.NULL:
 				return Types.NULL;
+
+			case ASTNodeType.VDOM: {
+				if (expr instanceof ASTVDomNode) {
+					return this.checkVDomNode(expr);
+				}
+				break;
+			}
 
 			case ASTNodeType.ARRAY: {
 				if (expr instanceof ASTArrayNode) {
@@ -465,7 +473,7 @@ export class TypeChecker {
 		return Types.MIXED;
 	}
 
-	checkBinaryExpression(expr: ASTBinaryNode, scope: TypeScope): Type {
+	private checkBinaryExpression(expr: ASTBinaryNode, scope: TypeScope): Type {
 		const left: Type = this.checkExpression(expr.left, scope);
 		const right: Type = this.checkExpression(expr.right, scope);
 		const op: string = expr.operator;
@@ -504,7 +512,7 @@ export class TypeChecker {
 		this.typeError(`Invalid binary operation`, expr);
 	}
 
-	checkFieldAccess(node: ASTMemberNode, classSymbol: ClassSymbol, fieldSymbol: FieldSymbol, scope: TypeScope): void {
+	private checkFieldAccess(node: ASTMemberNode, classSymbol: ClassSymbol, fieldSymbol: FieldSymbol, scope: TypeScope): void {
 		if (fieldSymbol.isPublic) {
 			return;
 		}
@@ -522,7 +530,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkInstanceMethodAccess(node: ASTMemberNode, classSymbol: ClassSymbol, methodSymbol: MethodSymbol, scope: TypeScope): void {
+	private checkInstanceMethodAccess(node: ASTMemberNode, classSymbol: ClassSymbol, methodSymbol: MethodSymbol, scope: TypeScope): void {
 		if (methodSymbol.isPublic) {
 			return;
 		}
@@ -540,7 +548,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkStaticMethodAccess(classSymbol: ClassSymbol, methodSymbol: MethodSymbol, scope: TypeScope): void {
+	private checkStaticMethodAccess(classSymbol: ClassSymbol, methodSymbol: MethodSymbol, scope: TypeScope): void {
 		if (!methodSymbol.isStatic) {
 			this.typeError(`Cannot call instance method ${classSymbol.name}.${methodSymbol.name} as static method`);
 			return;
@@ -565,7 +573,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkMemberExpression(node: ASTMemberNode, scope: TypeScope): Type {
+	private checkMemberExpression(node: ASTMemberNode, scope: TypeScope): Type {
 		const objectType: Type = this.checkExpression(node.object, scope);
 
 		if (objectType instanceof ClassRefType) {
@@ -589,14 +597,14 @@ export class TypeChecker {
 		this.typeError("Cannot access member of non-object", node);
 	}
 
-	checkThisExpression(node: ASTNode, scope: TypeScope): ClassRefType {
+	private checkThisExpression(node: ASTNode, scope: TypeScope): ClassRefType {
 		if (scope.currentObjectSymbol instanceof ClassSymbol) {
 			return new ClassRefType(scope.currentObjectSymbol);
 		}
 		this.typeError('this outside of class', node);
 	}
 
-	checkIdentifierExpression(node: ASTNode, scope: TypeScope): Type {
+	private checkIdentifierExpression(node: ASTNode, scope: TypeScope): Type {
 		if (scope.hasType(node.name)) {
 			return scope.getType(node.name);
 		}
@@ -606,7 +614,7 @@ export class TypeChecker {
 		this.typeError(`Undefined identifier ${node.name}`, node);
 	}
 
-	checkNewExpression(node: ASTNewNode, scope: TypeScope, expectedType: Type | null = null): ClassRefType {
+	private checkNewExpression(node: ASTNewNode, scope: TypeScope, expectedType: Type | null = null): ClassRefType {
 		const classSymbol: ClassSymbol = this.objectRegistry.types.getClassSymbol(node.name);
 
 		let instanceType;
@@ -641,7 +649,7 @@ export class TypeChecker {
 		return instanceType;
 	}
 
-	checkArrayExpression(node: ASTArrayNode, scope: TypeScope, expectedType: Type | null = null): ClassRefType {
+	private checkArrayExpression(node: ASTArrayNode, scope: TypeScope, expectedType: Type | null = null): ClassRefType {
 
 		if (node.elements.length === 0) {
 			if (expectedType instanceof ClassRefType) {
@@ -675,7 +683,7 @@ export class TypeChecker {
 		return this.newArrayTypeOf(expectedTypeOfItem);
 	}
 
-	checkUnaryExpression(node: ASTUnaryNode, scope: TypeScope): Type {
+	private checkUnaryExpression(node: ASTUnaryNode, scope: TypeScope): Type {
 		const operand = this.checkExpression(node.argument, scope);
 		const op = node.operator;
 		if (op === GRAMMAR.EXCLAMATION_MARK) {
@@ -687,7 +695,7 @@ export class TypeChecker {
 		this.typeError(`Invalid unary operator ${op}`, node);
 	}
 
-	checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
+	private checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
 		const lambdaScope = new TypeScope(scope);
 		const parameters = node.parameters.map(parameterNode => {
 			const parameterSymbol: ParameterSymbol = this.parameterNodeToSymbol(parameterNode);
@@ -704,7 +712,7 @@ export class TypeChecker {
 		this.typeError('Lambda expression must have a return type', node);
 	}
 
-	checkCallExpression(node: ASTCallNode, scope: TypeScope): Type {
+	private checkCallExpression(node: ASTCallNode, scope: TypeScope): Type {
 		const callee = node.callee;
 
 		if (callee.type === ASTNodeType.IDENTIFIER && callee.name === GRAMMAR.SUPER) {
@@ -750,7 +758,7 @@ export class TypeChecker {
 		return Types.MIXED;
 	}
 
-	checkSuperConstructorCall(node: ASTCallNode, scope: TypeScope): Type {
+	private checkSuperConstructorCall(node: ASTCallNode, scope: TypeScope): Type {
 		const currentClass = scope.currentObjectSymbol;
 
 		if (!(currentClass instanceof ClassSymbol)) {
@@ -774,7 +782,7 @@ export class TypeChecker {
 		return Types.VOID;
 	}
 
-	checkCallOnNullObjectType(objectType: Type, node: ASTNode): void {
+	private checkCallOnNullObjectType(objectType: Type, node: ASTNode): void {
 		if (objectType.equals(Types.NULL)) {
 			this.typeError(`Cannot call method on null`, node);
 		}
@@ -783,7 +791,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkInstanceCall(callee: ASTMemberNode, callArguments: ASTNode[], scope: TypeScope): Type {
+	private checkInstanceCall(callee: ASTMemberNode, callArguments: ASTNode[], scope: TypeScope): Type {
 		let objectType: Type = this.checkExpression(callee.object, scope);
 
 		objectType = Autoboxing.autoboxIfNeeded(objectType, this.objectRegistry);
@@ -822,7 +830,7 @@ export class TypeChecker {
 		this.typeError(`Cannot call method on non-object`, callee);
 	}
 
-	checkStaticCall(className: string, methodName: string, callArguments: ASTNode[], scope: TypeScope): Type {
+	private checkStaticCall(className: string, methodName: string, callArguments: ASTNode[], scope: TypeScope): Type {
 		const classSymbol: ClassSymbol = this.objectRegistry.types.getClassSymbol(className);
 
 		const methodSymbol: MethodSymbol | null = classSymbol.staticMethodSymbols.get(methodName) || null;
@@ -837,14 +845,14 @@ export class TypeChecker {
 		return methodSymbol.returnType;
 	}
 
-	checkLambdaCall(lambda: LambdaType, callArguments: ASTNode[], scope: TypeScope): Type {
+	private checkLambdaCall(lambda: LambdaType, callArguments: ASTNode[], scope: TypeScope): Type {
 
 		this.checkCallArguments(lambda, callArguments, scope);
 
 		return lambda.returnType;
 	}
 
-	checkFunctionCall(name: string, callArguments: ASTNode[], scope: TypeScope): Type {
+	private checkFunctionCall(name: string, callArguments: ASTNode[], scope: TypeScope): Type {
 		if (!globalFunctionTypeRegistry.has(name)) {
 			this.typeError(`Unknown function ${name}`);
 		}
@@ -858,7 +866,7 @@ export class TypeChecker {
 			: Types.VOID;
 	}
 
-	parametersSymbolsFromCallableSymbol(callableSymbol: MethodSymbol | LambdaType | NativeFunction): ParameterSymbol[] {
+	private parametersSymbolsFromCallableSymbol(callableSymbol: MethodSymbol | LambdaType | NativeFunction): ParameterSymbol[] {
 		if (callableSymbol instanceof NativeFunction) {
 			return callableSymbol
 				.parameterNodes
@@ -868,7 +876,7 @@ export class TypeChecker {
 		return callableSymbol.parameterSymbols
 	}
 
-	checkCallArguments(
+	private checkCallArguments(
 		callableSymbol: MethodSymbol | LambdaType | NativeFunction,
 		callArguments: ASTNode[],
 		scope: TypeScope,
@@ -902,7 +910,7 @@ export class TypeChecker {
 		}
 	}
 
-	checkAssignable(expectedType: Type, actualType: Type, node: ASTNode | null = null): void {
+	private checkAssignable(expectedType: Type, actualType: Type, node: ASTNode | null = null): void {
 		if (expectedType.equals(actualType)) {
 			return;
 		}
@@ -927,7 +935,7 @@ export class TypeChecker {
 		this.typeError(`Type mismatch: ${expectedType} <> ${actualType}`, node);
 	}
 
-	checkBody(children: ASTNode[], scope: TypeScope): Type {
+	private checkBody(children: ASTNode[], scope: TypeScope): Type {
 		let returnType: Type = Types.MIXED;
 
 		for (const child of children) {
@@ -940,7 +948,7 @@ export class TypeChecker {
 		return returnType;
 	}
 
-	checkReturnType(expectedType: Type, actualType: Type, node: ASTMethodNode): void {
+	private checkReturnType(expectedType: Type, actualType: Type, node: ASTMethodNode): void {
 		// void-Methode
 		if (expectedType === Types.VOID) {
 			if (actualType !== Types.MIXED && actualType !== Types.VOID) {
@@ -952,7 +960,6 @@ export class TypeChecker {
 		// kein return vorhanden
 		if (actualType === Types.MIXED) {
 			this.typeError(`Missing return statement (expected ${expectedType})`, node);
-			return;
 		}
 
 		// typ-inkompatibel
@@ -961,7 +968,27 @@ export class TypeChecker {
 		}
 	}
 
-	resolveInstanceMethode(classSymbol: ClassSymbol, methodName: string): MethodSymbol {
+	private checkVDomNode(node: ASTVDomNode): Type {
+
+		try {
+			const classSymbol: ClassSymbol = this.objectRegistry.types.getClassSymbol(node.tag);
+
+			const methodSymbol: MethodSymbol = this.resolveInstanceMethode(classSymbol, 'render');
+
+			if (!methodSymbol) {
+				this.typeError(`Component '${node.tag}' has no render() method`, node);
+			}
+
+			this.checkAssignable(methodSymbol.returnType, Types.VNODE, node);
+
+			return Types.VNODE;
+		} catch (e) {
+		}
+
+		return Types.VNODE;
+	}
+
+	private resolveInstanceMethode(classSymbol: ClassSymbol, methodName: string): MethodSymbol {
 		/** @type {MethodSymbol|null} */
 		const methodSymbol: MethodSymbol | null = this.resolveInHierarchy(
 			classSymbol,
@@ -975,7 +1002,7 @@ export class TypeChecker {
 		return methodSymbol;
 	}
 
-	resolveInHierarchy(classSymbol: ClassSymbol, resolver: (classSymbol: ClassSymbol) => any): any {
+	private resolveInHierarchy(classSymbol: ClassSymbol, resolver: (classSymbol: ClassSymbol) => any): any {
 		let current: ClassSymbol | null = classSymbol;
 
 		while (current) {
@@ -994,7 +1021,7 @@ export class TypeChecker {
 		return null;
 	}
 
-	newArrayTypeOf(elementType: Type): ClassRefType {
+	private newArrayTypeOf(elementType: Type): ClassRefType {
 		const className: string | null = PrimitiveClassTypes.getClassRefName(PrimitiveClassTypes.ARRAY);
 
 		if (className === null) {
@@ -1004,11 +1031,11 @@ export class TypeChecker {
 		return new ClassRefType(this.objectRegistry.types.getClassSymbol(className), [elementType]);
 	}
 
-	wrapType(type: ASTTypeNode, scope: TypeScope): Type {
+	private wrapType(type: ASTTypeNode, scope: TypeScope): Type {
 		return wrapType(type, this.objectRegistry, scope);
 	}
 
-	parameterNodeToSymbol(parameterNode: ASTParameterNode, scope: TypeScope = new TypeScope()): ParameterSymbol {
+	private parameterNodeToSymbol(parameterNode: ASTParameterNode, scope: TypeScope = new TypeScope()): ParameterSymbol {
 		const parameterType = parameterNode.typeAnnotation
 			? this.wrapType(parameterNode.typeAnnotation, scope)
 			: Types.MIXED;
@@ -1035,7 +1062,7 @@ export class TypeChecker {
 		);
 	}
 
-	registerClassSymbol(classNode: ASTClassNode): void {
+	private registerClassSymbol(classNode: ASTClassNode): void {
 		if (this.objectRegistry.types.hasSymbol(classNode.name)) {
 			return;
 		}
@@ -1118,7 +1145,7 @@ export class TypeChecker {
 		}
 	}
 
-	registerInterfaceSymbol(interfaceNode: ASTInterfaceNode): void {
+	private registerInterfaceSymbol(interfaceNode: ASTInterfaceNode): void {
 		if (this.objectRegistry.types.hasSymbol(interfaceNode.name)) {
 			return;
 		}
@@ -1159,7 +1186,6 @@ export class TypeChecker {
 				const methodSymbol = new MethodSymbol(memberNode);
 
 				methodSymbol.owner = interfaceSymbol;
-				methodSymbol.isStatic = memberNode.modifiers.static;
 
 				memberNode.typeParameters.forEach(name => {
 					methodSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
@@ -1179,7 +1205,7 @@ export class TypeChecker {
 		}
 	}
 
-	typeError(message: string, node: ASTNode | null = null): never {
+	private typeError(message: string, node: ASTNode | null = null): never {
 		throwTypeError(message, node?.span);
 	}
 }
