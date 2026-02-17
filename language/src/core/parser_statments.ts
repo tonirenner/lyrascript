@@ -748,6 +748,12 @@ export function parseExpressionStatement(parser: Parser): ASTExpressionNode {
 	return new ASTExpressionNode(expr);
 }
 
+export function skipEmptyText(parser: Parser) {
+	while (parser.peek().type === TokenType.TEXT && parser.peekIs('')) {
+		parser.next();
+	}
+}
+
 export function parseExpression(parser: Parser, precedence: number = 0): ASTNode {
 	let expr = parsePostfix(parser, parseUnary(parser));
 
@@ -791,7 +797,9 @@ export function parseVDomExpression(parser: Parser): ASTVDomNode {
 	return parseVDomElement(parser);
 }
 
+
 export function parseVDomElement(parser: Parser): ASTVDomNode {
+	skipEmptyText(parser);
 
 	const startToken: Token = parser.expectOperator(GRAMMAR.LESS_THAN);
 	const tagToken: Token = parser.expectIdentifier();
@@ -834,7 +842,8 @@ export function parseVDomText(parser: Parser): ASTVDomTextNode {
 		[
 			TokenType.IDENTIFIER,
 			TokenType.OPERATOR,
-			TokenType.KEYWORD
+			TokenType.KEYWORD,
+			TokenType.TEXT
 		]
 	);
 	const node = new ASTVDomTextNode(token.value);

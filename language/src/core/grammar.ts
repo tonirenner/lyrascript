@@ -129,6 +129,7 @@ export class GRAMMAR {
 		GRAMMAR.OR,
 	];
 	static DOM_OPERATORS: string[] = [
+		GRAMMAR.ASSIGN,
 		GRAMMAR.LESS_THAN,
 		GRAMMAR.GREATER_THAN,
 		GRAMMAR.XML_OPEN_CLOSE_TAG,
@@ -208,6 +209,7 @@ export class TokenType {
 	static STRING: string = 'string';
 	static BOOLEAN: string = 'boolean';
 	static OPERATOR: string = 'operator';
+	static TEXT: string = 'text';
 	static EOF: string = 'eof';
 }
 

@@ -65,6 +65,10 @@ export class Parser {
 		return this.expect(TokenType.STRING);
 	}
 
+	expectText(): Token {
+		return this.expect(TokenType.TEXT);
+	}
+
 	expectPunctuation(keyword: string | null = null): Token {
 		return this.expect(TokenType.PUNCTUATION, keyword);
 	}
@@ -129,7 +133,9 @@ export class Parser {
 	}
 
 	peekIs(keyword: string): boolean {
-		return this.peek().value === keyword;
+		return this.peek()
+		           .value
+		           .trim() === keyword;
 	}
 
 	next(): Token {

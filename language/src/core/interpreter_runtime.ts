@@ -958,13 +958,10 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
 			textCache.push(child.value);
-			continue;
+		} else {
+			children.push(evalExpression(child, objectRegistry, environment, thisValue));
 		}
-
-		children.push(evalExpression(child, objectRegistry, environment, thisValue));
-
-		textCache.push(' ');
-
+		
 		flushTextCache();
 	}
 
