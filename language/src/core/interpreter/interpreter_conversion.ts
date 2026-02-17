@@ -57,8 +57,6 @@ export class LyraObjectView extends LyraNativeObject {
 					const self: { [index: string]: any } = this;
 					return self[name];
 				}
-
-				return undefined;
 			},
 
 			set: (_: any, name: string, value: any): any => {
