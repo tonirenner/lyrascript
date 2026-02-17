@@ -1,17 +1,9 @@
 /// <reference lib="dom" />
 
-export interface VNode {
-	tag: string;
-	props: Record<string, unknown>;
-	children: Array<VNode | string>;
-}
+import type {VNode} from "../core/vdom";
 
 export interface ElementCreator {
 	createElement(vNode: VNode): any;
-}
-
-export function createVNode(tag: string, props: Record<string, unknown>, ...children: Array<VNode | string>): VNode {
-	return {tag, props, children};
 }
 
 export class HTMLElementCreator implements ElementCreator {

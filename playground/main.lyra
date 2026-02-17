@@ -165,6 +165,12 @@ foreach (item in a) {
 	System.print(item.toString());
 }
 
+class Component {
+ public render(): VNode {
+        return vdom <span>Hello from Component</span>;
+    }
+}
+
 class App {
 
     public run(): void {
@@ -173,7 +179,10 @@ class App {
     }
 
     public render(): VNode {
-        return vdom <span><b>Hello World</b>by LyraScript!</span>;
+        return vdom <span>
+                        <Component></Component>
+                        <b>Hello World</b>by LyraScript!
+                     </span>;
     }
 }
 

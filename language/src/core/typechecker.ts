@@ -41,10 +41,10 @@ import {
 	TypeScope,
 	TypeVariable,
 	wrapType
-} from "./type_objects.ts";
-import {Autoboxing} from "./autoboxing.ts";
+} from "./type_objects";
+import {Autoboxing} from "./autoboxing";
 import {NativeFunction, NativeFunctions} from "../library/native_functions";
-import {GRAMMAR} from "./grammar.ts";
+import {GRAMMAR} from "./grammar";
 import {throwTypeError} from "./errors"
 import {ClassDefinition, InterfaceDefinition} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";

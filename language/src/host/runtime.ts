@@ -1,5 +1,6 @@
 import {type Engine, WebLyraScript} from "./engine";
-import {HTMLElementCreator, type VNode} from "./dom";
+import {HTMLElementCreator} from "./dom";
+import type {VNode} from "../core/vdom";
 
 export abstract class AbstractApplicationRuntime {
 	protected constructor(
@@ -23,8 +24,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		super(new WebLyraScript());
 	}
 
-	private callRender(): any {
-		return this.callMethod('render', []) as any;
+	private callRender(): VNode {
+		return this.callMethod('render', []) as VNode;
 	}
 
 	async start(url: string, className = 'App'): Promise<void> {
@@ -53,9 +54,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.isRendering = true;
 
-		const nextVNode = this.renderFunction();
-		console.log(nextVNode);
-		return;
+		const nextVNode: VNode = this.renderFunction();
+
 
 		this.patch(this.currentVNode, nextVNode);
 

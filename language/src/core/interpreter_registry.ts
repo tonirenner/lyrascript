@@ -1,7 +1,7 @@
 import {ASTClassNode, ASTInterfaceNode, ASTNode} from "./ast";
 import {ClassDefinition, InterfaceDefinition} from "./interpreter_objects";
-import {ClassSymbol, InterfaceSymbol} from "./type_objects.ts";
-import {throwRuntimeError} from "./errors.ts";
+import {ClassSymbol, InterfaceSymbol} from "./type_objects";
+import {throwRuntimeError} from "./errors";
 
 export class ClassRegistry {
 	map: Map<string, ClassDefinition> = new Map();

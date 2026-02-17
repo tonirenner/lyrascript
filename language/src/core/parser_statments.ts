@@ -1,5 +1,5 @@
 import {Parser} from "./parser";
-import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./grammar";
 import {Modifiers, SuperClass} from "./interpreter_objects";
 import {
 	ASTAnnotationNode,

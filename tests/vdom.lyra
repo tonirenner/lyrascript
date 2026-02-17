@@ -1,13 +1,18 @@
 import System;
 
+class Component {
+    public render(): VNode {
+        return vdom <span>Hello from Component</span>;
+    }
+}
+
 class App
 {
-    public render(): string
-    {
-        System.log("Hello World");
-
-
-        return "Hello World";
+    public render(): VNode {
+        return vdom <span>
+                            <Component></Component>
+                            <b>Hello World</b>by LyraScript!
+                    </span>;
     }
 
 }

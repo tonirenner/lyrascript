@@ -23,16 +23,19 @@ import {
 	ASTReturnNode,
 	ASTTypeNode,
 	ASTUnaryNode,
-	ASTVariableNode
+	ASTVariableNode,
+	ASTVDomNode,
+	ASTVDomTextNode
 } from "./ast";
-import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./grammar";
 import {NativeClasses} from "../library/native_classes";
 import {NativeFunction, NativeFunctions} from "../library/native_functions";
 import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "./interpreter_conversion";
 import {throwRuntimeError} from "./errors";
-import {AutoboxedTypes} from "./autoboxing.ts";
+import {AutoboxedTypes} from "./autoboxing";
 import {LyraArray} from "../library/classes/array";
-import type {SourceSpan} from "./parser_source.ts";
+import type {SourceSpan} from "./parser_source";
+import type {VNode} from "./vdom";
 
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();
@@ -357,53 +360,7 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.BINARY: {
 			if (expr instanceof ASTBinaryNode) {
-				const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, thisValue))
-				const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, thisValue))
-
-				switch (expr.operator) {
-					case GRAMMAR.PLUS: {
-						return left + right;
-					}
-					case GRAMMAR.MINUS: {
-						return left - right;
-					}
-					case GRAMMAR.MULTIPLY: {
-						return left * right;
-					}
-					case GRAMMAR.DIVIDE: {
-						return left / right;
-					}
-					case GRAMMAR.MODULUS: {
-						return left % right;
-					}
-					case GRAMMAR.LESS_THAN: {
-						return left < right;
-					}
-					case GRAMMAR.GREATER_THAN: {
-						return left > right;
-					}
-					case GRAMMAR.LESS_EQUAL: {
-						return left <= right;
-					}
-					case GRAMMAR.GREATER_EQUAL: {
-						return left >= right;
-					}
-					case GRAMMAR.EQUAL: {
-						return left === right;
-					}
-					case GRAMMAR.NOT_EQUAL: {
-						return left !== right;
-					}
-					case GRAMMAR.AND: {
-						return left && right;
-					}
-					case GRAMMAR.OR: {
-						return left || right;
-					}
-					default: {
-						throwRuntimeError(`Unknown operator ${expr.operator}`);
-					}
-				}
+				return evalBinary(expr, objectRegistry, environment, thisValue);
 			}
 			throwRuntimeError(`Invalid binary expression ${expr.type}`);
 			break;
@@ -436,6 +393,13 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 			throwRuntimeError(`Invalid call expression ${expr.type}`, expr.span);
 			break;
 		}
+		case ASTNodeType.VDOM: {
+			if (expr instanceof ASTVDomNode) {
+				return evalVDomNode(expr, objectRegistry, environment, thisValue);
+			}
+			throwRuntimeError(`Invalid call expression ${expr.type}`, expr.span);
+			break;
+		}
 		case ASTNodeType.NEW: {
 			if (expr instanceof ASTNewNode) {
 				return evalNew(expr, objectRegistry, environment);
@@ -445,49 +409,14 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.ARRAY: {
 			if (expr instanceof ASTArrayNode) {
-				const values = [];
-				for (const elem of expr.elements) {
-					values.push(evalExpression(elem, objectRegistry, environment, thisValue));
-				}
-
-				const classDef = objectRegistry.classes.get('Array');
-				const instance = new Instance(classDef);
-
-				instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(values));
-
-				return instance;
+				return evalArray(expr, objectRegistry, environment, thisValue);
 			}
 			throwRuntimeError(`Invalid array expression ${expr.type}`, expr.span);
 			break;
 		}
 		case ASTNodeType.INDEX: {
 			if (expr instanceof ASTIndexNode) {
-				if (!expr.object) {
-					throwRuntimeError(`Index access on null.`, expr.span);
-					break;
-				}
-
-				if (!expr.index) {
-					throwRuntimeError(`Access with unspecific index.`, expr.span);
-					break;
-				}
-
-				const object = evalExpression(expr.object, objectRegistry, environment, thisValue);
-				const index = evalExpression(expr.index, objectRegistry, environment, thisValue);
-
-				if (!(object instanceof LyraArray || object.__nativeInstance instanceof LyraArray)) {
-					throwRuntimeError('Index access on non-array', expr.span);
-					break;
-				}
-
-				const target = object instanceof LyraArray ? object : object.__nativeInstance;
-				const value = target.values[index];
-
-				if (value instanceof LyraNativeObject) {
-					return wrapNativeInstance(value, objectRegistry);
-				}
-
-				return value;
+				return evalIndex(expr, objectRegistry, environment, thisValue);
 			}
 			throwRuntimeError(`Invalid index expression ${expr.type}`, expr.span);
 			break;
@@ -503,6 +432,102 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 			throwRuntimeError(`Unhandled expression ${expr.type}.`, expr.span);
 		}
 	}
+}
+
+export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+	const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, thisValue))
+	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, thisValue))
+
+	switch (expr.operator) {
+		case GRAMMAR.PLUS: {
+			return left + right;
+		}
+		case GRAMMAR.MINUS: {
+			return left - right;
+		}
+		case GRAMMAR.MULTIPLY: {
+			return left * right;
+		}
+		case GRAMMAR.DIVIDE: {
+			return left / right;
+		}
+		case GRAMMAR.MODULUS: {
+			return left % right;
+		}
+		case GRAMMAR.LESS_THAN: {
+			return left < right;
+		}
+		case GRAMMAR.GREATER_THAN: {
+			return left > right;
+		}
+		case GRAMMAR.LESS_EQUAL: {
+			return left <= right;
+		}
+		case GRAMMAR.GREATER_EQUAL: {
+			return left >= right;
+		}
+		case GRAMMAR.EQUAL: {
+			return left === right;
+		}
+		case GRAMMAR.NOT_EQUAL: {
+			return left !== right;
+		}
+		case GRAMMAR.AND: {
+			return left && right;
+		}
+		case GRAMMAR.OR: {
+			return left || right;
+		}
+		default: {
+			throwRuntimeError(`Unknown operator ${expr.operator}`);
+		}
+	}
+}
+
+export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): Instance {
+	const values: any[] = [];
+	for (const elem of expr.elements) {
+		values.push(evalExpression(elem, objectRegistry, environment, thisValue));
+	}
+
+	const classDef: ClassDefinition = objectRegistry.classes.get('Array');
+	const instance = new Instance(classDef);
+
+	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(values));
+
+	return instance;
+}
+
+/**
+ * @param {ASTIndexNode} expr
+ * @param {ObjectRegistry} objectRegistry
+ * @param {Environment} environment
+ * @param {Instance|null} thisValue
+ */
+export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
+	if (!expr.object) {
+		throwRuntimeError(`Index access on null.`, expr.span);
+	}
+
+	if (!expr.index) {
+		throwRuntimeError(`Access with unspecific index.`, expr.span);
+	}
+
+	const object = evalExpression(expr.object, objectRegistry, environment, thisValue);
+	const index = evalExpression(expr.index, objectRegistry, environment, thisValue);
+
+	if (!(object instanceof LyraArray || object.__nativeInstance instanceof LyraArray)) {
+		throwRuntimeError('Index access on non-array', expr.span);
+	}
+
+	const target = object instanceof LyraArray ? object : object.__nativeInstance;
+	const value = target.values[index];
+
+	if (value instanceof LyraNativeObject) {
+		return wrapNativeInstance(value, objectRegistry);
+	}
+
+	return value;
 }
 
 export function evalLambda(node: ASTLambdaNode, objectRegistry: ObjectRegistry, lambdaEnv: Environment): LambdaFunctionCall {
@@ -917,6 +942,57 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 	}
 
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
+}
+
+export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
+	try {
+		const classDef = objectRegistry.classes.get(node.tag);
+
+		if (classDef) {
+			return evalComponentNode(node, classDef, environment, objectRegistry);
+		}
+	} catch (e) {
+	}
+
+	return evalHtmlNode(node, objectRegistry, environment, thisValue);
+}
+
+export function evalHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
+	const props: Record<string, any> = {};
+
+	for (const [name, value] of node.props) {
+		props[name] = evalExpression(value, objectRegistry, environment, thisValue);
+	}
+
+	const children: Array<VNode | string> = [];
+
+	for (const child of node.children) {
+		if (child instanceof ASTVDomTextNode) {
+			children.push(child.value);
+		} else if (child instanceof ASTVDomNode) {
+			children.push(evalVDomNode(child, objectRegistry, environment, thisValue));
+		} else {
+			children.push(evalExpression(child, objectRegistry, environment, thisValue));
+		}
+	}
+
+	return {
+		tag: node.tag,
+		props: props,
+		children: children
+	};
+}
+
+export function evalComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
+
+	const instance = new Instance(classDef);
+	const methodNode: ASTMethodNode = classDef.findMethod('render');
+
+	for (const [key, valueNode] of node.props.entries()) {
+		instance.__instanceFields[key] = evalExpression(valueNode, objectRegistry, environment, instance);
+	}
+
+	return callInstanceMethod(instance, methodNode, [], objectRegistry, environment) as VNode;
 }
 
 export function evalBlock(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {

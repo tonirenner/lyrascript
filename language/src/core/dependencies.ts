@@ -4,7 +4,7 @@ import {Source} from "./parser_source";
 import {Parser} from "./parser";
 import {Environment} from "./interpreter_objects";
 import type {AbstractFileLoader} from "./loaders";
-import {throwRuntimeError} from "./errors.ts";
+import {throwRuntimeError} from "./errors";
 
 export class Dependency {
 	objectRegistry: ObjectRegistry = new ObjectRegistry();

@@ -1,8 +1,8 @@
 import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast";
-import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./grammar";
 import {ClassDefinition, Instance} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
-import {throwNativeError} from "./errors.ts";
+import {throwNativeError} from "./errors";
 
 interface SerializationObject {
 	[index: string]: any;

@@ -1,4 +1,4 @@
-import {GRAMMAR} from "./grammar.ts";
+import {GRAMMAR} from "./grammar";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -8,7 +8,7 @@ import {
 	ASTParameterNode,
 	ASTTypeNode
 } from "./ast";
-import {throwRuntimeError} from "./errors.ts";
+import {throwRuntimeError} from "./errors";
 
 export class Environment {
 	parent: Environment | null;

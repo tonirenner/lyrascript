@@ -3,9 +3,9 @@ import {ASTImportNode, ASTNode} from "./ast";
 import {NativeClasses} from "../library/native_classes";
 import {Environment, InterfaceDefinition} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
-import type {AbstractFileLoader} from "./loaders.ts";
-import type {NativeClass} from "../library/native_class.ts";
-import {throwDependencyError} from "./errors.ts";
+import type {AbstractFileLoader} from "./loaders";
+import type {NativeClass} from "../library/native_class";
+import {throwDependencyError} from "./errors";
 
 const nativeClasses = new NativeClasses();
 

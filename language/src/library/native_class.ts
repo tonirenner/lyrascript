@@ -2,7 +2,7 @@ import {ASTClassNode, ASTNodeType} from "../core/ast";
 import {ClassDefinition} from "../core/interpreter_objects";
 import {Parser} from "../core/parser";
 import {throwRuntimeError} from "../core/errors";
-import type {Source} from "../core/parser_source.ts";
+import type {Source} from "../core/parser_source";
 
 export class NativeClass {
 	name: string;

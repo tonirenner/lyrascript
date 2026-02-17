@@ -4,7 +4,7 @@ import {fetchSource, Source} from "./core/parser_source";
 import {ASTNode} from "./core/ast";
 import {Tokenizer} from "./core/tokenizer";
 import {Token} from "./core/grammar";
-import {LyraScriptProgram} from "./core/program.ts";
+import {LyraScriptProgram} from "./core/program";
 
 export {Tokenizer} from "./core/tokenizer";
 export {Parser} from "./core/parser";
