@@ -416,10 +416,6 @@ export class ASTTypeNode extends ASTNode {
 	}
 }
 
-interface VDomProperties {
-	[index: string]: ASTNode;
-}
-
 export class ASTVDomNode extends ASTNode {
 	readonly tag: string;
 	readonly props: Map<string, ASTNode> = new Map();
