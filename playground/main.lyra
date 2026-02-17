@@ -181,7 +181,7 @@ class App {
     public render(): VNode {
         return vdom <span>
                         <Component></Component>
-                        <b>Hello World</b>by LyraScript!
+                        <b>Hello World</b>by LyraScript !
                      </span>;
     }
 }

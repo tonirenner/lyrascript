@@ -820,7 +820,7 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 		}
 	}
 
-	parser.expectPunctuation(GRAMMAR.XML_OPEN_CLOSE_TAG);
+	parser.expectOperator(GRAMMAR.XML_OPEN_CLOSE_TAG);
 	parser.expectIdentifier();
 	parser.expectOperator(GRAMMAR.GREATER_THAN);
 
@@ -834,8 +834,7 @@ export function parseVDomText(parser: Parser): ASTVDomTextNode {
 		[
 			TokenType.IDENTIFIER,
 			TokenType.OPERATOR,
-			TokenType.KEYWORD,
-			TokenType.PUNCTUATION
+			TokenType.KEYWORD
 		]
 	);
 	const node = new ASTVDomTextNode(token.value);

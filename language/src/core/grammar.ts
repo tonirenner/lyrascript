@@ -128,6 +128,12 @@ export class GRAMMAR {
 		GRAMMAR.AND,
 		GRAMMAR.OR,
 	];
+	static DOM_OPERATORS: string[] = [
+		GRAMMAR.LESS_THAN,
+		GRAMMAR.GREATER_THAN,
+		GRAMMAR.XML_OPEN_CLOSE_TAG,
+		GRAMMAR.XML_CLOSE_TAG
+	]
 	static MATH_OPERATORS: string[] = [
 		GRAMMAR.PLUS,
 		GRAMMAR.MINUS,
@@ -154,9 +160,7 @@ export class GRAMMAR {
 		GRAMMAR.PARENTHESES_CLOSE,
 		GRAMMAR.SEMICOLON,
 		GRAMMAR.COLON,
-		GRAMMAR.COMMA,
-		GRAMMAR.XML_CLOSE_TAG,
-		GRAMMAR.XML_OPEN_CLOSE_TAG
+		GRAMMAR.COMMA
 	]
 }
 
@@ -173,6 +177,7 @@ export class TYPE_ENUM {
 export class Rules {
 	static KEYWORDS: Set<string> = new Set(GRAMMAR.KEYWORDS);
 	static OPERATORS: Set<string> = new Set(GRAMMAR.OPERATORS);
+	static DOM_OPERATORS: Set<string> = new Set(GRAMMAR.DOM_OPERATORS);
 	static PUNCTUATIONS: Set<string> = new Set(GRAMMAR.PUNCTUATIONS);
 	static COMMENT_LINE: string = '//';
 
