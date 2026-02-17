@@ -949,15 +949,15 @@ export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 		const classDef = objectRegistry.classes.get(node.tag);
 
 		if (classDef) {
-			return evalComponentNode(node, classDef, environment, objectRegistry);
+			return evalDomComponentNode(node, classDef, environment, objectRegistry);
 		}
 	} catch (e) {
 	}
 
-	return evalHtmlNode(node, objectRegistry, environment, thisValue);
+	return evalDomHtmlNode(node, objectRegistry, environment, thisValue);
 }
 
-export function evalHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
+export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
 	const props: Record<string, any> = {};
 
 	for (const [name, value] of node.props) {
@@ -965,16 +965,29 @@ export function evalHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 	}
 
 	const children: Array<VNode | string> = [];
+	let textCache: string[] = [];
+
+	function flushTextCache(): void {
+		if (textCache.length > 0) {
+			children.push(textCache.join(' '));
+			textCache = [];
+		}
+	}
 
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
-			children.push(child.value);
-		} else if (child instanceof ASTVDomNode) {
-			children.push(evalVDomNode(child, objectRegistry, environment, thisValue));
-		} else {
-			children.push(evalExpression(child, objectRegistry, environment, thisValue));
+			textCache.push(child.value);
+			continue;
 		}
+
+		children.push(evalExpression(child, objectRegistry, environment, thisValue));
+
+		textCache.push(' ');
+
+		flushTextCache();
 	}
+
+	flushTextCache();
 
 	return {
 		tag: node.tag,
@@ -983,7 +996,7 @@ export function evalHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 	};
 }
 
-export function evalComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
+export function evalDomComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
 
 	const instance = new Instance(classDef);
 	const methodNode: ASTMethodNode = classDef.findMethod('render');
