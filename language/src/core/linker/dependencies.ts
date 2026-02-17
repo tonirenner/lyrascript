@@ -1,10 +1,10 @@
-import {ObjectRegistry} from "./interpreter/interpreter_registry";
-import {ASTImportNode, ASTNode, ASTNodeType} from "./ast";
-import {Source} from "./parser/parser_source";
-import {Parser} from "./parser/parser";
-import {Environment} from "./interpreter/interpreter_objects";
-import type {AbstractFileLoader} from "./loaders";
-import {throwRuntimeError} from "./errors";
+import {ObjectRegistry} from "../interpreter/interpreter_registry.ts";
+import {ASTImportNode, ASTNode, ASTNodeType} from "../ast.ts";
+import {Source} from "../parser/parser_source.ts";
+import {Parser} from "../parser/parser.ts";
+import {Environment} from "../interpreter/interpreter_objects.ts";
+import type {AbstractFileLoader} from "../loaders.ts";
+import {throwRuntimeError} from "../errors.ts";
 
 export class Dependency {
 	objectRegistry: ObjectRegistry = new ObjectRegistry();
