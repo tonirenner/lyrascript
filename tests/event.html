@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lyrascript Events</title>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+	import Lyra from '../dist/language.js';
+
+
+	const pipeline = new Lyra.EventPipeline();
+	const counterState = new Lyra.State(0);
+
+	Lyra.bindStateToEvent(
+		pipeline,
+		'button:click',
+		counterState,
+		() => {
+			console.log('Counter state changed to: ', counterState.get());
+			return counterState.get() + 1
+		}
+	);
+
+	pipeline.emit('button:click', null);
+	pipeline.emit('button:click', null);
+	pipeline.emit('button:click', null);
+
+</script>
+</body>
+</html>
