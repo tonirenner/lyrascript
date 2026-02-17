@@ -1,13 +1,13 @@
-import {Source} from "./parser_source";
-import {Environment} from "./interpreter_objects";
-import {ObjectRegistry} from "./interpreter_registry";
-import {TypeChecker} from "./typechecker";
+import {Source} from "./parser/parser_source";
+import {Environment} from "./interpreter/interpreter_objects";
+import {ObjectRegistry} from "./interpreter/interpreter_registry";
+import {TypeChecker} from "./types/typechecker";
 import {Linker} from "./linker";
-import {TestSuites} from "./testsuites";
-import {Interpreter} from "./interpreter";
+import {TestSuites} from "./tests/testsuites";
+import {Interpreter} from "./interpreter/interpreter";
 import {FetchFileLoader} from "./loaders";
 import {ASTNode} from "./ast";
-import {Parser} from "./parser";
+import {Parser} from "./parser/parser";
 
 export class LyraScriptProgram {
 	private globalEnvironment: Environment = new Environment();

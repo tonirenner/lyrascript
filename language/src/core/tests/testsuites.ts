@@ -1,7 +1,7 @@
-import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./ast";
-import {callInstanceMethod, createInstanceFromNode, evalAnnotationProperties} from "./interpreter_runtime";
-import type {Environment} from "./interpreter_objects";
-import type {ObjectRegistry} from "./interpreter_registry";
+import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "../ast";
+import {callInstanceMethod, createInstanceFromNode, evalAnnotationProperties} from "../interpreter/interpreter_runtime";
+import type {Environment} from "../interpreter/interpreter_objects";
+import type {ObjectRegistry} from "../interpreter/interpreter_registry";
 
 export class TestSuites {
 	environment: Environment;

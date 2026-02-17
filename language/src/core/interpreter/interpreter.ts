@@ -1,4 +1,4 @@
-import {ASTNode} from './ast';
+import {ASTNode} from '../ast.ts';
 import {Environment} from "./interpreter_objects";
 import {evalNode, registerNativeClasses, registerNativeFunctions} from "./interpreter_runtime";
 import {ObjectRegistry} from "./interpreter_registry";

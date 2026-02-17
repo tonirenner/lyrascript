@@ -1,8 +1,8 @@
 import {LyraScriptProgram} from "../core/program";
-import {fetchSource} from "../core/parser_source";
-import {Environment, Instance} from "../core/interpreter_objects";
-import {ObjectRegistry} from "../core/interpreter_registry";
-import {callInstanceMethod} from "../core/interpreter_runtime";
+import {fetchSource} from "../core/parser/parser_source.ts";
+import {Environment, Instance} from "../core/interpreter/interpreter_objects.ts";
+import {ObjectRegistry} from "../core/interpreter/interpreter_registry.ts";
+import {callInstanceMethod} from "../core/interpreter/interpreter_runtime.ts";
 
 export interface Engine {
 	executeEntryFile(url: string, className: string): Promise<void>;

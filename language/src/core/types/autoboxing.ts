@@ -1,6 +1,6 @@
 import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "./interpreter_registry";
-import {throwRuntimeError} from "./errors";
+import {ObjectRegistry} from "../interpreter/interpreter_registry";
+import {throwRuntimeError} from "../errors";
 
 export class AutoboxedTypes {
 	static NUMBER: string = 'Number';

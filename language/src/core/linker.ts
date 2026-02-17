@@ -1,8 +1,8 @@
 import {DependencyLoader} from "./dependencies";
 import {ASTImportNode, ASTNode} from "./ast";
 import {NativeClasses} from "../library/native_classes";
-import {Environment, InterfaceDefinition} from "./interpreter_objects";
-import {ObjectRegistry} from "./interpreter_registry";
+import {Environment, InterfaceDefinition} from "./interpreter/interpreter_objects";
+import {ObjectRegistry} from "./interpreter/interpreter_registry";
 import type {AbstractFileLoader} from "./loaders";
 import type {NativeClass} from "../library/native_class";
 import {throwDependencyError} from "./errors";

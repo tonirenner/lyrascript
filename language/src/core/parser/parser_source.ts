@@ -1,6 +1,6 @@
-import {Tokenizer} from "./tokenizer";
-import {throwDependencyError} from "./errors";
-import type {Token} from "./grammar";
+import {Tokenizer} from "../tokenizer/tokenizer";
+import {throwDependencyError} from "../errors";
+import type {Token} from "../grammar";
 
 export class Source {
 	static NEWLINE = '\n';

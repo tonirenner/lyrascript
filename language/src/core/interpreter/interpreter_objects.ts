@@ -1,4 +1,4 @@
-import {GRAMMAR} from "./grammar";
+import {GRAMMAR} from "../grammar";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -7,8 +7,8 @@ import {
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
-} from "./ast";
-import {throwRuntimeError} from "./errors";
+} from "../ast";
+import {throwRuntimeError} from "../errors";
 
 export class Environment {
 	parent: Environment | null;

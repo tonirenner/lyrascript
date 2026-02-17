@@ -1,8 +1,8 @@
-import {ObjectRegistry} from "./interpreter_registry";
+import {ObjectRegistry} from "./interpreter/interpreter_registry";
 import {ASTImportNode, ASTNode, ASTNodeType} from "./ast";
-import {Source} from "./parser_source";
-import {Parser} from "./parser";
-import {Environment} from "./interpreter_objects";
+import {Source} from "./parser/parser_source";
+import {Parser} from "./parser/parser";
+import {Environment} from "./interpreter/interpreter_objects";
 import type {AbstractFileLoader} from "./loaders";
 import {throwRuntimeError} from "./errors";
 

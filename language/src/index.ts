@@ -1,21 +1,23 @@
-import {Parser} from "./core/parser";
+import {Parser} from "./core/parser/parser";
 import {wrapJsError} from "./core/errors";
-import {fetchSource, Source} from "./core/parser_source";
+import {fetchSource, Source} from "./core/parser/parser_source";
 import {ASTNode} from "./core/ast";
-import {Tokenizer} from "./core/tokenizer";
+import {Tokenizer} from "./core/tokenizer/tokenizer";
 import {Token} from "./core/grammar";
 import {LyraScriptProgram} from "./core/program";
+import {EventPipeline} from "./core/event/pipeline";
+import {bindStateToEvent, State} from "./core/event/state";
 
-export {Tokenizer} from "./core/tokenizer";
-export {Parser} from "./core/parser";
-export {Source} from "./core/parser_source";
 export {WebLyraScript} from "./host/engine";
 export {WebApplicationRuntime} from "./host/runtime";
 
 const Lyra = {
-	Source: Source,
-	Parser: Parser,
-	Tokenizer: Tokenizer,
+	Source,
+	Parser,
+	Tokenizer,
+	EventPipeline,
+	State,
+	bindStateToEvent,
 	Program: (isDebug: boolean): LyraScriptProgram => Program(isDebug),
 	execute: (source: Source, isDebug: boolean = false): Promise<void> => execute(source, isDebug),
 	executeFromString: (code: string, isDebug: boolean = false): Promise<void> => executeFromString(code, isDebug),

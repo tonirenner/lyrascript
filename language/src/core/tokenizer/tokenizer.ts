@@ -1,6 +1,6 @@
-import {GRAMMAR, Rules, Token, TokenType} from "./grammar";
-import {throwTokenError} from "./errors";
-import type {Source} from "./parser_source";
+import {GRAMMAR, Rules, Token, TokenType} from "../grammar";
+import {throwTokenError} from "../errors";
+import type {Source} from "../parser/parser_source";
 
 export class Tokenizer {
 	private readonly rules = new Rules();

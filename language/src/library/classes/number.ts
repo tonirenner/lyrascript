@@ -1,6 +1,6 @@
 import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/interpreter_conversion";
-import {Source} from "../../core/parser_source";
+import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion.ts";
+import {Source} from "../../core/parser/parser_source.ts";
 
 const CLASS_NAME = 'Number';
 

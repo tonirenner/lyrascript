@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import type {VNode} from "../core/vdom";
+import type {VNode} from "../core/vdom/vdom.ts";
 
 export interface ElementCreator {
 	createElement(vNode: VNode): any;

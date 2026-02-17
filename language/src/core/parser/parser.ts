@@ -1,7 +1,7 @@
-import {Token, TokenType} from "./grammar";
-import {TokenStream} from "./tokenizer";
+import {Token, TokenType} from "../grammar";
+import {TokenStream} from "../tokenizer/tokenizer";
 import {parseProgram} from "./parser_statments";
-import {throwParserError} from "./errors";
+import {throwParserError} from "../errors";
 import {Source} from "./parser_source";
 
 

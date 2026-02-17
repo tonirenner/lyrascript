@@ -1,6 +1,6 @@
 import {Parser} from "./parser";
-import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./grammar";
-import {Modifiers, SuperClass} from "./interpreter_objects";
+import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../grammar";
+import {Modifiers, SuperClass} from "../interpreter/interpreter_objects";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -32,8 +32,8 @@ import {
 	ASTVariableNode,
 	ASTVDomNode,
 	ASTVDomTextNode
-} from "./ast";
-import {throwParserError} from "./errors";
+} from "../ast";
+import {throwParserError} from "../errors";
 import {spanFrom} from "./parser_source";
 
 export function createMixedType(): ASTTypeNode {

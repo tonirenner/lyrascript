@@ -26,16 +26,16 @@ import {
 	ASTVariableNode,
 	ASTVDomNode,
 	ASTVDomTextNode
-} from "./ast";
-import {GRAMMAR, TYPE_ENUM} from "./grammar";
-import {NativeClasses} from "../library/native_classes";
-import {NativeFunction, NativeFunctions} from "../library/native_functions";
+} from "../ast";
+import {GRAMMAR, TYPE_ENUM} from "../grammar";
+import {NativeClasses} from "../../library/native_classes";
+import {NativeFunction, NativeFunctions} from "../../library/native_functions";
 import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "./interpreter_conversion";
-import {throwRuntimeError} from "./errors";
-import {AutoboxedTypes} from "./autoboxing";
-import {LyraArray} from "../library/classes/array";
-import type {SourceSpan} from "./parser_source";
-import type {VNode} from "./vdom";
+import {throwRuntimeError} from "../errors";
+import {AutoboxedTypes} from "../types/autoboxing";
+import {LyraArray} from "../../library/classes/array";
+import type {SourceSpan} from "../parser/parser_source";
+import type {VNode} from "../vdom/vdom";
 
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();
@@ -961,7 +961,7 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 		} else {
 			children.push(evalExpression(child, objectRegistry, environment, thisValue));
 		}
-		
+
 		flushTextCache();
 	}
 

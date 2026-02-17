@@ -1,6 +1,6 @@
 import {type Engine, WebLyraScript} from "./engine";
 import {HTMLElementCreator} from "./dom";
-import type {VNode} from "../core/vdom";
+import type {VNode} from "../core/vdom/vdom.ts";
 
 export abstract class AbstractApplicationRuntime {
 	protected constructor(

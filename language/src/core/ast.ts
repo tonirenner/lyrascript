@@ -1,6 +1,6 @@
 import {GRAMMAR, TYPE_ENUM} from "./grammar";
-import {Modifiers, SuperClass} from "./interpreter_objects";
-import {SourceSpan} from "./parser_source";
+import {Modifiers, SuperClass} from "./interpreter/interpreter_objects";
+import {SourceSpan} from "./parser/parser_source";
 
 export class ASTNodeType {
 	static PROGRAMM = 'program';

@@ -1,4 +1,4 @@
-import {TYPE_ENUM} from "./grammar";
+import {TYPE_ENUM} from "../grammar";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -7,9 +7,9 @@ import {
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
-} from "./ast";
-import {throwTypeError} from "./errors";
-import {ObjectRegistry} from "./interpreter_registry";
+} from "../ast";
+import {throwTypeError} from "../errors";
+import {ObjectRegistry} from "../interpreter/interpreter_registry";
 
 export class PrimitiveTypes {
 	static readonly NUMBER: string = TYPE_ENUM.NUMBER;

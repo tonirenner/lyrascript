@@ -1,5 +1,5 @@
 import {NativeClass} from "../native_class";
-import {Source} from "../../core/parser_source";
+import {Source} from "../../core/parser/parser_source.ts";
 
 const CLASS_NAME = 'Assert';
 
