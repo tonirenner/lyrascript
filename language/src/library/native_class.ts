@@ -11,8 +11,8 @@ export class NativeClass {
 	isAutoloadAble: boolean = false;
 
 	constructor(name: string, nativeInstance: any, source: Source) {
-		this.name              = name;
-		this.nativeInstance    = nativeInstance;
+		this.name = name;
+		this.nativeInstance = nativeInstance;
 		this.nativeClassSource = source;
 	}
 

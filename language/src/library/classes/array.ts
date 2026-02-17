@@ -2,7 +2,7 @@ import {NativeClass} from "../native_class";
 import {LyraNativeObject} from "../../core/interpreter_conversion";
 import {Source} from "../../core/parser_source";
 
-const ARRAY_CLASS_NAME          = 'Array';
+const ARRAY_CLASS_NAME = 'Array';
 const ARRAY_ITERATOR_CLASS_NAME = 'ArrayIterator';
 
 export class LyraArray extends LyraNativeObject {

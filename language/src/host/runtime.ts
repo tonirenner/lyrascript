@@ -24,10 +24,6 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		super(new WebLyraScript());
 	}
 
-	private callRender(): VNode {
-		return this.callMethod('render', []) as VNode;
-	}
-
 	async start(url: string, className = 'App'): Promise<void> {
 		await this.engine.executeEntryFile(url, className);
 
@@ -45,6 +41,10 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		queueMicrotask(() => {
 			this.performRender();
 		});
+	}
+
+	private callRender(): VNode {
+		return this.callMethod('render', []) as VNode;
 	}
 
 	private performRender(): void {

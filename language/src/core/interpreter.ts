@@ -8,7 +8,7 @@ export class Interpreter {
 	objectRegistry: ObjectRegistry;
 
 	constructor(environment: Environment, objectRegistry: ObjectRegistry) {
-		this.environment    = environment;
+		this.environment = environment;
 		this.objectRegistry = objectRegistry;
 
 		registerNativeClasses(objectRegistry, environment);

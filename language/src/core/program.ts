@@ -55,25 +55,6 @@ export class LyraScriptProgram {
 		           });
 	}
 
-	private async runPipeline(source: Source): Promise<ASTNode> {
-		this.debugMeasureStartTime()
-		const ast: ASTNode = new Parser(source).parse();
-		this.debugMeasureEndTime('parser')
-		this.debug(ast);
-
-		return this.linker.linkSources(ast)
-		           .then(() => {
-			           this.typeChecker.collectAllSymbolsFromRegistry(this.globalObjectRegistry);
-		           })
-		           .then(() => {
-			           this.debugMeasureStartTime();
-			           this.typeChecker.check(ast);
-			           this.debugMeasureEndTime('typechecker');
-
-			           return ast;
-		           });
-	}
-
 	debug(value: any): void {
 		if (this.isDebug) {
 			console.log(value);
@@ -93,5 +74,24 @@ export class LyraScriptProgram {
 			return 0;
 		}
 		return performance.now();
+	}
+
+	private async runPipeline(source: Source): Promise<ASTNode> {
+		this.debugMeasureStartTime()
+		const ast: ASTNode = new Parser(source).parse();
+		this.debugMeasureEndTime('parser')
+		this.debug(ast);
+
+		return this.linker.linkSources(ast)
+		           .then(() => {
+			           this.typeChecker.collectAllSymbolsFromRegistry(this.globalObjectRegistry);
+		           })
+		           .then(() => {
+			           this.debugMeasureStartTime();
+			           this.typeChecker.check(ast);
+			           this.debugMeasureEndTime('typechecker');
+
+			           return ast;
+		           });
 	}
 }

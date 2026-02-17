@@ -4,9 +4,8 @@ import type {Token} from "./grammar";
 
 export class Source {
 	static NEWLINE = '\n';
-
-	private code: string;
 	public readonly url: string;
+	private code: string;
 
 	constructor(code: string, url: string = '<inline>') {
 		this.url = url;

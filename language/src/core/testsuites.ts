@@ -8,7 +8,7 @@ export class TestSuites {
 	objectRegistry: ObjectRegistry;
 
 	constructor(environment: Environment, objectRegistry: ObjectRegistry) {
-		this.environment    = environment;
+		this.environment = environment;
 		this.objectRegistry = objectRegistry;
 	}
 
@@ -34,7 +34,7 @@ export class TestSuites {
 	}
 
 	private runTestCase(classNode: ASTClassNode, methodNode: ASTMethodNode, annotation: ASTAnnotationNode): void {
-		const instance   = createInstanceFromNode(classNode);
+		const instance = createInstanceFromNode(classNode);
 		const properties = evalAnnotationProperties(annotation);
 
 		const title = properties.title ?? `${classNode.name}.${methodNode.name}`;

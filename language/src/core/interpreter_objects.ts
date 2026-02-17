@@ -167,18 +167,6 @@ export class ClassDefinition {
 		this.isOpen = classNode.modifiers.open;
 	}
 
-	findMethod(name: string): ASTMethodNode {
-		const node = this.node
-		                 .children
-		                 .find(node => node.name === name);
-
-		if (node instanceof ASTMethodNode) {
-			return node;
-		}
-
-		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
-	}
-
 	static constructFromAST(node: ASTClassNode): ClassDefinition {
 		const instanceFields: ClassFieldDefinition[] = [];
 		const instanceMethods: { [index: string]: ClassMethodDefinition } = {};
@@ -232,6 +220,18 @@ export class ClassDefinition {
 			staticMethods,
 			constructorMethod
 		);
+	}
+
+	findMethod(name: string): ASTMethodNode {
+		const node = this.node
+		                 .children
+		                 .find(node => node.name === name);
+
+		if (node instanceof ASTMethodNode) {
+			return node;
+		}
+
+		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
 	}
 }
 
