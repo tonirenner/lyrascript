@@ -1,21 +1,24 @@
 import System;
 
 class Component {
+    private count: State<number> = new State<number>(0);
+
+    constructor() {
+        this.count.subscribe({value:number -> System.log(value)});
+    }
+
     public render(): VNode {
-        return vdom <span>Hello from Component</span>;
+        return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component</span>;
     }
 }
 
 
 class App
 {
-    private count: State<number> = new State<number>(0);
-
     public render(): VNode {
-
         return vdom <span>
                         <Component></Component>
-                        <b onClick={e -> this.count.set(this.count.get() + 1) }> Hello World</b>
+                        <b> Hello World</b>
                         by LyraScript!
                     </span>;
     }

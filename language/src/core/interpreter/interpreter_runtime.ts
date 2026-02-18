@@ -227,30 +227,18 @@ export function constructEmptyInstance(node: ASTClassNode, objectRegistry: Objec
 }
 
 export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	return classDef.constructNativeInstance(expr, objectRegistry, environment);
+	return classDef.constructNativeInstanceByNewNode(expr, objectRegistry, environment);
 }
 
 export function constructInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	return classDef.constructInstance(expr, objectRegistry, environment);
+	return classDef.constructInstanceByNewNode(expr, objectRegistry, environment);
 }
 
 export function evalClass(node: ASTClassNode, objectRegistry: ObjectRegistry, environment: Environment): void {
-	const instance = constructEmptyInstance(node, objectRegistry);
-	let rawValue;
-	for (const field of instance.__classDef.instanceFields) {
-		rawValue = field.initializer
-			? evalExpression(field.initializer, objectRegistry, environment)
-			: null;
+	const instance: Instance = constructEmptyInstance(node, objectRegistry);
 
-		instance.__instanceFields[field.name] = castValue(rawValue, field.type);
-	}
-	for (const field of instance.__classDef.staticFields) {
-		rawValue = field.initializer
-			? evalExpression(field.initializer, objectRegistry, environment)
-			: null;
+	instance.initializeInstanceFields(objectRegistry, environment);
 
-		instance.__staticFields[field.name] = castValue(rawValue, field.type);
-	}
 	environment.define(node.name, instance);
 }
 
@@ -893,11 +881,12 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 
 export function evalDomComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
 
-	const instance: Instance = classDef.constructEmptyInstance();
+	const instance: Instance = classDef.constructNewInstanceWithoutArguments(objectRegistry, environment);
+
 	const methodNode: ASTMethodNode = classDef.findMethod('render');
 
-	for (const [key, valueNode] of node.props.entries()) {
-		instance.__instanceFields[key] = evalExpression(valueNode, objectRegistry, environment, instance);
+	for (const [key, value] of node.props.entries()) {
+		instance.__instanceFields[key] = evalExpression(value, objectRegistry, environment, instance);
 	}
 
 	return callInstanceMethod(instance, methodNode, [], objectRegistry, environment) as VNode;
@@ -990,36 +979,21 @@ export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span
 	}
 
 	if (typeof value === TYPE_ENUM.NUMBER) {
-		return createBoxedInstance(
-			AutoboxedTypes.getClassName(TYPE_ENUM.NUMBER),
-			value,
-			objectRegistry,
-			span
-		);
+		return createBoxedInstance(AutoboxedTypes.getClassName(TYPE_ENUM.NUMBER), value, objectRegistry);
 	}
 
 	if (typeof value === TYPE_ENUM.STRING) {
-		return createBoxedInstance(
-			AutoboxedTypes.getClassName(TYPE_ENUM.STRING),
-			value,
-			objectRegistry,
-			span
-		);
+		return createBoxedInstance(AutoboxedTypes.getClassName(TYPE_ENUM.STRING), value, objectRegistry);
 	}
 
 	if (typeof value === TYPE_ENUM.BOOLEAN) {
-		return createBoxedInstance(
-			AutoboxedTypes.getClassName(TYPE_ENUM.BOOLEAN),
-			value,
-			objectRegistry,
-			span
-		);
+		return createBoxedInstance(AutoboxedTypes.getClassName(TYPE_ENUM.BOOLEAN), value, objectRegistry);
 	}
 
 	return value;
 }
 
-export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {
+export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry): Instance {
 	const classDef: ClassDefinition = objectRegistry.classes.get(className);
 	const instance: Instance = classDef.constructEmptyInstance();
 

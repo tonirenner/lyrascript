@@ -9,7 +9,7 @@
 <script type="module">
 	import {WebApplicationRuntime} from '../dist/language.js';
 
-	new WebApplicationRuntime(document.getElementById('app'))
+	new WebApplicationRuntime(document.getElementById('app'), true)
 		.start('/lyrascript/tests/vdom.lyra');
 </script>
 </body>

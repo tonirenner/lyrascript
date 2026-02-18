@@ -23,9 +23,9 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 	constructor(
 		private readonly mountPoint: HTMLElement,
+		isDebug: boolean = false,
 		private readonly eventPipeline: EventPipeline = new EventPipeline(),
-		private readonly elementCreator: HTMLElementCreator = new HTMLElementCreator(eventPipeline),
-		isDebug: boolean = false
+		private readonly elementCreator: HTMLElementCreator = new HTMLElementCreator(eventPipeline)
 	) {
 		super(new WebLyraScript(isDebug));
 	}

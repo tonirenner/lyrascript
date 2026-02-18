@@ -23,8 +23,8 @@ export class WebLyraScript implements Engine {
 	}
 
 	createInstance(className: string): Instance {
-		const classDef: ClassDefinition = this.objectRegistry.classes.get(className);
-		return classDef.constructEmptyInstance();
+		return this.getClassDefinition(className)
+		           .constructNewInstanceWithoutArguments(this.objectRegistry, this.environment);
 	}
 
 	callInstanceMethod(methodName: string, args: any[]): any {
@@ -48,5 +48,9 @@ export class WebLyraScript implements Engine {
 			           this.environment = this.program.getGlobalEnvironment();
 			           this.rootInstance = this.createInstance(className);
 		           });
+	}
+
+	private getClassDefinition(className: string): ClassDefinition {
+		return this.objectRegistry.classes.get(className);
 	}
 }

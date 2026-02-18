@@ -11,8 +11,8 @@ import {
 } from "../ast";
 import {throwRuntimeError} from "../errors";
 import type {ObjectRegistry} from "./interpreter_registry.ts";
-import {evalMethodArguments, evalNode} from "./interpreter_runtime.ts";
-import {fromLyraValue, LyraNativeObject} from "./interpreter_conversion.ts";
+import {evalExpression, evalMethodArguments, evalNode} from "./interpreter_runtime.ts";
+import {castValue, fromLyraValue, LyraNativeObject} from "./interpreter_conversion.ts";
 
 export class Environment {
 	parent: Environment | null;
@@ -65,6 +65,10 @@ export class Instance {
 		this.__instanceFields = {};
 		this.__staticFields = {};
 		this.__nativeInstance = null;
+	}
+
+	initializeInstanceFields(objectRegistry: ObjectRegistry, environment: Environment): void {
+		this.__classDef.initializeInstanceFields(this, objectRegistry, environment);
 	}
 }
 
@@ -242,14 +246,26 @@ export class ClassDefinition {
 		return new Instance(this);
 	}
 
-	constructInstance(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-		const instance = new Instance(this);
+	constructNewInstanceWithoutArguments(objectRegistry: ObjectRegistry, environment: Environment): Instance {
+		return this.constructNewInstance([], objectRegistry, environment);
+	}
+
+	constructNewInstance(args: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment): Instance {
+		const newNode = new ASTNewNode(args, new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, this.name));
+
+		return this.constructInstanceByNewNode(newNode, objectRegistry, environment);
+	}
+
+	constructInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+		const instance = this.constructEmptyInstance();
+
+		instance.initializeInstanceFields(objectRegistry, environment);
 
 		if (!this.constructorMethod) {
 			return instance;
 		}
 
-		const constructor = this.constructorMethod;
+		const constructor: ClassMethodDefinition = this.constructorMethod;
 		const constructorEnv = new Environment(environment);
 
 		const constructorArgs = evalMethodArguments(
@@ -263,7 +279,7 @@ export class ClassDefinition {
 		constructorEnv.define(GRAMMAR.THIS, instance);
 
 		for (let i = 0; i < constructorArgs.length; i++) {
-			const parameter = constructor.parameters[i];
+			const parameter: ASTParameterNode | undefined = constructor.parameters[i];
 			if (parameter) {
 				constructorEnv.define(parameter.name, constructorArgs[i]);
 			}
@@ -276,7 +292,7 @@ export class ClassDefinition {
 		return instance;
 	}
 
-	constructNativeInstance(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	constructNativeInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
 		const instance: Instance = this.constructEmptyInstance();
 		const constructor: ClassMethodDefinition | null = this.constructorMethod;
 		const constructorEnv: Environment = new Environment(environment);
@@ -303,6 +319,24 @@ export class ClassDefinition {
 		}
 
 		return instance;
+	}
+
+	initializeInstanceFields(instance: Instance, objectRegistry: ObjectRegistry, environment: Environment): void {
+		let rawValue;
+		for (const field of this.instanceFields) {
+			rawValue = field.initializer
+				? evalExpression(field.initializer, objectRegistry, environment)
+				: null;
+
+			instance.__instanceFields[field.name] = castValue(rawValue, field.type);
+		}
+		for (const field of this.staticFields) {
+			rawValue = field.initializer
+				? evalExpression(field.initializer, objectRegistry, environment)
+				: null;
+
+			instance.__staticFields[field.name] = castValue(rawValue, field.type);
+		}
 	}
 }
 
