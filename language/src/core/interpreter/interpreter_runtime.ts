@@ -946,26 +946,26 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 	}
 
 	const children: Array<VNode | string> = [];
-	let textCache: string[] = [];
+	let textBuffer: string[] = [];
 
-	function flushTextCache(): void {
-		if (textCache.length > 0) {
-			children.push(textCache.join(' '));
-			textCache = [];
+	function flushTextBuffer(): void {
+		if (textBuffer.length > 0) {
+			children.push(textBuffer.join(' '));
+			textBuffer = [];
 		}
 	}
 
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
-			textCache.push(child.value);
+			textBuffer.push(child.value);
 		} else {
 			children.push(evalExpression(child, objectRegistry, environment, thisValue));
 		}
 
-		flushTextCache();
+		flushTextBuffer();
 	}
 
-	flushTextCache();
+	flushTextBuffer();
 
 	return {
 		tag: node.tag,

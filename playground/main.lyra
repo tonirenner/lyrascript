@@ -180,8 +180,7 @@ class App {
 
     public render(): VNode {
         return vdom <span>
-                        <Component></Component>
-                        <b>Hello World</b> by LyraScript!
+                         <b onClick={ -> System.alert("Hello World")}>Hello World</b> by LyraScript!
                      </span>;
     }
 }
@@ -191,3 +190,10 @@ let app: App = new App();
 app.run();
 
 System.log(app.render());
+
+
+let count: State<number> = new State<number>(0);
+count.subscribe({value:number -> System.log(value)});
+count.set(1);
+count.set(2);
+count.set(3);

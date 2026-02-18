@@ -2,27 +2,32 @@ import {NativeClass} from "../native_class";
 import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion.ts";
 import {Source} from "../../core/parser/parser_source.ts";
 import {State} from "../../core/event/state.ts";
+import type {LambdaFunctionCall} from "../../core/interpreter/interpreter_runtime.ts";
 
 const CLASS_NAME = 'State';
 
-export class LyraState extends LyraNativeObject {
-	private state: State;
+export class LyraState<T> extends LyraNativeObject {
+	private state: State<T>;
 
-	constructor(initial: any) {
+	constructor(initial: T) {
 		super(CLASS_NAME);
-		this.state = new State(initial);
+		this.state = new State<T>(initial);
 	}
 
-	get(): any {
+	get(): T {
 		return this.state.get();
 	}
 
-	set(value: any): void {
+	set(value: T): void {
 		this.state.set(value);
 	}
 
-	subscribe(callback: (value: any) => {}): () => boolean {
-		return this.state.subscribe(callback);
+	subscribe(fn: LambdaFunctionCall): number {
+		return this.state.subscribe(fn);
+	}
+
+	unsubscribe(id: number): boolean {
+		return this.state.unsubscribe(id);
 	}
 }
 
@@ -36,13 +41,15 @@ export class StateType extends NativeClass {
 			new Source(
 				`
 class ${CLASS_NAME}<T> {
-	public constructor(initial);
+	public constructor(initial: T);
 
 	public get(): T;
 	
 	public set(value: T): void;
 	
-	public subscribe(callback: (T) -> void): () -> boolean;
+	public subscribe(fn: (T) -> void): number;
+	
+	public unsubscribe(id: number): boolean;
 }`
 			));
 

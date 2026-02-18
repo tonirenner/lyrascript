@@ -1,8 +1,12 @@
 import type {EventPipeline} from "./pipeline";
+import {toLyraValue} from "../interpreter/interpreter_conversion.ts";
+import {LambdaFunctionCall} from "../interpreter/interpreter_runtime.ts";
+
 
 export class State<T = any> {
 	private value: T;
-	private subscribers: Set<(value: T) => void> = new Set<(value: T) => void>();
+	private subscribers: Map<number, (value: T) => void> = new Map<number, (value: T) => void>();
+	private id: number = 0;
 
 	constructor(initial: T) {
 		this.value = initial;
@@ -21,14 +25,25 @@ export class State<T = any> {
 		this.notify();
 	}
 
-	subscribe(fn: (value: T) => void): () => boolean {
-		this.subscribers.add(fn);
-		return (): boolean => this.subscribers.delete(fn);
+	subscribe(fn: LambdaFunctionCall): number {
+		const nextId: number = this.id++;
+		this.subscribers.set(nextId, this.wrapCallback(fn));
+		return nextId;
+	}
+
+	unsubscribe(id: number): boolean {
+		return this.subscribers.delete(id);
 	}
 
 	private notify(): void {
-		for (const fn of this.subscribers) {
+		for (const fn of this.subscribers.values()) {
 			fn(this.value);
+		}
+	}
+
+	private wrapCallback(fn: LambdaFunctionCall) {
+		return (value: T): void => {
+			fn.evalCall(null, toLyraValue(value));
 		}
 	}
 }

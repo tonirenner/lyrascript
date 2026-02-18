@@ -807,11 +807,17 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 
 	const props = new Map<string, ASTNode>();
 	while (!parser.peekIs(GRAMMAR.GREATER_THAN) && !parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
+		skipEmptyText(parser);
 
 		const nameToken: Token = parser.expectIdentifier();
 		parser.expectOperator(GRAMMAR.ASSIGN);
 
-		const value: ASTNode = parseExpression(parser);
+		let value: ASTNode;
+		if (parser.peekIs(GRAMMAR.BRACE_OPEN)) {
+			value = parseLambda(parser);
+		} else {
+			value = parseExpression(parser);
+		}
 
 		props.set(nameToken.value, value);
 	}

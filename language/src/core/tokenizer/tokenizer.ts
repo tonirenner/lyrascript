@@ -91,7 +91,7 @@ export class Tokenizer {
 		}
 
 		const ifIsConsumingOperator = (): boolean => {
-			const operator: Token | null = this.matchOperatorAt(i, Rules.OPERATORS);
+			const operator: Token | null = this.matchOperatorAt(i);
 			if (operator) {
 				tokens.push(operator.withLineAndColumn(line, column));
 				i = operator.end + 1;
@@ -198,7 +198,7 @@ export class Tokenizer {
 		return new Token(type, value, start, j, this.source);
 	}
 
-	matchOperatorAt(i: number, operators: Set<string>): Token | null {
+	matchOperatorAt(i: number, operators: Set<string> = Rules.OPERATORS): Token | null {
 		const chars = this.source.charAt(i) + this.source.charAt(i + 1);
 		if (operators.has(chars)) {
 			return new Token(TokenType.OPERATOR, chars, i, i + 1, this.source);
@@ -211,13 +211,13 @@ export class Tokenizer {
 		return null;
 	}
 
-	matchPunctuationAt(i: number): Token | null {
+	matchPunctuationAt(i: number, punctuations = Rules.PUNCTUATIONS): Token | null {
 		const chars = this.source.charAt(i) + this.source.charAt(i + 1);
-		if (Rules.PUNCTUATIONS.has(chars)) {
+		if (punctuations.has(chars)) {
 			return new Token(TokenType.PUNCTUATION, chars, i, i + 1, this.source);
 		}
 
-		if (!Rules.PUNCTUATIONS.has(this.source.charAt(i))) {
+		if (!punctuations.has(this.source.charAt(i))) {
 			return null;
 		}
 		return new Token(TokenType.PUNCTUATION, this.source.charAt(i), i, i, this.source);
@@ -255,7 +255,74 @@ export class Tokenizer {
 		let i: number = startIndex;
 		let textBuffer: string = '';
 
-		const flushText = (): void => {
+		const ifIsConsumingString = (): boolean => {
+			const string: Token | null = this.matchStringAt(i);
+			if (string) {
+				flushTextBuffer();
+				tokens.push(string.withLineAndColumn(line, column));
+				i = string.end + 1;
+
+				column += this.columOffset(string);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingPunctuation = (): boolean => {
+			const punctuation: Token | null = this.matchPunctuationAt(i, Rules.DOM_PUNCTUATIONS);
+			if (punctuation) {
+				flushTextBuffer();
+				tokens.push(punctuation.withLineAndColumn(line, column));
+				i = punctuation.end + 1;
+
+				column += this.columOffset(punctuation);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingIdentifier = (): boolean => {
+			const identifier: Token | null = this.matchIdentifierAt(i);
+			if (identifier) {
+				flushTextBuffer();
+				tokens.push(identifier.withLineAndColumn(line, column));
+				i = identifier.end;
+
+				column += this.columOffset(identifier);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingNumber = (): boolean => {
+			const number: Token | null = this.matchNumberAt(i);
+			if (number) {
+				flushTextBuffer();
+
+				tokens.push(number.withLineAndColumn(line, column));
+				i = number.end;
+
+				column += this.columOffset(number);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingOperator = (): boolean => {
+			const operator: Token | null = this.matchOperatorAt(i, Rules.DOM_OPERATORS);
+			if (operator) {
+				flushTextBuffer();
+
+				tokens.push(operator.withLineAndColumn(line, column));
+				i = operator.end + 1;
+
+				column += this.columOffset(operator);
+				return true;
+			}
+			return false;
+		}
+
+		const flushTextBuffer = (): void => {
 			if (textBuffer.length > 0) {
 				tokens.push(
 					new Token(
@@ -270,11 +337,13 @@ export class Tokenizer {
 			}
 		};
 
+
+		let ignoreWhitespace = false;
 		while (i < this.source.length) {
 			const char: string = this.source.charAt(i);
 
 			if (char === GRAMMAR.SEMICOLON) {
-				flushText();
+				flushTextBuffer();
 
 				tokens.push(new Token(TokenType.PUNCTUATION, char, i, i, this.source)
 					            .withLineAndColumn(line, column));
@@ -282,27 +351,25 @@ export class Tokenizer {
 				i++;
 				column++;
 				break;
+			} else if (char === GRAMMAR.BRACE_OPEN) {
+				ignoreWhitespace = true;
+			} else if (char === GRAMMAR.BRACE_OPEN) {
+				ignoreWhitespace = false;
 			}
 
-			const operator: Token | null = this.matchOperatorAt(i, Rules.DOM_OPERATORS);
-			if (operator) {
-				flushText();
-
-				tokens.push(operator.withLineAndColumn(line, column));
-
-				i = operator.end + 1;
-				column += this.columOffset(operator);
-				continue;
+			if (ignoreWhitespace) {
+				if (this.matchWhitespaceAt(i)) {
+					i++;
+					continue;
+				}
 			}
 
-			const identifier: Token | null = this.matchIdentifierAt(i);
-			if (identifier) {
-				flushText();
-
-				tokens.push(identifier.withLineAndColumn(line, column));
-
-				i = identifier.end;
-				column += this.columOffset(identifier);
+			if (ifIsConsumingPunctuation()
+				|| ifIsConsumingString()
+				|| ifIsConsumingNumber()
+				|| ifIsConsumingIdentifier()
+				|| ifIsConsumingOperator()
+			) {
 				continue;
 			}
 
@@ -318,7 +385,7 @@ export class Tokenizer {
 			i++;
 		}
 
-		flushText();
+		flushTextBuffer();
 
 		return {tokens, newIndex: i, line, column};
 	}
