@@ -49,7 +49,7 @@ export class Linker {
 					if (!className) {
 						throwDependencyError(`Invalid import node ${node.type}.`, node?.span);
 					}
-					const nativeClass: NativeClass | null = nativeClasses.classes.get(className) || null;
+					const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
 					if (!nativeClass) {
 						throwDependencyError(`Unknown native class ${className}`, node?.span);
 					}

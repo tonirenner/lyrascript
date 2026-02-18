@@ -130,7 +130,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 }
 
 export function registerNativeClasses(objectRegistry: ObjectRegistry, environment: Environment): void {
-	for (const nativeClass of nativeClasses.classes.values()) {
+	for (const nativeClass of nativeClasses.registry.values()) {
 		if (nativeClass.isAutoloadAble) {
 			const classDef = nativeClass.getClassDefinition();
 			if (classDef === null) {
