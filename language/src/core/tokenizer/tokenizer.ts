@@ -353,7 +353,7 @@ export class Tokenizer {
 				break;
 			} else if (char === GRAMMAR.BRACE_OPEN) {
 				ignoreWhitespace = true;
-			} else if (char === GRAMMAR.BRACE_OPEN) {
+			} else if (char === GRAMMAR.BRACE_CLOSE) {
 				ignoreWhitespace = false;
 			}
 
