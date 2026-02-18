@@ -6,13 +6,17 @@ class Component {
     }
 }
 
+
 class App
 {
+    private count: State<number> = new State<number>(0);
+
     public render(): VNode {
+
         return vdom <span>
-                            <Component></Component>
-                            <b onClick={ -> System.alert("Hello World")}>Hello World</b> by LyraScript!
+                        <Component></Component>
+                        <b onClick={e -> this.count.set(this.count.get() + 1) }> Hello World</b>
+                        by LyraScript!
                     </span>;
     }
-
 }

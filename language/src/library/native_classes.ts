@@ -5,6 +5,7 @@ import {Assert} from "./classes/assert";
 import {NumberType} from "./classes/number";
 import {ArrayIteratorType, ArrayType} from "./classes/array";
 import {StateType} from "./classes/state";
+import {EventType} from "./classes/event.ts";
 
 export class NativeClasses {
 	registry: Map<string, NativeClass> = new Map();
@@ -17,5 +18,6 @@ export class NativeClasses {
 		this.registry.set(ArrayType.CLASS_NAME, new ArrayType());
 		this.registry.set(ArrayIteratorType.CLASS_NAME, new ArrayIteratorType())
 		this.registry.set(StateType.CLASS_NAME, new StateType());
+		this.registry.set(EventType.CLASS_NAME, new EventType())
 	}
 }

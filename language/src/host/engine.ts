@@ -1,6 +1,6 @@
 import {LyraScriptProgram} from "../core/program";
 import {fetchSource} from "../core/parser/parser_source";
-import {Environment, Instance} from "../core/interpreter/interpreter_objects";
+import {ClassDefinition, Environment, Instance} from "../core/interpreter/interpreter_objects";
 import {ObjectRegistry} from "../core/interpreter/interpreter_registry";
 import {callInstanceMethod} from "../core/interpreter/interpreter_runtime";
 
@@ -23,7 +23,8 @@ export class WebLyraScript implements Engine {
 	}
 
 	createInstance(className: string): Instance {
-		return new Instance(this.objectRegistry.classes.get(className));
+		const classDef: ClassDefinition = this.objectRegistry.classes.get(className);
+		return classDef.constructEmptyInstance();
 	}
 
 	callInstanceMethod(methodName: string, args: any[]): any {
@@ -45,8 +46,6 @@ export class WebLyraScript implements Engine {
 		           .then(() => {
 			           this.objectRegistry = this.program.getGlobalObjectRegistry();
 			           this.environment = this.program.getGlobalEnvironment();
-		           })
-		           .then(() => {
 			           this.rootInstance = this.createInstance(className);
 		           });
 	}

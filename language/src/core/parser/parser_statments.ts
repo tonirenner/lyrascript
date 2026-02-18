@@ -792,38 +792,17 @@ export function parseVDomExpression(parser: Parser): ASTVDomNode {
 	return parseVDomElement(parser);
 }
 
-
-export function parseDomeWhitespace(parser: Parser): ASTVDomTextNode | null {
-	if (parser.consumeIfText()) {
-		parser.rewind();
-		const token = parser.next();
-		const node = new ASTVDomTextNode(token.value);
-		node.span = spanFrom(token, token);
-		return node;
-	}
-
-	return null;
-}
-
 export function parseVDomElement(parser: Parser): ASTVDomNode {
-	const children: ASTNode[] = [];
-
-	const textNode: ASTVDomTextNode | null = parseDomeWhitespace(parser);
-	if (textNode) {
-		children.push(textNode);
-	}
+	parser.consumeIfText();
 
 	const startToken: Token = parser.expectOperator(GRAMMAR.LESS_THAN);
 	const tagToken: Token = parser.expectIdentifier();
 	const tag: string = tagToken.value;
 
+	parser.consumeIfText();
+
 	const props = new Map<string, ASTNode>();
 	while (!parser.peekIs(GRAMMAR.GREATER_THAN) && !parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
-		const textNode: ASTVDomTextNode | null = parseDomeWhitespace(parser);
-		if (textNode) {
-			children.push(textNode);
-		}
-
 		const nameToken: Token = parser.expectIdentifier();
 		parser.expectOperator(GRAMMAR.ASSIGN);
 
@@ -839,12 +818,16 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 
 	parser.expectOperator(GRAMMAR.GREATER_THAN);
 
+	const children: ASTNode[] = [];
 	while (!parser.peekIs(GRAMMAR.XML_OPEN_CLOSE_TAG)) {
-		if (parser.peekIs(GRAMMAR.LESS_THAN)) {
+
+		if (parser.peek().type === TokenType.OPERATOR) {
 			children.push(parseVDomElement(parser));
-		} else {
-			children.push(parseVDomText(parser));
+			continue;
 		}
+
+		children.push(parseVDomText(parser));
+		
 	}
 
 	parser.expectOperator(GRAMMAR.XML_OPEN_CLOSE_TAG);

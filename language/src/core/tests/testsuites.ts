@@ -1,6 +1,6 @@
 import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "../ast";
-import {callInstanceMethod, createInstanceFromNode, evalAnnotationProperties} from "../interpreter/interpreter_runtime";
-import type {Environment} from "../interpreter/interpreter_objects";
+import {callInstanceMethod, evalAnnotationProperties} from "../interpreter/interpreter_runtime";
+import {ClassDefinition, type Environment, Instance} from "../interpreter/interpreter_objects";
 import type {ObjectRegistry} from "../interpreter/interpreter_registry";
 
 export class TestSuites {
@@ -34,10 +34,11 @@ export class TestSuites {
 	}
 
 	private runTestCase(classNode: ASTClassNode, methodNode: ASTMethodNode, annotation: ASTAnnotationNode): void {
-		const instance = createInstanceFromNode(classNode);
-		const properties = evalAnnotationProperties(annotation);
-
-		const title = properties.title ?? `${classNode.name}.${methodNode.name}`;
+		const instance: Instance = ClassDefinition.fromAST(classNode)
+		                                          .constructEmptyInstance();
+		
+		const properties: { [index: string]: any } = evalAnnotationProperties(annotation);
+		const title: string = properties.title ?? `${classNode.name}.${methodNode.name}`;
 
 		let errorMessage = null;
 

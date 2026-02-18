@@ -16,13 +16,13 @@ export class NativeClass {
 		this.nativeClassSource = source;
 	}
 
-	getClassDefinition(): ClassDefinition | null {
+	getClassDefinition(): ClassDefinition {
 		const ast = new Parser(this.nativeClassSource).parse();
 
 		for (const node of ast.children) {
 			if (node.type === ASTNodeType.CLASS) {
 				if (node instanceof ASTClassNode && node.name === this.name) {
-					const classDef = ClassDefinition.constructFromAST(node);
+					const classDef = ClassDefinition.fromAST(node);
 
 					classDef.nativeInstance = this.nativeInstance;
 

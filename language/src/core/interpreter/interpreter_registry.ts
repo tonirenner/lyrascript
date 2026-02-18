@@ -7,7 +7,7 @@ export class ClassRegistry {
 	map: Map<string, ClassDefinition> = new Map();
 
 	register(node: ASTClassNode): void {
-		this.set(node.name, ClassDefinition.constructFromAST(node));
+		this.set(node.name, ClassDefinition.fromAST(node));
 	}
 
 	all(): IterableIterator<ClassDefinition> {
@@ -19,7 +19,7 @@ export class ClassRegistry {
 	}
 
 	get(name: string): ClassDefinition {
-		const classDef = this.map.get(name);
+		const classDef: ClassDefinition | null = this.map.get(name) || null;
 		if (!classDef) {
 			throwRuntimeError(`Class ${name} not found.`);
 		}

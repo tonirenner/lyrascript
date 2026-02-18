@@ -1,7 +1,7 @@
 import {DependencyLoader} from "./dependencies";
 import {ASTImportNode, ASTNode} from "../ast";
 import {NativeClasses} from "../../library/native_classes";
-import {Environment, InterfaceDefinition} from "../interpreter/interpreter_objects";
+import {ClassDefinition, Environment, InterfaceDefinition} from "../interpreter/interpreter_objects";
 import {ObjectRegistry} from "../interpreter/interpreter_registry";
 import type {AbstractFileLoader} from "../loaders";
 import type {NativeClass} from "../../library/native_class";
@@ -53,10 +53,7 @@ export class Linker {
 					if (!nativeClass) {
 						throwDependencyError(`Unknown native class ${className}`, node?.span);
 					}
-					const classDef = nativeClass.getClassDefinition();
-					if (!classDef) {
-						throwDependencyError(`Class definition for native class ${className} not found.`, node?.span);
-					}
+					const classDef: ClassDefinition = nativeClass.getClassDefinition();
 					if (this.objectRegistry.classes.has(className)) {
 						throwDependencyError(`Could not resolve class ${className}.`, node?.span);
 					}

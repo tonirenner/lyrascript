@@ -53,31 +53,27 @@ export class AbstractFunctionCall {
 		this.functionEnv = functionEnv;
 	}
 
-	getASTCallNode(): ASTCallNode | null {
-		if (this.node instanceof ASTCallNode) {
-			return this.node;
+	getASTCallNode(): ASTCallNode {
+		if (!(this.node instanceof ASTCallNode)) {
+			throwRuntimeError(`Invalid native function call ${this.node.type}.`, this.node.span);
 		}
-		throwRuntimeError(`Invalid native function call ${this.node.type}.`, this.node.span);
+		return this.node;
 	}
 
 	/**
 	 * @return {ASTLambdaNode}
 	 */
-	getASTLambdaNode(): ASTLambdaNode | null {
-		if (this.node instanceof ASTLambdaNode) {
-			return this.node;
+	getASTLambdaNode(): ASTLambdaNode {
+		if (!(this.node instanceof ASTLambdaNode)) {
+			throwRuntimeError(`Invalid lambda call ${this.node.type}.`, this.node.span);
 		}
-		throwRuntimeError(`Invalid lambda call ${this.node.type}.`, this.node.span);
+		return this.node;
 	}
 }
 
 export class LambdaFunctionCall extends AbstractFunctionCall {
 	evalCall(thisValue: Instance | null, ...args: any[]): any {
-		const node = this.getASTLambdaNode();
-		if (node === null) {
-			throwRuntimeError("Invalid function call.");
-		}
-
+		const node: ASTLambdaNode = this.getASTLambdaNode();
 		const closureEnv = new Environment(this.functionEnv);
 
 		for (let i = 0; i < node.parameters.length; i++) {
@@ -94,10 +90,7 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 
 export class NativeFunctionCall extends AbstractFunctionCall {
 	evalCall(thisValue: Instance | null, ...args: any[]): any {
-		const callNode: ASTCallNode | null = this.getASTCallNode();
-		if (callNode === null) {
-			throwRuntimeError('Invalid function call.');
-		}
+		const callNode: ASTCallNode = this.getASTCallNode();
 
 		let result: any = this.resolveCall(thisValue)[callNode.callee.name](...args);
 		if (result instanceof LyraNativeObject) {
@@ -132,10 +125,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 export function registerNativeClasses(objectRegistry: ObjectRegistry, environment: Environment): void {
 	for (const nativeClass of nativeClasses.registry.values()) {
 		if (nativeClass.isAutoloadAble) {
-			const classDef = nativeClass.getClassDefinition();
-			if (classDef === null) {
-				throwRuntimeError("Class definition is null.");
-			}
+			const classDef: ClassDefinition = nativeClass.getClassDefinition();
 			objectRegistry.classes.set(nativeClass.name, classDef);
 			environment.define(nativeClass.name, classDef);
 		}
@@ -223,85 +213,29 @@ export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environm
 	}
 }
 
-export function createInstanceFromNode(node: ASTClassNode): Instance {
-	return new Instance(ClassDefinition.constructFromAST(node));
-}
-
-export function registerInstance(node: ASTClassNode, objectRegistry: ObjectRegistry): Instance {
+export function constructEmptyInstance(node: ASTClassNode, objectRegistry: ObjectRegistry): Instance {
 	let classDef: ClassDefinition;
 
 	if (objectRegistry.classes.has(node.name)) {
 		classDef = objectRegistry.classes.get(node.name);
 	} else {
-		classDef = ClassDefinition.constructFromAST(node);
-
+		classDef = ClassDefinition.fromAST(node);
 		objectRegistry.classes.set(node.name, classDef);
 	}
 
-	return new Instance(classDef);
+	return classDef.constructEmptyInstance();
 }
 
-export function evalNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	const instance: Instance = new Instance(classDef);
-	const constructor: ClassMethodDefinition | null = classDef.constructorMethod;
-	const constructorEnv: Environment = new Environment(environment);
-
-	const constructorArgs: any[] = evalMethodArguments(
-		expr,
-		constructor
-			? constructor.parameters
-			: [],
-		objectRegistry,
-		environment,
-		instance
-	);
-
-	constructorEnv.define(GRAMMAR.THIS, instance);
-
-	if (classDef.nativeInstance === null) {
-		throwRuntimeError('Class has no native instance');
-	}
-
-	const nativeInstance = new classDef.nativeInstance(...constructorArgs.map(fromLyraValue));
-	if (nativeInstance instanceof LyraNativeObject) {
-		instance.__nativeInstance = nativeInstance;
-	}
-
-	return instance;
+export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	return classDef.constructNativeInstance(expr, objectRegistry, environment);
 }
 
-export function evalInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	const instance = new Instance(classDef);
-
-	if (classDef.constructorMethod) {
-		const constructor = classDef.constructorMethod;
-		const constructorEnv = new Environment(environment);
-
-		const constructorArgs = evalMethodArguments(expr,
-		                                            constructor.parameters,
-		                                            objectRegistry,
-		                                            environment,
-		                                            instance);
-
-		constructorEnv.define(GRAMMAR.THIS, instance);
-
-		for (let i = 0; i < constructorArgs.length; i++) {
-			const parameter: ASTParameterNode | null = constructor.parameters[i] || null;
-			if (parameter) {
-				constructorEnv.define(parameter.name, constructorArgs[i]);
-			}
-		}
-
-		for (const child of constructor.children) {
-			evalNode(child, objectRegistry, constructorEnv, instance);
-		}
-	}
-
-	return instance;
+export function constructInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	return classDef.constructInstance(expr, objectRegistry, environment);
 }
 
 export function evalClass(node: ASTClassNode, objectRegistry: ObjectRegistry, environment: Environment): void {
-	const instance = registerInstance(node, objectRegistry);
+	const instance = constructEmptyInstance(node, objectRegistry);
 	let rawValue;
 	for (const field of instance.__classDef.instanceFields) {
 		rawValue = field.initializer
@@ -323,13 +257,14 @@ export function evalClass(node: ASTClassNode, objectRegistry: ObjectRegistry, en
 export function evalNew(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
 	if (!objectRegistry.classes.has(expr.name)) {
 		throwRuntimeError(`Unknown class ${expr.name}.`, expr.span);
-
 	}
+
 	const classDef = objectRegistry.classes.get(expr.name);
 	if (classDef.nativeInstance) {
-		return evalNativeInstance(expr, classDef, objectRegistry, environment);
+		return constructNativeInstance(expr, classDef, objectRegistry, environment);
 	}
-	return evalInstance(expr, classDef, objectRegistry, environment);
+
+	return constructInstance(expr, classDef, objectRegistry, environment);
 }
 
 export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
@@ -474,8 +409,7 @@ export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, en
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get('Array');
-	const instance = new Instance(classDef);
-
+	const instance: Instance = classDef.constructEmptyInstance();
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(values));
 
 	return instance;
@@ -539,7 +473,7 @@ export function evalAssign(expr: ASTAssignmentNode, objectRegistry: ObjectRegist
 }
 
 export function evalMember(expr: ASTMemberNode, environment: Environment): any {
-	const object = environment.get(expr.object.name);
+	const object: any = environment.get(expr.object.name);
 
 	if (expr.property in object.__instanceFields) {
 		return object.__instanceFields[expr.property];
@@ -548,9 +482,6 @@ export function evalMember(expr: ASTMemberNode, environment: Environment): any {
 	if (expr.property in object.__staticFields) {
 		return object.__staticFields[expr.property];
 	}
-
-	throwRuntimeError(`Unknown member ${expr.property}`, expr.span);
-
 }
 
 export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
@@ -777,7 +708,7 @@ export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegis
 	throwRuntimeError(`Unknown function ${moduleName}.${methodName}`, node.span);
 }
 
-function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: ASTParameterNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any[] {
+export function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: ASTParameterNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any[] {
 	const args = [];
 
 	for (let i = 0; i < parameters.length; i++) {
@@ -927,11 +858,9 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 
 export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
 	try {
-		const classDef = objectRegistry.classes.get(node.tag);
+		const classDef: ClassDefinition = objectRegistry.classes.get(node.tag);
 
-		if (classDef) {
-			return evalDomComponentNode(node, classDef, environment, objectRegistry);
-		}
+		return evalDomComponentNode(node, classDef, environment, objectRegistry);
 	} catch (e) {
 	}
 
@@ -964,7 +893,7 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 
 export function evalDomComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
 
-	const instance = new Instance(classDef);
+	const instance: Instance = classDef.constructEmptyInstance();
 	const methodNode: ASTMethodNode = classDef.findMethod('render');
 
 	for (const [key, valueNode] of node.props.entries()) {
@@ -1091,13 +1020,8 @@ export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span
 }
 
 export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {
-	const classDef = objectRegistry.classes.get(className);
-
-	if (!classDef) {
-		throwRuntimeError(`Autoboxing failed: ${className} not defined`, span);
-	}
-
-	const instance = new Instance(classDef);
+	const classDef: ClassDefinition = objectRegistry.classes.get(className);
+	const instance: Instance = classDef.constructEmptyInstance();
 
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(primitiveValue));
 

@@ -4,11 +4,15 @@ import {
 	ASTFieldNode,
 	ASTInterfaceNode,
 	ASTMethodNode,
+	ASTNewNode,
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
 } from "../ast";
 import {throwRuntimeError} from "../errors";
+import type {ObjectRegistry} from "./interpreter_registry.ts";
+import {evalMethodArguments, evalNode} from "./interpreter_runtime.ts";
+import {fromLyraValue, LyraNativeObject} from "./interpreter_conversion.ts";
 
 export class Environment {
 	parent: Environment | null;
@@ -167,7 +171,7 @@ export class ClassDefinition {
 		this.isOpen = classNode.modifiers.open;
 	}
 
-	static constructFromAST(node: ASTClassNode): ClassDefinition {
+	static fromAST(node: ASTClassNode): ClassDefinition {
 		const instanceFields: ClassFieldDefinition[] = [];
 		const instanceMethods: { [index: string]: ClassMethodDefinition } = {};
 		const staticFields: ClassFieldDefinition[] = [];
@@ -232,6 +236,73 @@ export class ClassDefinition {
 		}
 
 		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
+	}
+
+	constructEmptyInstance(): Instance {
+		return new Instance(this);
+	}
+
+	constructInstance(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+		const instance = new Instance(this);
+
+		if (!this.constructorMethod) {
+			return instance;
+		}
+
+		const constructor = this.constructorMethod;
+		const constructorEnv = new Environment(environment);
+
+		const constructorArgs = evalMethodArguments(
+			expr,
+			constructor.parameters,
+			objectRegistry,
+			environment,
+			instance
+		);
+
+		constructorEnv.define(GRAMMAR.THIS, instance);
+
+		for (let i = 0; i < constructorArgs.length; i++) {
+			const parameter = constructor.parameters[i];
+			if (parameter) {
+				constructorEnv.define(parameter.name, constructorArgs[i]);
+			}
+		}
+
+		for (const child of constructor.children) {
+			evalNode(child, objectRegistry, constructorEnv, instance);
+		}
+
+		return instance;
+	}
+
+	constructNativeInstance(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+		const instance: Instance = this.constructEmptyInstance();
+		const constructor: ClassMethodDefinition | null = this.constructorMethod;
+		const constructorEnv: Environment = new Environment(environment);
+
+		const constructorArgs: any[] = evalMethodArguments(
+			expr,
+			constructor
+				? constructor.parameters
+				: [],
+			objectRegistry,
+			environment,
+			instance
+		);
+
+		constructorEnv.define(GRAMMAR.THIS, instance);
+
+		if (this.nativeInstance === null) {
+			throwRuntimeError('Class has no native instance');
+		}
+
+		const nativeInstance = new this.nativeInstance(...constructorArgs.map(fromLyraValue));
+		if (nativeInstance instanceof LyraNativeObject) {
+			instance.__nativeInstance = nativeInstance;
+		}
+
+		return instance;
 	}
 }
 

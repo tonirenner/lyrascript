@@ -5,13 +5,19 @@ import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {type EventPipeline} from "../core/event/pipeline";
 import Events from "./event.ts";
 import Event from "./event.ts";
+import {GRAMMAR} from "../core/grammar.ts";
+import {EventType} from "../library/classes/event.ts";
+import {ClassDefinition, Instance} from "../core/interpreter/interpreter_objects.ts";
 
 export interface ElementCreator {
 	createElement(vNode: VNode): any;
 }
 
 export class HTMLElementCreator implements ElementCreator {
+	private readonly lyraEventClassDef: ClassDefinition;
+
 	constructor(private readonly evenPipeline: EventPipeline) {
+		this.lyraEventClassDef = new EventType().getClassDefinition();
 	}
 
 	createElement(vNode: VNode): Node {
@@ -21,9 +27,7 @@ export class HTMLElementCreator implements ElementCreator {
 
 		function flushTextBuffer(): void {
 			if (textBuffer.length > 0) {
-				const textNode: Text = document.createTextNode('');
-				textNode.textContent = textBuffer.join('');
-				element.appendChild(textNode);
+				element.appendChild(document.createTextNode(textBuffer.join('')));
 				textBuffer = [];
 			}
 		}
@@ -46,6 +50,8 @@ export class HTMLElementCreator implements ElementCreator {
 			} else {
 				element.appendChild(this.createElement(child) as HTMLElement);
 			}
+
+			flushTextBuffer();
 		}
 
 		flushTextBuffer();
@@ -62,7 +68,25 @@ export class HTMLElementCreator implements ElementCreator {
 
 	private wrapCallback(fn: LambdaFunctionCall) {
 		return (event: Event): void => {
-			this.evenPipeline.emit(Events.DOM_EVENT, {fn, event});
+			this.evenPipeline.emit(
+				Events.DOM_EVENT,
+				{
+					invoke: (): any => {
+						fn.evalCall(
+							fn.functionEnv.get(GRAMMAR.THIS) as Instance,
+							this.createLyraEventInstance(event)
+						);
+					},
+					event
+				}
+			);
 		};
+	}
+
+	private createLyraEventInstance(event: Event): Instance {
+		const eventInstance = this.lyraEventClassDef.constructEmptyInstance();
+		eventInstance.__nativeInstance = new this.lyraEventClassDef.nativeInstance(event);
+
+		return eventInstance;
 	}
 }

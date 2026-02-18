@@ -3,7 +3,6 @@ import {HTMLElementCreator} from "./dom";
 import type {VNode} from "../core/vdom/vdom";
 import {EventPipeline} from "../core/event/pipeline";
 import Events from "./event";
-import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime.ts";
 
 export abstract class AbstractApplicationRuntime {
 	protected constructor(
@@ -83,10 +82,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	}
 
 	private startListeningToDomEvents(): void {
-		this.eventPipeline.on(Events.DOM_EVENT, ({fn, event}): void => {
-			if (fn instanceof LambdaFunctionCall) {
-				fn.evalCall(null, event);
-			}
+		this.eventPipeline.on(Events.DOM_EVENT, ({invoke}: any): void => {
+			invoke();
 		});
 	}
 }
