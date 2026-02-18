@@ -1,6 +1,9 @@
 import {type Engine, WebLyraScript} from "./engine";
 import {HTMLElementCreator} from "./dom";
 import type {VNode} from "../core/vdom/vdom";
+import {EventPipeline} from "../core/event/pipeline";
+import Events from "./event";
+import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime.ts";
 
 export abstract class AbstractApplicationRuntime {
 	protected constructor(
@@ -19,13 +22,19 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	private isRendering: boolean = false;
 	private renderFunction: (() => VNode) | null = null;
 
-	constructor(private readonly mountPoint: HTMLElement,
-	            private readonly elementCreator: HTMLElementCreator = new HTMLElementCreator()) {
-		super(new WebLyraScript());
+	constructor(
+		private readonly mountPoint: HTMLElement,
+		private readonly eventPipeline: EventPipeline = new EventPipeline(),
+		private readonly elementCreator: HTMLElementCreator = new HTMLElementCreator(eventPipeline),
+		isDebug: boolean = false
+	) {
+		super(new WebLyraScript(isDebug));
 	}
 
 	async start(url: string, className = 'App'): Promise<void> {
 		await this.engine.executeEntryFile(url, className);
+
+		this.startListeningToDomEvents();
 
 		this.renderFunction = () => this.callRender();
 
@@ -56,7 +65,6 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		const nextVNode: VNode = this.renderFunction();
 
-
 		this.patch(this.currentVNode, nextVNode);
 
 		this.currentVNode = nextVNode;
@@ -72,5 +80,13 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		this.mountPoint.innerHTML = '';
 		const element: Node = this.elementCreator.createElement(newVNode);
 		this.mountPoint.appendChild(element);
+	}
+
+	private startListeningToDomEvents(): void {
+		this.eventPipeline.on(Events.DOM_EVENT, ({fn, event}): void => {
+			if (fn instanceof LambdaFunctionCall) {
+				fn.evalCall(null, event);
+			}
+		});
 	}
 }

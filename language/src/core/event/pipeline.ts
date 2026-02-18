@@ -17,6 +17,6 @@ export class EventPipeline {
 
 	emit<T = any>(event: string, payload: T): void {
 		this.listeners.get(event)
-		    ?.forEach(handler => handler(payload));
+		    ?.forEach((handler: EventHandler): void => handler(payload));
 	}
 }

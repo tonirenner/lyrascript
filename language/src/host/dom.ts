@@ -2,12 +2,18 @@
 
 import type {VNode} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
+import {type EventPipeline} from "../core/event/pipeline";
+import Events from "./event.ts";
+import Event from "./event.ts";
 
 export interface ElementCreator {
 	createElement(vNode: VNode): any;
 }
 
 export class HTMLElementCreator implements ElementCreator {
+	constructor(private readonly evenPipeline: EventPipeline) {
+	}
+
 	createElement(vNode: VNode): Node {
 		const element: HTMLElement = document.createElement(vNode.tag) as HTMLElement;
 
@@ -22,13 +28,16 @@ export class HTMLElementCreator implements ElementCreator {
 			}
 		}
 
-		for (const [key, fn] of Object.entries(vNode.props)) {
-			if (key.startsWith('on') && fn instanceof LambdaFunctionCall) {
-				const event: string = key.slice(2)
-				                         .toLowerCase();
-
-				element.addEventListener(event, this.wrapCallback(fn) as EventListener);
+		for (const [property, fn] of Object.entries(vNode.props)) {
+			if (!property.startsWith('on')) {
+				continue;
 			}
+
+			if (!(fn instanceof LambdaFunctionCall)) {
+				continue;
+			}
+
+			this.attachEventListener(element, property, fn);
 		}
 
 		for (const child of vNode.children) {
@@ -44,9 +53,16 @@ export class HTMLElementCreator implements ElementCreator {
 		return element;
 	}
 
+	private attachEventListener(element: HTMLElement, property: string, fn: LambdaFunctionCall): void {
+		const event: string = property.slice(2)
+		                              .toLowerCase();
+
+		element.addEventListener(event, this.wrapCallback(fn));
+	}
+
 	private wrapCallback(fn: LambdaFunctionCall) {
-		return (): void => {
-			fn.evalCall(null);
-		}
+		return (event: Event): void => {
+			this.evenPipeline.emit(Events.DOM_EVENT, {fn, event});
+		};
 	}
 }
