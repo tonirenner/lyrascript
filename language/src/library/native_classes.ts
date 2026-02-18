@@ -4,7 +4,7 @@ import {System} from "./classes/system";
 import {Assert} from "./classes/assert";
 import {NumberType} from "./classes/number";
 import {ArrayIteratorType, ArrayType} from "./classes/array";
-import {StateType} from "./classes/state.ts";
+import {StateType} from "./classes/state";
 
 export class NativeClasses {
 	registry: Map<string, NativeClass> = new Map();

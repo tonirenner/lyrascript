@@ -1,6 +1,6 @@
 import type {EventPipeline} from "./pipeline";
-import {toLyraValue} from "../interpreter/interpreter_conversion.ts";
-import {LambdaFunctionCall} from "../interpreter/interpreter_runtime.ts";
+import {toLyraValue} from "../interpreter/interpreter_conversion";
+import {LambdaFunctionCall} from "../interpreter/interpreter_runtime";
 
 
 export class State<T = any> {

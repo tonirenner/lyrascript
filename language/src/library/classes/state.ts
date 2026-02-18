@@ -1,8 +1,8 @@
 import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion.ts";
-import {Source} from "../../core/parser/parser_source.ts";
-import {State} from "../../core/event/state.ts";
-import type {LambdaFunctionCall} from "../../core/interpreter/interpreter_runtime.ts";
+import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion";
+import {Source} from "../../core/parser/parser_source";
+import {State} from "../../core/event/state";
+import type {LambdaFunctionCall} from "../../core/interpreter/interpreter_runtime";
 
 const CLASS_NAME = 'State';
 

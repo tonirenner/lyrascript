@@ -2,7 +2,7 @@ import {Source} from "./parser/parser_source";
 import {Environment} from "./interpreter/interpreter_objects";
 import {ObjectRegistry} from "./interpreter/interpreter_registry";
 import {TypeChecker} from "./types/typechecker";
-import {Linker} from "./linker/linker.ts";
+import {Linker} from "./linker/linker";
 import {TestSuites} from "./tests/testsuites";
 import {Interpreter} from "./interpreter/interpreter";
 import {FetchFileLoader} from "./loaders";

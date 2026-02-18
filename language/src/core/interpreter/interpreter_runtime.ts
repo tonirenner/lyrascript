@@ -946,26 +946,14 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 	}
 
 	const children: Array<VNode | string> = [];
-	let textBuffer: string[] = [];
-
-	function flushTextBuffer(): void {
-		if (textBuffer.length > 0) {
-			children.push(textBuffer.join(' '));
-			textBuffer = [];
-		}
-	}
 
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
-			textBuffer.push(child.value);
+			children.push(child.value);
 		} else {
 			children.push(evalExpression(child, objectRegistry, environment, thisValue));
 		}
-
-		flushTextBuffer();
 	}
-
-	flushTextBuffer();
 
 	return {
 		tag: node.tag,

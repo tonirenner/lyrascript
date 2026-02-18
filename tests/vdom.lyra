@@ -11,7 +11,7 @@ class App
     public render(): VNode {
         return vdom <span>
                             <Component></Component>
-                            <b>Hello World</b> by LyraScript!
+                            <b onClick={ -> System.alert("Hello World")}>Hello World</b> by LyraScript!
                     </span>;
     }
 

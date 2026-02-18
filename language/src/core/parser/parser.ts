@@ -96,7 +96,7 @@ export class Parser {
 	consumeIf(tokenType: string, keyword: string | null = null): boolean {
 		const token = this.peek();
 
-		if (token.type === tokenType && (keyword && token.value === keyword)) {
+		if (token.type === tokenType && (keyword && token.value.trim() === keyword)) {
 			this.next();
 			return true;
 		}
@@ -118,6 +118,16 @@ export class Parser {
 
 	consumeIfKeyword(keyword: string): boolean {
 		return this.consumeIf(TokenType.KEYWORD, keyword);
+	}
+
+	consumeIfText(): boolean {
+		if (this.peek().type === TokenType.TEXT && this.peekIs('')) {
+			this.next();
+
+			return true;
+		}
+
+		return false;
 	}
 
 	peek(): Token {
