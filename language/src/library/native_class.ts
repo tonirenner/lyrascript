@@ -32,7 +32,5 @@ export class NativeClass {
 		}
 
 		throwRuntimeError(`Class ${this.name} not found.`, ast.span);
-
-		return null; // never reached
 	}
 }
