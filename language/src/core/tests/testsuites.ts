@@ -35,8 +35,11 @@ export class TestSuites {
 
 	private runTestCase(classNode: ASTClassNode, methodNode: ASTMethodNode, annotation: ASTAnnotationNode): void {
 		const instance: Instance = ClassDefinition.fromAST(classNode)
-		                                          .constructEmptyInstance();
-		
+		                                          .constructNewInstanceWithoutArguments(
+			                                          this.objectRegistry,
+			                                          this.environment
+		                                          );
+
 		const properties: { [index: string]: any } = evalAnnotationProperties(annotation);
 		const title: string = properties.title ?? `${classNode.name}.${methodNode.name}`;
 
