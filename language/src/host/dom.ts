@@ -3,11 +3,10 @@
 import type {VNode} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {type EventPipeline} from "../core/event/pipeline";
-import Events from "./event.ts";
-import Event from "./event.ts";
-import {GRAMMAR} from "../core/grammar.ts";
-import {EventType} from "../library/classes/event.ts";
-import {ClassDefinition, Instance} from "../core/interpreter/interpreter_objects.ts";
+import Events from "./event";
+import {GRAMMAR} from "../core/grammar";
+import {EventType} from "../library/classes/event";
+import {ClassDefinition, Instance} from "../core/interpreter/interpreter_objects";
 
 export interface ElementCreator {
 	createElement(vNode: VNode): any;

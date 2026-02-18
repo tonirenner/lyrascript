@@ -5,7 +5,7 @@ import {Assert} from "./classes/assert";
 import {NumberType} from "./classes/number";
 import {ArrayIteratorType, ArrayType} from "./classes/array";
 import {StateType} from "./classes/state";
-import {EventType} from "./classes/event.ts";
+import {EventType} from "./classes/event";
 
 export class NativeClasses {
 	registry: Map<string, NativeClass> = new Map();

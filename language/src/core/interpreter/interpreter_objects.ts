@@ -10,9 +10,9 @@ import {
 	ASTTypeNode
 } from "../ast";
 import {throwRuntimeError} from "../errors";
-import type {ObjectRegistry} from "./interpreter_registry.ts";
-import {evalExpression, evalMethodArguments, evalNode} from "./interpreter_runtime.ts";
-import {castValue, fromLyraValue, LyraNativeObject} from "./interpreter_conversion.ts";
+import type {ObjectRegistry} from "./interpreter_registry";
+import {evalExpression, evalMethodArguments, evalNode} from "./interpreter_runtime";
+import {castValue, fromLyraValue, LyraNativeObject} from "./interpreter_conversion";
 
 export class Environment {
 	parent: Environment | null;
