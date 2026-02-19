@@ -875,7 +875,8 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 	return {
 		tag: node.tag,
 		props: props,
-		children: children
+		children: children,
+		dom: null
 	};
 }
 
