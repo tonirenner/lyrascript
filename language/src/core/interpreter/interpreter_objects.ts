@@ -246,6 +246,12 @@ export class ClassDefinition {
 		return new Instance(this);
 	}
 
+	constructNativeInstance(args: any[] = []): Instance {
+		const instance: Instance = this.constructEmptyInstance();
+		instance.__nativeInstance = new this.nativeInstance(...args);
+		return instance;
+	}
+
 	constructNewInstanceWithoutArguments(objectRegistry: ObjectRegistry, environment: Environment): Instance {
 		return this.constructNewInstance([], objectRegistry, environment);
 	}
