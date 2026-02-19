@@ -9,8 +9,13 @@
 <script type="module">
 	import {WebApplicationRuntime} from '../dist/language.js';
 
-	new WebApplicationRuntime(document.getElementById('app'), true)
-		.start('/lyrascript/tests/vdom.lyra');
+	const runtime = new WebApplicationRuntime(document.getElementById('app'), true);
+	runtime.start('/lyrascript/tests/vdom.lyra')
+	       .then(() => {
+
+		       // setInterval(() => runtime.requestRender(), 1000)
+
+	       });
 </script>
 </body>
 </html>

@@ -41,7 +41,7 @@ This layer has no DOM knowledge and can run in different environments.
 ### 2. Application Runtime
 
 - VDOM renderer
-- Event binding
+- Events binding
 - State system
 - Mount management
 

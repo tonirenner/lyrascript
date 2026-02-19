@@ -226,7 +226,7 @@ Semantik:
 ### Methodendeklaration
 
 ```lyra
-public add(a: number, b: number): number
+public addEventHandler(a: number, b: number): number
 {
     return a + b;
 }
@@ -235,13 +235,13 @@ public add(a: number, b: number): number
 ### Default-Parameter
 
 ```lyra
-public add(a: number, b: number = 2): number
+public addEventHandler(a: number, b: number = 2): number
 {
     return a + b;
 }
 
-add(3);     // 5
-add(3, 4);  // 7
+addEventHandler(3);     // 5
+addEventHandler(3, 4);  // 7
 ```
 
 ---

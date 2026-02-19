@@ -3,51 +3,50 @@
 import type {VNode} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {type EventPipeline} from "../core/event/pipeline";
-import Events from "./event";
-import {GRAMMAR} from "../core/grammar";
-import {EventType} from "../library/classes/event";
-import {ClassDefinition, Instance} from "../core/interpreter/interpreter_objects";
+import Events from "./events.ts";
 
 export interface ElementCreator {
-	createElement(vNode: VNode): any;
+	create(vNode: VNode | string): Node;
+}
+
+export interface ElementPatcher {
+	patch(oldVNode: VNode | string | null, newVNode: VNode | string): void
 }
 
 export class HTMLElementCreator implements ElementCreator {
-	private readonly lyraEventClassDef: ClassDefinition;
+	private textBuffer: string[] = [];
 
-	constructor(private readonly evenPipeline: EventPipeline) {
-		this.lyraEventClassDef = new EventType().getClassDefinition();
+	constructor(private readonly eventPipeline: EventPipeline) {
 	}
 
-	createElement(vNode: VNode): Node {
-		const element: HTMLElement = document.createElement(vNode.tag) as HTMLElement;
+	public create(vNode: VNode | string): Node {
+		if (typeof vNode === "string") {
+			return document.createTextNode(vNode);
+		}
 
-		let textBuffer: string[] = [];
-
-		function flushTextBuffer(): void {
-			if (textBuffer.length > 0) {
-				element.appendChild(document.createTextNode(textBuffer.join('')));
-				textBuffer = [];
+		const flushTextBuffer: () => void = (): void => {
+			const text: Node | null = this.flushTextBuffer();
+			if (text) {
+				element.appendChild(text);
 			}
 		}
 
-		for (const [property, fn] of Object.entries(vNode.props)) {
-			if (!property.startsWith('on')) {
-				continue;
-			}
+		const element: HTMLElement = document.createElement(vNode.tag) as HTMLElement;
+		vNode.dom = element;
 
-			if (!(fn instanceof LambdaFunctionCall)) {
-				continue;
+		for (const [propertyKey, value] of Object.entries(vNode.props)) {
+			if (Events.isEventProperty(propertyKey)) {
+				Events.addEventHandler(this.eventPipeline, element, propertyKey, value as LambdaFunctionCall);
+			} else if (typeof value === 'string') {
+				element.setAttribute(propertyKey, value as string);
 			}
-
-			this.attachEventListener(element, property, fn);
 		}
 
 		for (const child of vNode.children) {
 			if (typeof child === 'string') {
-				textBuffer.push(child);
+				this.textBuffer.push(child);
 			} else {
-				element.appendChild(this.createElement(child) as HTMLElement);
+				element.appendChild(this.create(child) as HTMLElement);
 			}
 
 			flushTextBuffer();
@@ -58,34 +57,126 @@ export class HTMLElementCreator implements ElementCreator {
 		return element;
 	}
 
-	private attachEventListener(element: HTMLElement, property: string, fn: LambdaFunctionCall): void {
-		const event: string = property.slice(2)
-		                              .toLowerCase();
+	private flushTextBuffer(): Node | null {
+		if (this.textBuffer.length === 0) {
+			return null;
+		}
+		const element: Text = document.createTextNode(this.textBuffer.join(''));
+		this.textBuffer = [];
+		return element;
+	}
+}
 
-		element.addEventListener(event, this.wrapCallback(fn));
+export class HTMLElementPatcher implements ElementPatcher {
+	constructor(private readonly mountPoint: HTMLElement,
+	            private readonly eventPipeline: EventPipeline,
+	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(eventPipeline)) {
 	}
 
-	private wrapCallback(fn: LambdaFunctionCall) {
-		return (event: Event): void => {
-			this.evenPipeline.emit(
-				Events.DOM_EVENT,
-				{
-					invoke: (): any => {
-						fn.evalCall(
-							fn.functionEnv.get(GRAMMAR.THIS) as Instance,
-							this.createLyraEventInstance(event)
-						);
-					},
-					event
+	public patch(oldVNode: VNode | string | null, newVNode: VNode | string): void {
+		if (oldVNode) {
+			this.patchNode(this.mountPoint, oldVNode, newVNode);
+			return;
+		}
+
+		const element: Node = this.elementCreator.create(newVNode);
+
+		this.mountPoint.appendChild(element);
+
+		if (typeof newVNode !== 'string') {
+			newVNode.dom = element;
+		}
+	}
+
+	private patchNode(parent: Node, oldNode: VNode | string, newNode: VNode | string): void {
+
+		if (typeof oldNode === 'string' && typeof newNode === 'string') {
+			if (oldNode !== newNode) {
+				const textNode: ChildNode | null = parent.firstChild;
+				if (textNode) {
+					textNode.textContent = newNode;
 				}
-			);
-		};
+			}
+			return;
+		}
+
+		if (typeof oldNode === 'string' || typeof newNode === 'string') {
+			const newElement: Node = this.elementCreator.create(newNode);
+			parent.replaceChild(newElement, parent.firstChild!);
+			if (typeof newNode !== 'string') {
+				newNode.dom = newElement;
+			}
+			return;
+		}
+
+		if (oldNode.tag !== newNode.tag) {
+			const newElement: Node = this.elementCreator.create(newNode);
+			parent.replaceChild(newElement, oldNode.dom!);
+			newNode.dom = newElement;
+			return;
+		}
+
+		const dom: Node = oldNode.dom!;
+		newNode.dom = dom;
+
+		this.updateProperties(dom as HTMLElement, oldNode.props, newNode.props);
+		this.patchChildren(dom, oldNode.children, newNode.children);
 	}
 
-	private createLyraEventInstance(event: Event): Instance {
-		const eventInstance = this.lyraEventClassDef.constructEmptyInstance();
-		eventInstance.__nativeInstance = new this.lyraEventClassDef.nativeInstance(event);
+	private updateProperties(element: HTMLElement, oldProperties: Record<string, any>, newProperties: Record<string, any>): void {
+		for (const propertyKey in oldProperties) {
+			if (!(propertyKey in newProperties)) {
+				if (Events.isEventProperty(propertyKey)) {
+					Events.removeEventHandler(element, propertyKey);
+				} else {
+					element.removeAttribute(propertyKey);
+				}
+			}
+		}
 
-		return eventInstance;
+		for (const propertyKey in newProperties) {
+			const oldValue: any = oldProperties[propertyKey];
+			const newValue: any = newProperties[propertyKey];
+
+			if (oldValue === newValue) {
+				continue;
+			}
+
+			if (Events.isEventProperty(propertyKey)) {
+				if (oldValue) {
+					Events.removeEventHandler(element, propertyKey);
+				}
+				Events.addEventHandler(this.eventPipeline, element, propertyKey, newValue as LambdaFunctionCall);
+			} else {
+				element.setAttribute(propertyKey, newValue as string);
+			}
+		}
+	}
+
+	private patchChildren(parent: Node, oldChildren: (VNode | string)[], newChildren: (VNode | string)[]): void {
+		const max: number = Math.max(oldChildren.length, newChildren.length);
+
+		for (let i: number = 0; i < max; i++) {
+
+			const oldChild: VNode | string | undefined = oldChildren[i];
+			const newChild: VNode | string | undefined = newChildren[i];
+
+			if (!oldChild && newChild) {
+				parent.appendChild(this.elementCreator.create(newChild));
+				continue;
+			}
+
+			const parentChildNode: ChildNode | undefined = parent.childNodes[i];
+			if (parentChildNode) {
+				if (oldChild && !newChild) {
+					parent.removeChild(parentChildNode);
+					continue;
+				}
+
+				if (newChild && oldChild) {
+					this.patchNode(parentChildNode.parentNode!, oldChild, newChild);
+				}
+			}
+		}
 	}
 }

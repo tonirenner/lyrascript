@@ -1,8 +1,8 @@
 import {type Engine, WebLyraScript} from "./engine";
-import {HTMLElementCreator} from "./dom";
+import {type ElementPatcher, HTMLElementPatcher} from "./dom";
 import type {VNode} from "../core/vdom/vdom";
 import {EventPipeline} from "../core/event/pipeline";
-import Events from "./event";
+import Events from "./events.ts";
 
 export abstract class AbstractApplicationRuntime {
 	protected constructor(
@@ -22,10 +22,10 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	private renderFunction: (() => VNode) | null = null;
 
 	constructor(
-		private readonly mountPoint: HTMLElement,
+		mountPoint: HTMLElement,
 		isDebug: boolean = false,
 		private readonly eventPipeline: EventPipeline = new EventPipeline(),
-		private readonly elementCreator: HTMLElementCreator = new HTMLElementCreator(eventPipeline)
+		private readonly patcher: ElementPatcher = new HTMLElementPatcher(mountPoint, eventPipeline)
 	) {
 		super(new WebLyraScript(isDebug));
 	}
@@ -33,26 +33,27 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	async start(url: string, className = 'App'): Promise<void> {
 		await this.engine.executeEntryFile(url, className);
 
-		this.startListeningToDomEvents();
+		this.listenToDomEvents();
 
-		this.renderFunction = () => this.callRender();
+		this.renderFunction = (): VNode => this.render();
 
 		this.performRender();
 	}
 
-	// Wird vom Store aufgerufen
-	requestRender(): void {
+	public requestRender(): void {
 		if (this.isRendering) {
 			return;
 		}
 
-		queueMicrotask(() => {
+		queueMicrotask((): void => {
 			this.performRender();
 		});
 	}
 
-	private callRender(): VNode {
-		return this.callMethod('render', []) as VNode;
+	private listenToDomEvents(): void {
+		this.eventPipeline.on(Events.DOM_EVENT, ({invoke}: any): void => {
+			invoke();
+		});
 	}
 
 	private performRender(): void {
@@ -64,26 +65,14 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		const nextVNode: VNode = this.renderFunction();
 
-		this.patch(this.currentVNode, nextVNode);
+		this.patcher.patch(this.currentVNode, nextVNode);
 
 		this.currentVNode = nextVNode;
 
 		this.isRendering = false;
 	}
 
-	private patch(oldVNode: VNode | null, newVNode: VNode): void {
-
-		// Erstmal simpel: Full Replace
-		// Später diff + patch
-
-		this.mountPoint.innerHTML = '';
-		const element: Node = this.elementCreator.createElement(newVNode);
-		this.mountPoint.appendChild(element);
-	}
-
-	private startListeningToDomEvents(): void {
-		this.eventPipeline.on(Events.DOM_EVENT, ({invoke}: any): void => {
-			invoke();
-		});
+	private render(): VNode {
+		return this.callMethod('render') as VNode;
 	}
 }

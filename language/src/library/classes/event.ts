@@ -2,7 +2,7 @@ import {NativeClass} from "../native_class";
 import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion";
 import {Source} from "../../core/parser/parser_source";
 
-const CLASS_NAME = 'Event';
+const CLASS_NAME = 'Events';
 
 export class LyraEvent extends LyraNativeObject {
 	constructor(private readonly event: Event) {
