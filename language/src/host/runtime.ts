@@ -5,7 +5,7 @@ import {EventPipeline} from "../core/event/pipeline";
 import Events from "./events";
 import {type Instance} from "../core/interpreter/interpreter_objects";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
-import {EventStore} from "./eventstore";
+import {EventHandlerRegistry} from "./registry";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;
@@ -33,9 +33,8 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 	protected constructor(
 		private readonly _engine: Engine,
 		private readonly _eventPipeline: EventPipeline = new EventPipeline(),
-		private readonly eventStore: EventStore = new EventStore()
+		private readonly eventHandlerRegistry: EventHandlerRegistry = new EventHandlerRegistry()
 	) {
-
 	}
 
 	get engine(): Engine {
@@ -76,7 +75,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 
 		const eventHandler: (event: Event) => void = this.engine.createEventHandler(handler, Events.DOM_EVENT);
 
-		this.eventStore.addEventHandler(element, propertyKey, eventHandler);
+		this.eventHandlerRegistry.register(element, propertyKey, eventHandler);
 
 		element.addEventListener(eventName, eventHandler);
 	}
@@ -85,7 +84,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		const eventName: string = propertyKey.slice(2)
 		                                     .toLowerCase();
 
-		const eventHandler: Function | null = this.eventStore.removeEventHandler(element, propertyKey);
+		const eventHandler: Function | null = this.eventHandlerRegistry.unregister(element, propertyKey);
 
 		if (eventHandler) {
 			element.removeEventListener(eventName, eventHandler as EventListener);
@@ -104,9 +103,9 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		mountPoint: HTMLElement,
 		isDebug: boolean = false,
 		eventPipeline: EventPipeline = new EventPipeline(),
-		eventStore: EventStore = new EventStore()
+		eventHandlerRegistry: EventHandlerRegistry = new EventHandlerRegistry()
 	) {
-		super(new WebLyraScript(eventPipeline, isDebug), eventPipeline, eventStore);
+		super(new WebLyraScript(eventPipeline, isDebug), eventPipeline, eventHandlerRegistry);
 
 		this.patcher = new HTMLElementPatcher(mountPoint, this)
 	}
