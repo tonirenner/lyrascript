@@ -2,8 +2,8 @@
 
 import type {VNode} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
-import {type EventPipeline} from "../core/event/pipeline";
-import Events from "./events.ts";
+import Events from "./events";
+import type {ApplicationRuntime} from "./runtime";
 
 export interface ElementCreator {
 	create(vNode: VNode | string): Node;
@@ -16,12 +16,25 @@ export interface ElementPatcher {
 export class HTMLElementCreator implements ElementCreator {
 	private textBuffer: string[] = [];
 
-	constructor(private readonly eventPipeline: EventPipeline) {
+	constructor(
+		private readonly applicationRuntime: ApplicationRuntime
+	) {
 	}
 
 	public create(vNode: VNode | string): Node {
+
 		if (typeof vNode === "string") {
 			return document.createTextNode(vNode);
+		}
+
+		if (vNode.isComponent && vNode.component === null) {
+			vNode.component = this.applicationRuntime.createInstance(vNode.tag);
+
+			vNode.dom = this.create(
+				this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode
+			);
+
+			return vNode.dom;
 		}
 
 		const flushTextBuffer: () => void = (): void => {
@@ -35,8 +48,8 @@ export class HTMLElementCreator implements ElementCreator {
 		vNode.dom = element;
 
 		for (const [propertyKey, value] of Object.entries(vNode.props)) {
-			if (Events.isEventProperty(propertyKey)) {
-				Events.addEventHandler(this.eventPipeline, element, propertyKey, value as LambdaFunctionCall);
+			if (Events.isEvent(propertyKey)) {
+				this.applicationRuntime.addEventHandler(element, propertyKey, value as LambdaFunctionCall);
 			} else if (typeof value === 'string') {
 				element.setAttribute(propertyKey, value as string);
 			}
@@ -69,8 +82,8 @@ export class HTMLElementCreator implements ElementCreator {
 
 export class HTMLElementPatcher implements ElementPatcher {
 	constructor(private readonly mountPoint: HTMLElement,
-	            private readonly eventPipeline: EventPipeline,
-	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(eventPipeline)) {
+	            private readonly applicationRuntime: ApplicationRuntime,
+	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime)) {
 	}
 
 	public patch(oldVNode: VNode | string | null, newVNode: VNode | string): void {
@@ -126,8 +139,8 @@ export class HTMLElementPatcher implements ElementPatcher {
 	private updateProperties(element: HTMLElement, oldProperties: Record<string, any>, newProperties: Record<string, any>): void {
 		for (const propertyKey in oldProperties) {
 			if (!(propertyKey in newProperties)) {
-				if (Events.isEventProperty(propertyKey)) {
-					Events.removeEventHandler(element, propertyKey);
+				if (Events.isEvent(propertyKey)) {
+					this.applicationRuntime.removeEventHandler(element, propertyKey);
 				} else {
 					element.removeAttribute(propertyKey);
 				}
@@ -142,11 +155,11 @@ export class HTMLElementPatcher implements ElementPatcher {
 				continue;
 			}
 
-			if (Events.isEventProperty(propertyKey)) {
+			if (Events.isEvent(propertyKey)) {
 				if (oldValue) {
-					Events.removeEventHandler(element, propertyKey);
+					this.applicationRuntime.removeEventHandler(element, propertyKey);
 				}
-				Events.addEventHandler(this.eventPipeline, element, propertyKey, newValue as LambdaFunctionCall);
+				this.applicationRuntime.addEventHandler(element, propertyKey, newValue as LambdaFunctionCall);
 			} else {
 				element.setAttribute(propertyKey, newValue as string);
 			}

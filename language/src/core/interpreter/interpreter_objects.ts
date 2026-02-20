@@ -55,6 +55,7 @@ export class Environment {
 }
 
 export class Instance {
+	public readonly id: string;
 	__classDef: ClassDefinition;
 	__instanceFields: { [index: string]: any };
 	__staticFields: { [index: string]: any };
@@ -65,6 +66,12 @@ export class Instance {
 		this.__instanceFields = {};
 		this.__staticFields = {};
 		this.__nativeInstance = null;
+
+		this.id = Instance.generateInstanceUUID();
+	}
+
+	private static generateInstanceUUID(): string {
+		return self.crypto.randomUUID();
 	}
 
 	initializeInstanceFields(objectRegistry: ObjectRegistry, environment: Environment): void {
@@ -242,12 +249,14 @@ export class ClassDefinition {
 		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
 	}
 
-	constructEmptyInstance(): Instance {
-		return new Instance(this);
+	constructEmptyInstance(objectRegistry: ObjectRegistry): Instance {
+		const instance = new Instance(this);
+		objectRegistry.instances.register(instance);
+		return instance;
 	}
 
-	constructNativeInstance(args: any[] = []): Instance {
-		const instance: Instance = this.constructEmptyInstance();
+	constructNativeInstance(objectRegistry: ObjectRegistry, args: any[] = []): Instance {
+		const instance: Instance = this.constructEmptyInstance(objectRegistry);
 		instance.__nativeInstance = new this.nativeInstance(...args);
 		return instance;
 	}
@@ -263,7 +272,7 @@ export class ClassDefinition {
 	}
 
 	constructInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-		const instance = this.constructEmptyInstance();
+		const instance = this.constructEmptyInstance(objectRegistry);
 
 		instance.initializeInstanceFields(objectRegistry, environment);
 
@@ -299,7 +308,7 @@ export class ClassDefinition {
 	}
 
 	constructNativeInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-		const instance: Instance = this.constructEmptyInstance();
+		const instance: Instance = this.constructEmptyInstance(objectRegistry);
 		const constructor: ClassMethodDefinition | null = this.constructorMethod;
 		const constructorEnv: Environment = new Environment(environment);
 

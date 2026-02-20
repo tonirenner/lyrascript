@@ -1,5 +1,5 @@
 import {ASTClassNode, ASTInterfaceNode, ASTNode} from "../ast";
-import {ClassDefinition, InterfaceDefinition} from "./interpreter_objects";
+import {ClassDefinition, Instance, InterfaceDefinition} from "./interpreter_objects";
 import {ClassSymbol, InterfaceSymbol} from "../types/type_objects";
 import {throwRuntimeError} from "../errors";
 
@@ -47,6 +47,26 @@ export class InterfaceRegistry {
 	}
 }
 
+export class InstanceRegistry {
+	private instances: Map<string, Instance> = new Map<string, Instance>();
+
+	register(instance: Instance): void {
+		this.instances.set(instance.id, instance);
+	}
+
+	unregister(instance: Instance): void {
+		this.instances.delete(instance.id);
+	}
+
+	get(id: string): Instance | null {
+		return this.instances.get(id) || null;
+	}
+
+	allInstances(): Instance[] {
+		return Array.from(this.instances.values());
+	}
+}
+
 export class TypeRegistry {
 	classSymbols: Map<string, ClassSymbol> = new Map();
 	interfaceSymbols: Map<string, InterfaceSymbol> = new Map();
@@ -89,9 +109,10 @@ export class TypeRegistry {
 }
 
 export class ObjectRegistry {
-	classes = new ClassRegistry();
-	interfaces = new InterfaceRegistry();
-	types = new TypeRegistry();
+	public readonly classes: ClassRegistry = new ClassRegistry();
+	public readonly interfaces: InterfaceRegistry = new InterfaceRegistry();
+	public readonly instances: InstanceRegistry = new InstanceRegistry();
+	public readonly types: TypeRegistry = new TypeRegistry();
 
 	fetchAllObjectDefinitions(): Map<string, ClassDefinition | InterfaceDefinition> {
 		const map = new Map();

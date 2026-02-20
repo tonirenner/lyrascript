@@ -827,7 +827,7 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 		}
 
 		children.push(parseVDomText(parser));
-		
+
 	}
 
 	parser.expectOperator(GRAMMAR.XML_OPEN_CLOSE_TAG);
@@ -845,6 +845,7 @@ export function parseVDomText(parser: Parser): ASTVDomTextNode {
 			TokenType.IDENTIFIER,
 			TokenType.OPERATOR,
 			TokenType.KEYWORD,
+			TokenType.PUNCTUATION,
 			TokenType.TEXT
 		]
 	);

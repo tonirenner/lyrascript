@@ -29,7 +29,7 @@ import {
 } from "../ast";
 import {GRAMMAR, TYPE_ENUM} from "../grammar";
 import {NativeClasses} from "../../library/native_classes";
-import {NativeFunction, NativeFunctions} from "../../library/native_functions";
+import {NativeFunction, NativeFunctions, NativeFunctionTypeRegistry} from "../../library/native_functions";
 import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "./interpreter_conversion";
 import {throwRuntimeError} from "../errors";
 import {AutoboxedTypes} from "../types/autoboxing";
@@ -40,7 +40,7 @@ import type {VNode} from "../vdom/vdom";
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();
 const globalFunctions = nativeFunctions.getGlobalFunctions();
-const globalFunctionTypeRegistry = nativeFunctions.getGlobalFunctionTypeRegistry();
+const globalFunctionTypeRegistry: NativeFunctionTypeRegistry = nativeFunctions.getGlobalFunctionTypeRegistry();
 
 export class AbstractFunctionCall {
 	node: ASTNode;
@@ -223,7 +223,7 @@ export function constructEmptyInstance(node: ASTClassNode, objectRegistry: Objec
 		objectRegistry.classes.set(node.name, classDef);
 	}
 
-	return classDef.constructEmptyInstance();
+	return classDef.constructEmptyInstance(objectRegistry);
 }
 
 export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
@@ -397,7 +397,7 @@ export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, en
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get('Array');
-	const instance: Instance = classDef.constructEmptyInstance();
+	const instance: Instance = classDef.constructEmptyInstance(objectRegistry);
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(values));
 
 	return instance;
@@ -845,17 +845,6 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 }
 
 export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
-	try {
-		const classDef: ClassDefinition = objectRegistry.classes.get(node.tag);
-
-		return evalDomComponentNode(node, classDef, environment, objectRegistry);
-	} catch (e) {
-	}
-
-	return evalDomHtmlNode(node, objectRegistry, environment, thisValue);
-}
-
-export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
 	const props: Record<string, any> = {};
 
 	for (const [name, value] of node.props) {
@@ -867,30 +856,19 @@ export function evalDomHtmlNode(node: ASTVDomNode, objectRegistry: ObjectRegistr
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
 			children.push(child.value);
-		} else {
-			children.push(evalExpression(child, objectRegistry, environment, thisValue));
+		} else if (child instanceof ASTVDomNode) {
+			children.push(evalVDomNode(child, objectRegistry, environment, thisValue));
 		}
 	}
 
 	return {
 		tag: node.tag,
+		isComponent: objectRegistry.classes.has(node.tag),
+		component: null,
 		props: props,
 		children: children,
 		dom: null
 	};
-}
-
-export function evalDomComponentNode(node: ASTVDomNode, classDef: ClassDefinition, environment: Environment, objectRegistry: ObjectRegistry): VNode {
-
-	const instance: Instance = classDef.constructNewInstanceWithoutArguments(objectRegistry, environment);
-
-	const methodNode: ASTMethodNode = classDef.findMethod('render');
-
-	for (const [key, value] of node.props.entries()) {
-		instance.__instanceFields[key] = evalExpression(value, objectRegistry, environment, instance);
-	}
-
-	return callInstanceMethod(instance, methodNode, [], objectRegistry, environment) as VNode;
 }
 
 export function evalBlock(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
@@ -996,7 +974,7 @@ export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span
 
 export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry): Instance {
 	const classDef: ClassDefinition = objectRegistry.classes.get(className);
-	const instance: Instance = classDef.constructEmptyInstance();
+	const instance: Instance = classDef.constructEmptyInstance(objectRegistry);
 
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(primitiveValue));
 
