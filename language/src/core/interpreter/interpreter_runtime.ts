@@ -839,7 +839,7 @@ export function evalForeach(node: ASTForeachNode, objectRegistry: ObjectRegistry
 export function callIteratorMethod(iterator: Instance, methodName: string, objectRegistry: ObjectRegistry, environment: Environment): any {
 	return callInstanceMethod(
 		iterator,
-		iterator.__classDef.findMethod(methodName),
+		iterator.findeMethodNode(methodName),
 		[],
 		objectRegistry,
 		environment

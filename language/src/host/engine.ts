@@ -59,7 +59,7 @@ export class WebLyraScript implements Engine {
 
 		return callInstanceMethod(
 			instance,
-			instance.__classDef.findMethod(methodName),
+			instance.findeMethodNode(methodName),
 			args,
 			this.objectRegistry,
 			this.environment

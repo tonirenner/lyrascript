@@ -75,6 +75,21 @@ export class Instance {
 		return self.crypto.randomUUID();
 	}
 
+	findeMethodNode(name: string): ASTMethodNode {
+		return this.__classDef.findMethodNode(name);
+	}
+
+	setInstanceField(name: string, value: any, expected: any = null): void {
+		let fieldDefinition: ClassFieldDefinition = this.__classDef.findInstanceFieldDefinition(name);
+
+		if (fieldDefinition.modifiers.public) {
+			this.__instanceFields[name] = castValue(value, expected);
+			return;
+		}
+
+		throwRuntimeError(`Field ${name} is not public.`);
+	}
+
 	initializeInstanceFields(objectRegistry: ObjectRegistry, environment: Environment): void {
 		this.__classDef.initializeInstanceFields(this, objectRegistry, environment);
 	}
@@ -245,7 +260,7 @@ export class ClassDefinition {
 		);
 	}
 
-	findMethod(name: string): ASTMethodNode {
+	findMethodNode(name: string): ASTMethodNode {
 		const node = this.node
 		                 .children
 		                 .find(node => node.name === name);
@@ -255,6 +270,17 @@ export class ClassDefinition {
 		}
 
 		throwRuntimeError(`Method ${name} not found in class ${this.name}.`);
+	}
+
+	findInstanceFieldDefinition(name: string): ClassFieldDefinition {
+		const fieldDefinition: ClassFieldDefinition | undefined = this.instanceFields
+		                                                              .find((field: ClassFieldDefinition) => field.name === name);
+
+		if (fieldDefinition instanceof ClassFieldDefinition) {
+			return fieldDefinition;
+		}
+
+		throwRuntimeError(`Field ${name} not found in class ${this.name}.`);
 	}
 
 	constructEmptyInstance(objectRegistry: ObjectRegistry): Instance {
