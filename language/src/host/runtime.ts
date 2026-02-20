@@ -38,14 +38,6 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 
 	}
 
-	renderRootComponent(): VNode {
-		return this.renderComponent(this._engine.getRootInstance());
-	}
-
-	renderComponent(instance: Instance): VNode {
-		return this.callMethod(instance, 'render', []) as VNode
-	}
-
 	get engine(): Engine {
 		return this._engine;
 	}
@@ -54,6 +46,13 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._eventPipeline;
 	}
 
+	renderRootComponent(): VNode {
+		return this.renderComponent(this._engine.getRootInstance());
+	}
+
+	renderComponent(instance: Instance): VNode {
+		return this.callMethod(instance, 'render', []) as VNode
+	}
 
 	public start(url: string, className: string): Promise<void> {
 		throw new Error("Method not implemented.");
