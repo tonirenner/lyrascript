@@ -57,6 +57,7 @@ export class Environment {
 export class Instance {
 	public readonly id: string;
 	__classDef: ClassDefinition;
+	__fieldsInitialized: boolean = false;
 	__instanceFields: { [index: string]: any };
 	__staticFields: { [index: string]: any };
 	__nativeInstance: any | null = null;
@@ -106,6 +107,13 @@ export class SuperClass {
 	constructor(type: string, name: string) {
 		this.type = type;
 		this.name = name;
+	}
+}
+
+export class ExecutionStop extends Error {
+	constructor(public readonly returnValue: ReturnValue,
+	            public readonly returnType: ASTTypeNode | null) {
+		super('Execution stoppend with return.');
 	}
 }
 
@@ -337,6 +345,10 @@ export class ClassDefinition {
 	}
 
 	initializeInstanceFields(instance: Instance, objectRegistry: ObjectRegistry, environment: Environment): void {
+		if (instance.__fieldsInitialized) {
+			return;
+		}
+
 		let rawValue;
 		for (const field of this.instanceFields) {
 			rawValue = field.initializer
@@ -352,6 +364,8 @@ export class ClassDefinition {
 
 			instance.__staticFields[field.name] = castValue(rawValue, field.type);
 		}
+
+		instance.__fieldsInitialized = true;
 	}
 }
 

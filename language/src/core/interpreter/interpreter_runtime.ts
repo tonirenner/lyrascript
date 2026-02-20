@@ -1,4 +1,11 @@
-import {ClassDefinition, ClassMethodDefinition, Environment, Instance, ReturnValue} from "./interpreter_objects";
+import {
+	ClassDefinition,
+	ClassMethodDefinition,
+	Environment,
+	ExecutionStop,
+	Instance,
+	ReturnValue
+} from "./interpreter_objects";
 import {ObjectRegistry} from "./interpreter_registry";
 import {
 	ASTAnnotationNode,
@@ -84,7 +91,7 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 			closureEnv.define(parameter.name, args[i]);
 		}
 
-		return evalBlock(node.children, this.objectRegistry, closureEnv, thisValue, node.returnType);
+		return evalReturn(node.children, this.objectRegistry, closureEnv, thisValue, node.returnType);
 	}
 }
 
@@ -99,7 +106,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 			result = returnValue(result);
 		}
 
-		return evalBlock(
+		return evalReturn(
 			[result],
 			this.objectRegistry,
 			this.functionEnv,
@@ -192,6 +199,12 @@ export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environm
 			}
 			throwRuntimeError(`Invalid foreach node ${node.type}.`, node.span);
 		}
+		case ASTNodeType.VDOM: {
+			if (node instanceof ASTVDomNode) {
+				return evalVDomNode(node, objectRegistry, environment, thisValue);
+			}
+			throwRuntimeError(`Invalid foreach node ${node.type}.`, node.span);
+		}
 		case ASTNodeType.EXPRESSION: {
 			if (node instanceof ASTExpressionNode) {
 				return evalExpression(node.expr, objectRegistry, environment, thisValue);
@@ -200,7 +213,7 @@ export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environm
 		}
 		case ASTNodeType.RETURN: {
 			if (node instanceof ASTReturnNode) {
-				const value = node.argument
+				const value: any = node.argument
 					? evalExpression(node.argument, objectRegistry, environment, thisValue)
 					: null;
 				return new ReturnValue(value);
@@ -533,8 +546,7 @@ export function evalFunctionCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	return (new NativeFunctionCall(expr, objectRegistry, environment)).evalCall(thisValue, ...args);
 }
 
-export function evalStaticCall(expr: ASTCallNode, className: string, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
-
+export function evalStaticCall(expr: ASTCallNode, className: string, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
 	if (!(expr.callee instanceof ASTMemberNode)) {
 		throwRuntimeError(`Invalid member expression ${expr.type}`, expr.span);
 	}
@@ -555,11 +567,12 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalBlock([returnValue(result)],
-		                 objectRegistry,
-		                 new Environment(environment),
-		                 thisValue,
-		                 methodDef.returnType
+		return evalReturn(
+			[returnValue(result)],
+			objectRegistry,
+			new Environment(environment),
+			thisValue,
+			methodDef.returnType
 		);
 	}
 
@@ -567,7 +580,7 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 
 	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, thisValue);
 
-	return evalBlock(methodDef.children, objectRegistry, methodEnv, thisValue, methodDef.returnType);
+	return evalReturn(methodDef.children, objectRegistry, methodEnv, thisValue, methodDef.returnType);
 }
 
 export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
@@ -615,12 +628,12 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalBlock([returnValue(result)], objectRegistry, methodEnv, target, methodDef.returnType);
+		return evalReturn([returnValue(result)], objectRegistry, methodEnv, target, methodDef.returnType);
 	}
 
 	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, thisValue);
 
-	return evalBlock(methodDef.children, objectRegistry, methodEnv, target, methodDef.returnType);
+	return evalReturn(methodDef.children, objectRegistry, methodEnv, target, methodDef.returnType);
 }
 
 export function resolveInstanceMethod(classDef: ClassDefinition, objectRegistry: ObjectRegistry, methodName: string): ClassMethodDefinition | null {
@@ -871,11 +884,22 @@ export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 	};
 }
 
+export function evalReturn(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
+	try {
+		return evalBlock(blockNodes, objectRegistry, environment, thisValue, returnType);
+	} catch (executionStop) {
+		if (executionStop instanceof ExecutionStop) {
+			return castValue(executionStop.returnValue.value, executionStop.returnType?.name);
+		}
+		throw executionStop;
+	}
+}
+
 export function evalBlock(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
 	for (const blockNode of blockNodes) {
-		const result = evalNode(blockNode, objectRegistry, environment, thisValue);
-		if (result instanceof ReturnValue) {
-			return castValue(result.value, returnType?.name);
+		const returnValue: any = evalNode(blockNode, objectRegistry, environment, thisValue);
+		if (returnValue instanceof ReturnValue) {
+			throw new ExecutionStop(returnValue, returnType);
 		}
 	}
 	return null;
@@ -926,7 +950,7 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalBlock([returnValue(result)], objectRegistry, methodEnv, instance, methodNode.returnType);
+		return evalReturn([returnValue(result)], objectRegistry, methodEnv, instance, methodNode.returnType);
 	}
 
 	for (let i = 0; i < methodNode.parameters.length; i++) {
@@ -949,7 +973,7 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 		methodEnv.define(parameter.name, value);
 	}
 
-	return evalBlock(methodNode.children, objectRegistry, methodEnv, instance, methodNode.returnType);
+	return evalReturn(methodNode.children, objectRegistry, methodEnv, instance, methodNode.returnType);
 }
 
 export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {

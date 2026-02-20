@@ -210,7 +210,7 @@ export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectReg
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get(lyraNativeObject.className);
-	const instance: Instance = classDef.constructEmptyInstance();
+	const instance: Instance = classDef.constructEmptyInstance(objectRegistry);
 
 	instance.__nativeInstance = lyraNativeObject;
 

@@ -22,14 +22,12 @@ export class HTMLElementCreator implements ElementCreator {
 	}
 
 	public create(vNode: VNode | string): Node {
-
 		if (typeof vNode === "string") {
 			return document.createTextNode(vNode);
 		}
 
 		if (vNode.isComponent && vNode.component === null) {
 			vNode.component = this.applicationRuntime.createInstance(vNode.tag);
-
 			vNode.dom = this.create(
 				this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode
 			);
@@ -124,6 +122,16 @@ export class HTMLElementPatcher implements ElementPatcher {
 
 		if (oldNode.tag !== newNode.tag) {
 			const newElement: Node = this.elementCreator.create(newNode);
+			parent.replaceChild(newElement, oldNode.dom!);
+			newNode.dom = newElement;
+			return;
+		}
+
+		if (newNode.isComponent && newNode.component === null) {
+			newNode.component = oldNode.component;
+			const newElement: Node = this.elementCreator.create(
+				this.applicationRuntime.renderComponent(oldNode.component!)
+			);
 			parent.replaceChild(newElement, oldNode.dom!);
 			newNode.dom = newElement;
 			return;

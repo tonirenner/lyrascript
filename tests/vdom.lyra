@@ -5,13 +5,12 @@ class Component {
 
     constructor() {
         this.count.subscribe({value:number -> System.log(value)});
-        System.log("Component created");
     }
 
     public render(): VNode {
 
         if ( this.count.get() % 2 == 0 ) {
-            return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component :)</span>;
+            return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component ^^</span>;
         }
 
         return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component</span>;

@@ -1,4 +1,4 @@
-import type {Instance} from "../interpreter/interpreter_objects.ts";
+import type {Instance} from "../interpreter/interpreter_objects";
 
 export interface VNode {
 	tag: string;

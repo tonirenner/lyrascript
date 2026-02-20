@@ -5,7 +5,7 @@ import {ObjectRegistry} from "../core/interpreter/interpreter_registry";
 import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {EventType} from "../library/classes/event";
 import {EventPipeline} from "../core/event/pipeline";
-import {GRAMMAR} from "../core/grammar.ts";
+import {GRAMMAR} from "../core/grammar";
 
 const lyraEventClassDef: ClassDefinition = new EventType().getClassDefinition();
 
@@ -13,6 +13,8 @@ export interface Engine {
 	executeEntryFile(url: string, className: string): Promise<void>;
 
 	createInstance(className: string): Instance;
+
+	getRootInstance(): Instance;
 
 	callRootInstanceMethod(methodName: string, args: any[]): any;
 
@@ -36,23 +38,24 @@ export class WebLyraScript implements Engine {
 		this.program = new LyraScriptProgram(isDebug);
 	}
 
+	public getRootInstance(): Instance {
+		if (this.rootInstance === null) {
+			throw new Error('No root instance available.');
+		}
+		return this.rootInstance;
+	}
+
 	public createInstance(className: string): Instance {
 		return this.getClassDefinition(className)
 		           .constructNewInstanceWithoutArguments(this.objectRegistry, this.environment);
 	}
 
 	public callRootInstanceMethod(methodName: string, args: any[]): any {
-		if (this.rootInstance === null) {
-			throw new Error('No root instance available.');
-		}
-
-		return this.callInstanceMethod(this.rootInstance, methodName, args);
+		return this.callInstanceMethod(this.getRootInstance(), methodName, args);
 	}
 
 	public callInstanceMethod(instance: Instance, methodName: string, args: any[]): any {
-		if (this.rootInstance === null) {
-			throw new Error('No root instance available.');
-		}
+
 
 		return callInstanceMethod(
 			instance,
