@@ -172,10 +172,10 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		    });
 
 		this.eventPipeline
-		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, (event): void => {
+		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, ({instance}: any): void => {
 			    this.requestComponentRender(
-				    this.vdom.getNodeByInstance(event.instance),
-				    event.instance
+				    this.vdom.getNodeByInstance(instance),
+				    instance
 			    );
 		    });
 	}
