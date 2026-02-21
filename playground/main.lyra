@@ -173,9 +173,13 @@ class Component {
 
 class App {
 
+    private number: number = 39;
+
     public run(): void {
         System.print("Hello from App.run()");
-        System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
+        System.print({ a: number, b: number -> number : a + b }(this.number, 3).toString());
+
+        { -> System.print(this.number.toString())}();
     }
 
     public render(): VNode {
