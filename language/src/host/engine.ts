@@ -27,8 +27,8 @@ export interface Engine {
 
 export class WebLyraScript implements Engine {
 	private readonly program: LyraScriptProgram;
-	private globalObjectRegistry: ObjectRegistry;
-	private globalEnvironment: Environment;
+	private readonly globalObjectRegistry: ObjectRegistry;
+	private readonly globalEnvironment: Environment;
 	private rootInstance: Instance | null = null;
 
 
@@ -59,8 +59,6 @@ export class WebLyraScript implements Engine {
 	}
 
 	public callInstanceMethod(instance: Instance, methodName: string, args: any[]): any {
-
-
 		return callInstanceMethod(
 			instance,
 			instance.findeMethodNode(methodName),

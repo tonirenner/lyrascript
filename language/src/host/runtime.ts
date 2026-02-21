@@ -99,7 +99,6 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	private currentVNode: VNode | null = null;
 	private isRendering: boolean = false;
 
-
 	constructor(
 		mountPoint: HTMLElement,
 		isDebug: boolean = false,
