@@ -1,32 +1,25 @@
 export class ScratchpadOutput {
 	/** @type {string[]} */
-	stdout = [];
+	stdout: string[] = [];
 	/** @type {string[]} */
-	stderr = [];
+	stderr: string[] = [];
 
-	/** @param {...any} args */
-	log(...args) {
+	log(...args: any[]): void {
 		this.stdout.push(args.map(String)
 		                     .join(" "));
 	}
 
-	/** @param {any} err */
-	error(err) {
+	error(err: any): void {
 		this.stderr.push(String(err));
 	}
 
-	clear() {
+	clear(): void {
 		this.stdout.length = 0;
 		this.stderr.length = 0;
 	}
 }
 
-/**
- * @param {Function} onLog
- * @param {Function} onError
- * @return {Function}
- */
-export function wrapConsole(onLog, onError) {
+export function wrapConsole(onLog: Function, onError: Function): () => void {
 	const original = {
 		log: console.log,
 		error: console.error,
@@ -54,10 +47,10 @@ export function wrapConsole(onLog, onError) {
 		original.info.apply(console, args);
 	};
 
-	return () => {
-		console.log   = original.log;
+	return (): void => {
+		console.log = original.log;
 		console.error = original.error;
-		console.warn  = original.warn;
-		console.info  = original.info;
+		console.warn = original.warn;
+		console.info = original.info;
 	};
 }

@@ -14,7 +14,9 @@
     "lyra:build": "bun build language/src/index.ts --outfile ./dist/language.js --sourcemap=inline",
     "lyra:build:watch": "bun build --watch language/src/index.ts --outfile ./dist/language.js --sourcemap=inline",
     "lyra:build:min": "bun build --minify language/src/index.ts --outfile ./dist/language.min.js",
-    "lyra:build:min:watch": "bun build --watch --minify language/src/index.ts --outfile ./dist/language.min.js"
+    "lyra:build:min:watch": "bun build --watch --minify language/src/index.ts --outfile ./dist/language.min.js",
+    "scratchpad:build": "bun build scratchpad/src/index.ts --outfile ./dist/scratchpad.js --sourcemap=inline",
+    "scratchpad:build:watch": "bun build --watch scratchpad/src/index.ts --outfile ./dist/scratchpad.js --sourcemap=inline"
   },
   "dependencies": {
     "ts-migrate": "^0.1.35"
