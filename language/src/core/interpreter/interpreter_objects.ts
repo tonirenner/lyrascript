@@ -74,6 +74,10 @@ export class Instance {
 		this.id = Instance.generateInstanceUUID();
 	}
 
+	private static generateInstanceUUID(): string {
+		return self.crypto.randomUUID();
+	}
+
 	public markDirty(eventPipeline: EventPipeline): void {
 		this.__isDirty = true;
 
@@ -83,11 +87,7 @@ export class Instance {
 	public markClean(eventPipeline: EventPipeline): void {
 		this.__isDirty = false;
 
-		eventPipeline.emit(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, {instance: this});
-	}
-
-	private static generateInstanceUUID(): string {
-		return self.crypto.randomUUID();
+		eventPipeline.emit(LyraEvents.LYRA_INSTANCE_CLEAN_STATE, {instance: this});
 	}
 
 	findeMethodNode(name: string): ASTMethodNode {

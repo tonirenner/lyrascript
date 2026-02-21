@@ -4,6 +4,7 @@ import type {VNode} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import Events from "./events";
 import type {ApplicationRuntime} from "./runtime";
+import {VDOM} from "./registry";
 
 export interface ElementCreator {
 	create(vNode: VNode | string): Node;
@@ -17,7 +18,8 @@ export class HTMLElementCreator implements ElementCreator {
 	private textBuffer: string[] = [];
 
 	constructor(
-		private readonly applicationRuntime: ApplicationRuntime
+		private readonly applicationRuntime: ApplicationRuntime,
+		private readonly vdom: VDOM
 	) {
 	}
 
@@ -35,8 +37,11 @@ export class HTMLElementCreator implements ElementCreator {
 				}
 			}
 
-			const element: HTMLElement = this
-				.create(this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode) as HTMLElement;
+			const subTree = this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode;
+
+			this.vdom.register(vNode.component, subTree);
+
+			const element: HTMLElement = this.create(subTree) as HTMLElement;
 
 			for (const [propertyKey, value] of Object.entries(vNode.props)) {
 				element.setAttribute(propertyKey, String(value));
@@ -93,7 +98,8 @@ export class HTMLElementCreator implements ElementCreator {
 export class HTMLElementPatcher implements ElementPatcher {
 	constructor(private readonly mountPoint: HTMLElement,
 	            private readonly applicationRuntime: ApplicationRuntime,
-	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime)) {
+	            vdom: VDOM,
+	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime, vdom)) {
 	}
 
 	public patch(oldVNode: VNode | string | null, newVNode: VNode | string): void {

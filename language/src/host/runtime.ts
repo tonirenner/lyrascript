@@ -5,7 +5,7 @@ import {EventPipeline} from "../core/event/pipeline";
 import Events from "./events";
 import {type Instance} from "../core/interpreter/interpreter_objects";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
-import {EventHandlerRegistry} from "./registry";
+import {EventHandlerRegistry, VDOM} from "./registry";
 import LyraEvents from "../core/event/events";
 
 export interface ApplicationRuntime {
@@ -94,6 +94,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 }
 
 export class WebApplicationRuntime extends AbstractApplicationRuntime {
+	private readonly vdom: VDOM = new VDOM();
 	private readonly patcher: ElementPatcher;
 
 	private currentVNode: VNode | null = null;
@@ -107,7 +108,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	) {
 		super(new WebLyraScript(eventPipeline, isDebug), eventPipeline, eventHandlerRegistry);
 
-		this.patcher = new HTMLElementPatcher(mountPoint, this)
+		this.patcher = new HTMLElementPatcher(mountPoint, this, this.vdom);
 	}
 
 	public override async start(url: string, className: string = 'App'): Promise<void> {
@@ -115,17 +116,53 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.listenToDomEvents();
 
-		this.performRender();
+		this.requestFullRender();
 	}
 
-	public requestRender(): void {
+	public requestFullRender(): void {
 		if (this.isRendering) {
 			return;
 		}
 
 		queueMicrotask((): void => {
-			this.performRender();
+			this.performFullRender();
 		});
+	}
+
+	public requestComponentRender(oldVNode: VNode, instance: Instance): void {
+		if (this.isRendering) {
+			return;
+		}
+
+		queueMicrotask((): void => {
+			this.performComponentRender(oldVNode, instance);
+		});
+	}
+
+	private performFullRender(): void {
+		this.isRendering = true;
+
+		const next: VNode = this.renderRootComponent();
+
+		this.patcher.patch(this.currentVNode, next);
+
+		this.currentVNode = next;
+
+		this.vdom.register(this.engine.getRootInstance(), next);
+
+		this.isRendering = false;
+	}
+
+	private performComponentRender(oldVNode: VNode, instance: Instance): void {
+		this.isRendering = true;
+
+		const next: VNode = this.renderComponent(instance);
+
+		this.patcher.patch(oldVNode, next);
+
+		this.vdom.register(instance, next);
+
+		this.isRendering = false;
 	}
 
 	private listenToDomEvents(): void {
@@ -135,20 +172,11 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		    });
 
 		this.eventPipeline
-		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, (payload): void => {
-			    this.requestRender();
+		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, (event): void => {
+			    this.requestComponentRender(
+				    this.vdom.getNodeByInstance(event.instance),
+				    event.instance
+			    );
 		    });
-	}
-
-	private performRender(): void {
-		this.isRendering = true;
-
-		const next: VNode = this.renderRootComponent();
-
-		this.patcher.patch(this.currentVNode, next);
-
-		this.currentVNode = next;
-
-		this.isRendering = false;
 	}
 }

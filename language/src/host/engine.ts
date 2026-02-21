@@ -89,8 +89,6 @@ export class WebLyraScript implements Engine {
 						const instance: Instance = handler.functionEnv.get(GRAMMAR.THIS);
 
 						handler.evalCall(instance, this.createEvent(event));
-
-						instance.markDirty(this.globalEventPipeline);
 					},
 					event
 				}
