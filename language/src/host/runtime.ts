@@ -162,6 +162,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.vdom.register(instance, next);
 
+		instance.markClean(this.eventPipeline);
+
 		this.isRendering = false;
 	}
 
