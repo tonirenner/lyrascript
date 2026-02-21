@@ -7,17 +7,10 @@
 <body>
 <div id="app"></div>
 <script type="module">
-	import Lyra, {WebApplicationRuntime} from '../dist/language.js';
+	import {WebApplicationRuntime} from '../dist/language.js';
 
-	console.log(await Lyra.tokenizeUrl('/lyrascript/tests/vdom.lyra'));
-
-	const runtime = new WebApplicationRuntime(document.getElementById('app'), true);
-	runtime.start('/lyrascript/tests/vdom.lyra')
-	       .then(() => {
-
-		       //setInterval(() => runtime.requestRender(), 1000)
-
-	       });
+	new WebApplicationRuntime(document.getElementById('app'), true)
+		.start('/lyrascript/tests/vdom.lyra');
 </script>
 </body>
 </html>
