@@ -35,7 +35,7 @@ export class InterfaceRegistry {
 	map: Map<string, InterfaceDefinition> = new Map();
 
 	register(node: ASTInterfaceNode): void {
-		this.set(node.name, InterfaceDefinition.constructFromAST(node));
+		this.set(node.name, InterfaceDefinition.fromAST(node));
 	}
 
 	all(): IterableIterator<InterfaceDefinition> {

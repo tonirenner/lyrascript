@@ -1,4 +1,3 @@
-import type {EventPipeline} from "./pipeline";
 import {toLyraValue} from "../interpreter/interpreter_conversion";
 import {LambdaFunctionCall} from "../interpreter/interpreter_runtime";
 
@@ -46,11 +45,4 @@ export class State<T = any> {
 			fn.evalCall(null, toLyraValue(value));
 		}
 	}
-}
-
-export function bindStateToEvent<T>(pipeline: EventPipeline, event: string, state: State<T>, map?: (payload: any) => T): void {
-	pipeline.on(event, (payload): void => {
-		const value: any = map ? map(payload) : payload;
-		state.set(value);
-	});
 }

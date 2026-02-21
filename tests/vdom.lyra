@@ -2,18 +2,21 @@ import System;
 
 class Component {
     private count: State<number> = new State<number>(0);
+    public className:string = "Component";
+    private counter:number = 0;
+
 
     constructor() {
-        this.count.subscribe({value:number -> System.log(value)});
+        this.count.subscribe({value:number -> System.log(this.count.get())});
     }
 
     public render(): VNode {
 
-        if ( this.count.get() % 2 == 0 ) {
-            return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component ^^</span>;
+        if ( this.counter % 2 == 0 ) {
+            return vdom <span className={this.className} onClick={e ->  this.counter = this.counter + 1 }>Hello from Component ^^</span>;
         }
 
-        return vdom <span onClick={e ->  this.count.set(this.count.get() + 1) }>Hello from Component</span>;
+        return vdom <span className={this.className} onClick={e -> this.counter = this.counter + 1 }>Hello from Component</span>;
     }
 }
 

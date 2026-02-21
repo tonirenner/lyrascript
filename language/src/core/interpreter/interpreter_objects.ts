@@ -13,6 +13,8 @@ import {throwRuntimeError} from "../errors";
 import type {ObjectRegistry} from "./interpreter_registry";
 import {evalExpression, evalMethodArguments, evalNode} from "./interpreter_runtime";
 import {castValue, fromLyraValue, LyraNativeObject} from "./interpreter_conversion";
+import type {EventPipeline} from "../event/pipeline";
+import LyraEvents from "../event/events";
 
 export class Environment {
 	parent: Environment | null;
@@ -61,6 +63,7 @@ export class Instance {
 	__instanceFields: { [index: string]: any };
 	__staticFields: { [index: string]: any };
 	__nativeInstance: any | null = null;
+	__isDirty: boolean = false
 
 	constructor(classDef: ClassDefinition) {
 		this.__classDef = classDef;
@@ -71,6 +74,18 @@ export class Instance {
 		this.id = Instance.generateInstanceUUID();
 	}
 
+	public markDirty(eventPipeline: EventPipeline): void {
+		this.__isDirty = true;
+
+		eventPipeline.emit(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, {instance: this});
+	}
+
+	public markClean(eventPipeline: EventPipeline): void {
+		this.__isDirty = false;
+
+		eventPipeline.emit(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, {instance: this});
+	}
+
 	private static generateInstanceUUID(): string {
 		return self.crypto.randomUUID();
 	}
@@ -79,7 +94,16 @@ export class Instance {
 		return this.__classDef.findMethodNode(name);
 	}
 
-	setInstanceField(name: string, value: any, expected: any = null): void {
+	hasPublicProperty(name: string): boolean {
+		try {
+			return this.__classDef.findInstanceFieldDefinition(name).modifiers.public;
+		} catch (e) {
+		}
+
+		return false;
+	}
+
+	setPublicProperty(name: string, value: any, expected: any = null): void {
 		let fieldDefinition: ClassFieldDefinition = this.__classDef.findInstanceFieldDefinition(name);
 
 		if (fieldDefinition.modifiers.public) {
@@ -90,8 +114,8 @@ export class Instance {
 		throwRuntimeError(`Field ${name} is not public.`);
 	}
 
-	initializeInstanceFields(objectRegistry: ObjectRegistry, environment: Environment): void {
-		this.__classDef.initializeInstanceFields(this, objectRegistry, environment);
+	initializeInstanceFields(objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): void {
+		this.__classDef.initializeInstanceFields(this, objectRegistry, environment, eventPipeline);
 	}
 }
 
@@ -274,7 +298,7 @@ export class ClassDefinition {
 
 	findInstanceFieldDefinition(name: string): ClassFieldDefinition {
 		const fieldDefinition: ClassFieldDefinition | undefined = this.instanceFields
-		                                                              .find((field: ClassFieldDefinition) => field.name === name);
+		                                                              .find((field: ClassFieldDefinition): boolean => field.name === name);
 
 		if (fieldDefinition instanceof ClassFieldDefinition) {
 			return fieldDefinition;
@@ -295,20 +319,20 @@ export class ClassDefinition {
 		return instance;
 	}
 
-	constructNewInstanceWithoutArguments(objectRegistry: ObjectRegistry, environment: Environment): Instance {
-		return this.constructNewInstance([], objectRegistry, environment);
+	constructNewInstanceWithoutArguments(objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
+		return this.constructNewInstance([], objectRegistry, environment, eventPipeline);
 	}
 
-	constructNewInstance(args: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	constructNewInstance(args: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
 		const newNode = new ASTNewNode(args, new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, this.name));
 
-		return this.constructInstanceByNewNode(newNode, objectRegistry, environment);
+		return this.constructInstanceByNewNode(newNode, objectRegistry, environment, eventPipeline);
 	}
 
-	constructInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	constructInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
 		const instance = this.constructEmptyInstance(objectRegistry);
 
-		instance.initializeInstanceFields(objectRegistry, environment);
+		instance.initializeInstanceFields(objectRegistry, environment, eventPipeline);
 
 		if (!this.constructorMethod) {
 			return instance;
@@ -322,6 +346,7 @@ export class ClassDefinition {
 			constructor.parameters,
 			objectRegistry,
 			environment,
+			eventPipeline,
 			instance
 		);
 
@@ -335,13 +360,13 @@ export class ClassDefinition {
 		}
 
 		for (const child of constructor.children) {
-			evalNode(child, objectRegistry, constructorEnv, instance);
+			evalNode(child, objectRegistry, constructorEnv, eventPipeline, instance);
 		}
 
 		return instance;
 	}
 
-	constructNativeInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+	constructNativeInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
 		const instance: Instance = this.constructEmptyInstance(objectRegistry);
 		const constructor: ClassMethodDefinition | null = this.constructorMethod;
 		const constructorEnv: Environment = new Environment(environment);
@@ -353,6 +378,7 @@ export class ClassDefinition {
 				: [],
 			objectRegistry,
 			environment,
+			eventPipeline,
 			instance
 		);
 
@@ -370,7 +396,7 @@ export class ClassDefinition {
 		return instance;
 	}
 
-	initializeInstanceFields(instance: Instance, objectRegistry: ObjectRegistry, environment: Environment): void {
+	initializeInstanceFields(instance: Instance, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): void {
 		if (instance.__fieldsInitialized) {
 			return;
 		}
@@ -378,14 +404,14 @@ export class ClassDefinition {
 		let rawValue;
 		for (const field of this.instanceFields) {
 			rawValue = field.initializer
-				? evalExpression(field.initializer, objectRegistry, environment)
+				? evalExpression(field.initializer, objectRegistry, environment, eventPipeline)
 				: null;
 
 			instance.__instanceFields[field.name] = castValue(rawValue, field.type);
 		}
 		for (const field of this.staticFields) {
 			rawValue = field.initializer
-				? evalExpression(field.initializer, objectRegistry, environment)
+				? evalExpression(field.initializer, objectRegistry, environment, eventPipeline)
 				: null;
 
 			instance.__staticFields[field.name] = castValue(rawValue, field.type);
@@ -413,7 +439,7 @@ export class InterfaceDefinition {
 		this.instanceMethods = instanceMethods;
 	}
 
-	static constructFromAST(node: ASTInterfaceNode): InterfaceDefinition {
+	static fromAST(node: ASTInterfaceNode): InterfaceDefinition {
 		const staticFields: ClassFieldDefinition[] = [];
 		const instanceMethods: { [index: string]: ClassMethodDefinition } = {};
 

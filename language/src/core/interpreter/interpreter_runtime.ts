@@ -41,8 +41,8 @@ import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInsta
 import {throwRuntimeError} from "../errors";
 import {AutoboxedTypes} from "../types/autoboxing";
 import {LyraArray} from "../../library/classes/array";
-import type {SourceSpan} from "../parser/parser_source";
 import type {VNode} from "../vdom/vdom";
+import type {EventPipeline} from "../event/pipeline";
 
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();
@@ -53,11 +53,13 @@ export class AbstractFunctionCall {
 	node: ASTNode;
 	objectRegistry: ObjectRegistry;
 	functionEnv: Environment;
+	eventPipeline: EventPipeline;
 
-	constructor(node: ASTNode, objectRegistry: ObjectRegistry, functionEnv: Environment) {
+	constructor(node: ASTNode, objectRegistry: ObjectRegistry, functionEnv: Environment, eventPipeline: EventPipeline) {
 		this.node = node;
 		this.objectRegistry = objectRegistry;
 		this.functionEnv = functionEnv;
+		this.eventPipeline = eventPipeline;
 	}
 
 	getASTCallNode(): ASTCallNode {
@@ -91,7 +93,14 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 			closureEnv.define(parameter.name, args[i]);
 		}
 
-		return evalReturn(node.children, this.objectRegistry, closureEnv, thisValue, node.returnType);
+		return evalReturn(
+			node.children,
+			this.objectRegistry,
+			closureEnv,
+			this.eventPipeline,
+			thisValue,
+			node.returnType
+		);
 	}
 }
 
@@ -110,6 +119,7 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 			[result],
 			this.objectRegistry,
 			this.functionEnv,
+			this.eventPipeline,
 			thisValue,
 			this.lookupFunctionType(callNode.callee.name).returnType
 		);
@@ -122,10 +132,10 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 	resolveCall(thisValue: Instance | null): any {
 		const node: ASTCallNode | null = this.getASTCallNode();
 		if (node === null) {
-			throwRuntimeError("Invalid function call.");
+			throwRuntimeError('Invalid function call.');
 		}
 
-		return evalExpression(node.callee, this.objectRegistry, this.functionEnv, thisValue);
+		return evalExpression(node.callee, this.objectRegistry, this.functionEnv, this.eventPipeline, thisValue);
 	}
 }
 
@@ -143,21 +153,27 @@ export function registerNativeFunctions(environment: Environment): void {
 	for (const name in globalFunctions) {
 		const globalFunction: any = globalFunctions[name];
 		if (!globalFunction) {
-			throwRuntimeError("Global function is null.");
+			throwRuntimeError('Global function is null.');
 		}
 		environment.define(name, globalFunctions);
 	}
 }
 
-export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+export function evalNode(
+	node: ASTNode,
+	objectRegistry: ObjectRegistry,
+	environment: Environment,
+	eventPipeline: EventPipeline,
+	thisValue: Instance | null = null
+): any {
 	if (node.isExpression) {
-		return new ReturnValue(evalExpression(node, objectRegistry, environment, thisValue));
+		return new ReturnValue(evalExpression(node, objectRegistry, environment, eventPipeline, thisValue));
 	}
 
 	switch (node.type) {
 		case ASTNodeType.PROGRAMM: {
 			for (const child of node.children) {
-				evalNode(child, objectRegistry, environment, thisValue);
+				evalNode(child, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			return null;
 		}
@@ -167,14 +183,14 @@ export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environm
 		}
 		case ASTNodeType.CLASS: {
 			if (node instanceof ASTClassNode) {
-				return evalClass(node, objectRegistry, environment);
+				return evalClass(node, objectRegistry, environment, eventPipeline);
 			}
 			throwRuntimeError(`Invalid class node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.VARIABLE: {
 			if (node instanceof ASTVariableNode) {
 				const value = node.init
-					? evalExpression(node.init, objectRegistry, environment, thisValue)
+					? evalExpression(node.init, objectRegistry, environment, eventPipeline, thisValue)
 					: null;
 				environment.define(node.name, value);
 				return null;
@@ -183,38 +199,38 @@ export function evalNode(node: ASTNode, objectRegistry: ObjectRegistry, environm
 		}
 		case ASTNodeType.IF: {
 			if (node instanceof ASTIfNode) {
-				return evalIf(node, objectRegistry, environment, thisValue);
+				return evalIf(node, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid if node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.MATCH: {
 			if (node instanceof ASTMatchNode) {
-				return evalMatch(node, objectRegistry, environment, thisValue);
+				return evalMatch(node, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid match node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.FOREACH: {
 			if (node instanceof ASTForeachNode) {
-				return evalForeach(node, objectRegistry, environment, thisValue);
+				return evalForeach(node, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid foreach node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.VDOM: {
 			if (node instanceof ASTVDomNode) {
-				return evalVDomNode(node, objectRegistry, environment, thisValue);
+				return evalVDomNode(node, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid foreach node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.EXPRESSION: {
 			if (node instanceof ASTExpressionNode) {
-				return evalExpression(node.expr, objectRegistry, environment, thisValue);
+				return evalExpression(node.expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid expression node ${node.type}.`, node.span);
 		}
 		case ASTNodeType.RETURN: {
 			if (node instanceof ASTReturnNode) {
 				const value: any = node.argument
-					? evalExpression(node.argument, objectRegistry, environment, thisValue)
+					? evalExpression(node.argument, objectRegistry, environment, eventPipeline, thisValue)
 					: null;
 				return new ReturnValue(value);
 			}
@@ -239,36 +255,36 @@ export function constructEmptyInstance(node: ASTClassNode, objectRegistry: Objec
 	return classDef.constructEmptyInstance(objectRegistry);
 }
 
-export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	return classDef.constructNativeInstanceByNewNode(expr, objectRegistry, environment);
+export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
+	return classDef.constructNativeInstanceByNewNode(expr, objectRegistry, environment, eventPipeline);
 }
 
-export function constructInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment): Instance {
-	return classDef.constructInstanceByNewNode(expr, objectRegistry, environment);
+export function constructInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
+	return classDef.constructInstanceByNewNode(expr, objectRegistry, environment, eventPipeline);
 }
 
-export function evalClass(node: ASTClassNode, objectRegistry: ObjectRegistry, environment: Environment): void {
+export function evalClass(node: ASTClassNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): void {
 	const instance: Instance = constructEmptyInstance(node, objectRegistry);
 
-	instance.initializeInstanceFields(objectRegistry, environment);
+	instance.initializeInstanceFields(objectRegistry, environment, eventPipeline);
 
 	environment.define(node.name, instance);
 }
 
-export function evalNew(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment): Instance {
+export function evalNew(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
 	if (!objectRegistry.classes.has(expr.name)) {
 		throwRuntimeError(`Unknown class ${expr.name}.`, expr.span);
 	}
 
 	const classDef = objectRegistry.classes.get(expr.name);
 	if (classDef.nativeInstance) {
-		return constructNativeInstance(expr, classDef, objectRegistry, environment);
+		return constructNativeInstance(expr, classDef, objectRegistry, environment, eventPipeline);
 	}
 
-	return constructInstance(expr, classDef, objectRegistry, environment);
+	return constructInstance(expr, classDef, objectRegistry, environment, eventPipeline);
 }
 
-export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
 	switch (expr.type) {
 		case ASTNodeType.STRING:
 		case ASTNodeType.NUMBER:
@@ -289,19 +305,19 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.BINARY: {
 			if (expr instanceof ASTBinaryNode) {
-				return evalBinary(expr, objectRegistry, environment, thisValue);
+				return evalBinary(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid binary expression ${expr.type}`);
 		}
 		case ASTNodeType.UNARY: {
 			if (expr instanceof ASTUnaryNode) {
-				return evalUnary(expr, objectRegistry, environment, thisValue);
+				return evalUnary(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid unary expression ${expr.type}.`, expr.span);
 		}
 		case ASTNodeType.ASSIGNMENT: {
 			if (expr instanceof ASTAssignmentNode) {
-				return evalAssign(expr, objectRegistry, environment, thisValue);
+				return evalAssign(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid assignment expression ${expr.type}`, expr.span);
 		}
@@ -313,37 +329,37 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.CALL: {
 			if (expr instanceof ASTCallNode) {
-				return evalCall(expr, objectRegistry, environment, thisValue);
+				return evalCall(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid call expression ${expr.type}`, expr.span);
 		}
 		case ASTNodeType.VDOM: {
 			if (expr instanceof ASTVDomNode) {
-				return evalVDomNode(expr, objectRegistry, environment, thisValue);
+				return evalVDomNode(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid call expression ${expr.type}`, expr.span);
 		}
 		case ASTNodeType.NEW: {
 			if (expr instanceof ASTNewNode) {
-				return evalNew(expr, objectRegistry, environment);
+				return evalNew(expr, objectRegistry, environment, eventPipeline);
 			}
 			throwRuntimeError(`Invalid call expression ${expr.type}`, expr.span);
 		}
 		case ASTNodeType.ARRAY: {
 			if (expr instanceof ASTArrayNode) {
-				return evalArray(expr, objectRegistry, environment, thisValue);
+				return evalArray(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid array expression ${expr.type}`, expr.span);
 		}
 		case ASTNodeType.INDEX: {
 			if (expr instanceof ASTIndexNode) {
-				return evalIndex(expr, objectRegistry, environment, thisValue);
+				return evalIndex(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid index expression ${expr.type}`, expr.span);
 		}
 		case ASTNodeType.LAMBDA: {
 			if (expr instanceof ASTLambdaNode) {
-				return evalLambda(expr, objectRegistry, environment);
+				return evalLambda(expr, objectRegistry, environment, eventPipeline);
 			}
 			throwRuntimeError(`Invalid lambda expression ${expr.type}`, expr.span);
 		}
@@ -353,9 +369,9 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 	}
 }
 
-export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, thisValue))
-	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, thisValue))
+export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, eventPipeline, thisValue))
+	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, eventPipeline, thisValue))
 
 	switch (expr.operator) {
 		case GRAMMAR.PLUS: {
@@ -403,10 +419,10 @@ export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, 
 	}
 }
 
-export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): Instance {
+export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): Instance {
 	const values: any[] = [];
 	for (const elem of expr.elements) {
-		values.push(evalExpression(elem, objectRegistry, environment, thisValue));
+		values.push(evalExpression(elem, objectRegistry, environment, eventPipeline, thisValue));
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get('Array');
@@ -416,13 +432,8 @@ export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, en
 	return instance;
 }
 
-/**
- * @param {ASTIndexNode} expr
- * @param {ObjectRegistry} objectRegistry
- * @param {Environment} environment
- * @param {Instance|null} thisValue
- */
-export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
+
+export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null) {
 	if (!expr.object) {
 		throwRuntimeError(`Index access on null.`, expr.span);
 	}
@@ -431,8 +442,8 @@ export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, en
 		throwRuntimeError(`Access with unspecific index.`, expr.span);
 	}
 
-	const object = evalExpression(expr.object, objectRegistry, environment, thisValue);
-	const index = evalExpression(expr.index, objectRegistry, environment, thisValue);
+	const object = evalExpression(expr.object, objectRegistry, environment, eventPipeline, thisValue);
+	const index = evalExpression(expr.index, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (!(object instanceof LyraArray || object.__nativeInstance instanceof LyraArray)) {
 		throwRuntimeError('Index access on non-array', expr.span);
@@ -448,22 +459,30 @@ export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, en
 	return value;
 }
 
-export function evalLambda(node: ASTLambdaNode, objectRegistry: ObjectRegistry, lambdaEnv: Environment): LambdaFunctionCall {
-	return new LambdaFunctionCall(node, objectRegistry, lambdaEnv)
+export function evalLambda(node: ASTLambdaNode, objectRegistry: ObjectRegistry, lambdaEnv: Environment, eventPipeline: EventPipeline): LambdaFunctionCall {
+	return new LambdaFunctionCall(node, objectRegistry, lambdaEnv, eventPipeline)
 }
 
-export function evalAssign(expr: ASTAssignmentNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	const value = evalExpression(expr.right, objectRegistry, environment, thisValue);
+export function evalAssign(expr: ASTAssignmentNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	const value: any = evalExpression(expr.right, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (expr.left.type === ASTNodeType.MEMBER) {
 		if (expr.left instanceof ASTMemberNode) {
-			const object = evalExpression(expr.left.object, objectRegistry, environment, thisValue);
+			const object: Instance = evalExpression(
+				expr.left.object,
+				objectRegistry,
+				environment,
+				eventPipeline,
+				thisValue
+			) as Instance;
 
 			if (expr.left.object.type === ASTNodeType.IDENTIFIER) {
 				object.__staticFields[expr.left.property] = value;
 			} else {
 				object.__instanceFields[expr.left.property] = value;
 			}
+
+			object.markDirty(eventPipeline);
 		} else {
 			throwRuntimeError(`Invalid member expression ${expr.type}`, expr.span);
 		}
@@ -485,7 +504,7 @@ export function evalMember(expr: ASTMemberNode, environment: Environment): any {
 	}
 }
 
-export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
 	// super call inside constructor
 	if (expr.callee.type === ASTNodeType.IDENTIFIER && expr.callee.name === GRAMMAR.SUPER) {
 		if (!thisValue || !thisValue.__classDef?.superClass) {
@@ -507,11 +526,12 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 		                     objectRegistry,
 		                     constructorEnv,
 		                     environment,
+		                     eventPipeline,
 		                     thisValue
 		);
 
 		for (const child of constructorMethod.children) {
-			evalNode(child, objectRegistry, constructorEnv, thisValue);
+			evalNode(child, objectRegistry, constructorEnv, eventPipeline, thisValue);
 		}
 
 		return null;
@@ -523,30 +543,30 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 				const className = expr.callee.object.name;
 
 				if (objectRegistry.classes.has(className)) {
-					return evalStaticCall(expr, className, objectRegistry, environment, thisValue);
+					return evalStaticCall(expr, className, objectRegistry, environment, eventPipeline, thisValue);
 				}
 			}
-			return evalInstanceCall(expr, objectRegistry, environment, thisValue);
+			return evalInstanceCall(expr, objectRegistry, environment, eventPipeline, thisValue);
 		}
 
 		return null;
 	}
 
-	return evalFunctionCall(expr, objectRegistry, environment, thisValue);
+	return evalFunctionCall(expr, objectRegistry, environment, eventPipeline, thisValue);
 }
 
-export function evalFunctionCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
-	const functionCall = evalExpression(expr.callee, objectRegistry, environment, thisValue);
-	const args = evalCallArguments(expr, objectRegistry, environment, thisValue);
+export function evalFunctionCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null) {
+	const functionCall = evalExpression(expr.callee, objectRegistry, environment, eventPipeline, thisValue);
+	const args = evalCallArguments(expr, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (functionCall instanceof LambdaFunctionCall) {
 		return functionCall.evalCall(thisValue, ...args);
 	}
 
-	return (new NativeFunctionCall(expr, objectRegistry, environment)).evalCall(thisValue, ...args);
+	return (new NativeFunctionCall(expr, objectRegistry, environment, eventPipeline)).evalCall(thisValue, ...args);
 }
 
-export function evalStaticCall(expr: ASTCallNode, className: string, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+export function evalStaticCall(expr: ASTCallNode, className: string, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
 	if (!(expr.callee instanceof ASTMemberNode)) {
 		throwRuntimeError(`Invalid member expression ${expr.type}`, expr.span);
 	}
@@ -559,7 +579,12 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 	}
 
 	if (classDef.nativeInstance && classDef.nativeInstance[methodDef.name]) {
-		const args = evalMethodArguments(expr, methodDef.parameters, objectRegistry, environment, thisValue)
+		const args = evalMethodArguments(expr,
+		                                 methodDef.parameters,
+		                                 objectRegistry,
+		                                 environment,
+		                                 eventPipeline,
+		                                 thisValue)
 		const rawArgs = args.map(fromLyraValue);
 		const result = classDef.nativeInstance[methodDef.name](...rawArgs);
 
@@ -571,6 +596,7 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 			[returnValue(result)],
 			objectRegistry,
 			new Environment(environment),
+			eventPipeline,
 			thisValue,
 			methodDef.returnType
 		);
@@ -578,20 +604,20 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 
 	const methodEnv = new Environment(environment);
 
-	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, thisValue);
+	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, eventPipeline, thisValue);
 
-	return evalReturn(methodDef.children, objectRegistry, methodEnv, thisValue, methodDef.returnType);
+	return evalReturn(methodDef.children, objectRegistry, methodEnv, eventPipeline, thisValue, methodDef.returnType);
 }
 
-export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null) {
+export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null) {
 	if (!(expr.callee instanceof ASTMemberNode)) {
 		throwRuntimeError(`Invalid member expression ${expr.type}`, expr.span);
 	}
 
 	// Objekt auswerten (u | this | super)
-	let target = evalExpression(expr.callee.object, objectRegistry, environment, thisValue);
+	let target = evalExpression(expr.callee.object, objectRegistry, environment, eventPipeline, thisValue);
 
-	target = autoBoxIfNeeded(target, objectRegistry, expr.callee.span);
+	target = autoBoxIfNeeded(target, objectRegistry);
 
 	if (!target || !target.__classDef) {
 		throwRuntimeError('Instance call on non-object', expr.callee.span);
@@ -620,7 +646,14 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	methodEnv.define(GRAMMAR.THIS, target);
 
 	if (target.__nativeInstance && methodDef.name in target.__nativeInstance) {
-		const args = evalMethodArguments(expr, methodDef.parameters, objectRegistry, environment, thisValue);
+		const args = evalMethodArguments(
+			expr,
+			methodDef.parameters,
+			objectRegistry,
+			environment,
+			eventPipeline,
+			thisValue
+		);
 		const rawArgs = args.map(fromLyraValue);
 		const result = target.__nativeInstance[methodDef.name](...rawArgs);
 
@@ -628,12 +661,17 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalReturn([returnValue(result)], objectRegistry, methodEnv, target, methodDef.returnType);
+		return evalReturn([returnValue(result)],
+		                  objectRegistry,
+		                  methodEnv,
+		                  eventPipeline,
+		                  target,
+		                  methodDef.returnType);
 	}
 
-	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, thisValue);
+	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, eventPipeline, thisValue);
 
-	return evalReturn(methodDef.children, objectRegistry, methodEnv, target, methodDef.returnType);
+	return evalReturn(methodDef.children, objectRegistry, methodEnv, eventPipeline, target, methodDef.returnType);
 }
 
 export function resolveInstanceMethod(classDef: ClassDefinition, objectRegistry: ObjectRegistry, methodName: string): ClassMethodDefinition | null {
@@ -655,8 +693,9 @@ export function bindMethodParameters(
 	objectRegistry: ObjectRegistry,
 	methodEnv: Environment,
 	environment: Environment,
+	eventPipeline: EventPipeline,
 	thisValue: Instance | null = null
-) {
+): void {
 
 	const args = callNode.arguments;
 	for (let i = 0; i < parameters.length; i++) {
@@ -670,9 +709,9 @@ export function bindMethodParameters(
 		let rawValue;
 
 		if (argument) {
-			rawValue = evalExpression(argument, objectRegistry, environment, thisValue);
+			rawValue = evalExpression(argument, objectRegistry, environment, eventPipeline, thisValue);
 		} else if (parameter?.defaultValue) {
-			rawValue = evalExpression(parameter.defaultValue, objectRegistry, environment, thisValue);
+			rawValue = evalExpression(parameter.defaultValue, objectRegistry, environment, eventPipeline, thisValue);
 		}
 
 		const casted = parameter.typeAnnotation
@@ -683,16 +722,16 @@ export function bindMethodParameters(
 	}
 }
 
-export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any[] {
+export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any[] {
 	if (node.callee instanceof ASTLambdaNode) {
 		const lambda = node.callee;
-		return evalMethodArguments(node, lambda.parameters, objectRegistry, environment, thisValue);
+		return evalMethodArguments(node, lambda.parameters, objectRegistry, environment, eventPipeline, thisValue);
 	}
 
 	if (node.callee.type === ASTNodeType.IDENTIFIER) {
 		return node.arguments.map(argument => {
 			return castValue(
-				evalExpression(argument, objectRegistry, environment, thisValue),
+				evalExpression(argument, objectRegistry, environment, eventPipeline, thisValue),
 				argument.type
 			);
 		});
@@ -709,7 +748,7 @@ export function evalCallArguments(node: ASTCallNode, objectRegistry: ObjectRegis
 	throwRuntimeError(`Unknown function ${moduleName}.${methodName}`, node.span);
 }
 
-export function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: ASTParameterNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any[] {
+export function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: ASTParameterNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any[] {
 	const args = [];
 
 	for (let i = 0; i < parameters.length; i++) {
@@ -719,9 +758,9 @@ export function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: 
 		let value;
 
 		if (argument) {
-			value = evalExpression(argument, objectRegistry, environment, thisValue);
+			value = evalExpression(argument, objectRegistry, environment, eventPipeline, thisValue);
 		} else if (parameter?.defaultValue) {
-			value = evalExpression(parameter.defaultValue, objectRegistry, environment, thisValue);
+			value = evalExpression(parameter.defaultValue, objectRegistry, environment, eventPipeline, thisValue);
 		} else {
 			throwRuntimeError(`[RuntimeError] Missing argument '${parameter?.name}'`, expr.span);
 		}
@@ -737,57 +776,57 @@ export function evalMethodArguments(expr: ASTCallNode | ASTNewNode, parameters: 
 	});
 }
 
-export function evalIf(node: ASTIfNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
+export function evalIf(node: ASTIfNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
 	const condition = castValue(
-		evalExpression(node.condition, objectRegistry, environment, thisValue),
+		evalExpression(node.condition, objectRegistry, environment, eventPipeline, thisValue),
 		TYPE_ENUM.BOOLEAN
 	);
 
 	// THEN
 	if (condition === true) {
-		return evalBlock(node.then.children, objectRegistry, new Environment(environment), thisValue);
+		return evalBlock(node.then.children, objectRegistry, new Environment(environment), eventPipeline, thisValue);
 	}
 
 	// ELSE
 	if (node.else) {
 		if (node.else instanceof ASTIfNode) {
-			return evalIf(node.else, objectRegistry, environment, thisValue);
+			return evalIf(node.else, objectRegistry, environment, eventPipeline, thisValue);
 		}
 
-		return evalBlock(node.else.children, objectRegistry, new Environment(environment), thisValue);
+		return evalBlock(node.else.children, objectRegistry, new Environment(environment), eventPipeline, thisValue);
 	}
 
 	return null;
 }
 
-export function evalMatch(node: ASTMatchNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	const matchValue = evalExpression(node.expression, objectRegistry, environment);
+export function evalMatch(node: ASTMatchNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	const matchValue: any = evalExpression(node.expression, objectRegistry, environment, eventPipeline);
 
 	for (const caseNode of node.cases) {
 		if (caseNode.test === null) {
 			continue;
 		}
 
-		const testValue = evalExpression(caseNode.test, objectRegistry, environment, thisValue);
+		const testValue = evalExpression(caseNode.test, objectRegistry, environment, eventPipeline, thisValue);
 
 		if (testValue === matchValue) {
-			return evalMatchCase(caseNode, objectRegistry, environment, thisValue);
+			return evalMatchCase(caseNode, objectRegistry, environment, eventPipeline, thisValue);
 		}
 	}
 
 	if (node.defaultCase) {
-		return evalMatchCase(node.defaultCase, objectRegistry, environment, thisValue);
+		return evalMatchCase(node.defaultCase, objectRegistry, environment, eventPipeline, thisValue);
 	}
 
 	return null;
 }
 
-export function evalMatchCase(node: ASTMatchCaseNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	return evalBlock(node.children, objectRegistry, new Environment(environment), thisValue);
+export function evalMatchCase(node: ASTMatchCaseNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	return evalBlock(node.children, objectRegistry, new Environment(environment), eventPipeline, thisValue);
 }
 
-export function evalForeach(node: ASTForeachNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	let iterable = evalExpression(node.iterable, objectRegistry, environment, thisValue);
+export function evalForeach(node: ASTForeachNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	let iterable = evalExpression(node.iterable, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (!(iterable instanceof Instance)) {
 		throwRuntimeError(`foreach expects an object implementing Iterable`, node.iterable.span);
@@ -803,12 +842,13 @@ export function evalForeach(node: ASTForeachNode, objectRegistry: ObjectRegistry
 		throwRuntimeError(`Object does not implement Iterable (missing iterator())`, node.iterable.span);
 	}
 
-	const iterator = evalInstanceCall(
-		(() => {
+	const iterator: any = evalInstanceCall(
+		((): ASTCallNode => {
 			return new ASTCallNode(new ASTMemberNode(node.iterable, 'iterator'));
 		})(),
 		objectRegistry,
 		environment,
+		eventPipeline,
 		thisValue
 	);
 
@@ -816,38 +856,39 @@ export function evalForeach(node: ASTForeachNode, objectRegistry: ObjectRegistry
 		throwRuntimeError(`iterator() must return an Iterator object`, node.iterable.span);
 	}
 
-	callIteratorMethod(iterator, 'rewind', objectRegistry, environment);
+	callIteratorMethod(iterator, 'rewind', objectRegistry, environment, eventPipeline);
 
-	while (callIteratorMethod(iterator, 'hasNext', objectRegistry, environment)) {
-		const value = callIteratorMethod(iterator, 'current', objectRegistry, environment);
+	while (callIteratorMethod(iterator, 'hasNext', objectRegistry, environment, eventPipeline)) {
+		const value = callIteratorMethod(iterator, 'current', objectRegistry, environment, eventPipeline);
 
 		const loopEnv = new Environment(environment);
 
 		loopEnv.define(node.iterator, value);
 
-		const result = evalBlock(node.body, objectRegistry, loopEnv, thisValue);
+		const result = evalBlock(node.body, objectRegistry, loopEnv, eventPipeline, thisValue);
 		if (result instanceof ReturnValue) {
 			return result;
 		}
 
-		callIteratorMethod(iterator, 'next', objectRegistry, environment);
+		callIteratorMethod(iterator, 'next', objectRegistry, environment, eventPipeline);
 	}
 
 	return null;
 }
 
-export function callIteratorMethod(iterator: Instance, methodName: string, objectRegistry: ObjectRegistry, environment: Environment): any {
+export function callIteratorMethod(iterator: Instance, methodName: string, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): any {
 	return callInstanceMethod(
 		iterator,
 		iterator.findeMethodNode(methodName),
 		[],
 		objectRegistry,
-		environment
+		environment,
+		eventPipeline
 	);
 }
 
-export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): any {
-	const value = evalExpression(node.argument, objectRegistry, environment, thisValue);
+export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	const value = evalExpression(node.argument, objectRegistry, environment, eventPipeline, thisValue);
 
 	switch (node.operator) {
 		case GRAMMAR.EXCLAMATION_MARK:
@@ -857,36 +898,42 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
 }
 
-export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null): VNode {
+export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): VNode {
 	const props: Record<string, any> = {};
 
 	for (const [name, value] of node.props) {
-		props[name] = evalExpression(value, objectRegistry, environment, thisValue);
+		props[name] = evalExpression(value, objectRegistry, environment, eventPipeline, thisValue);
 	}
 
 	const children: Array<VNode | string> = [];
 
-	for (const child of node.children) {
-		if (child instanceof ASTVDomTextNode) {
-			children.push(child.value);
-		} else if (child instanceof ASTVDomNode) {
-			children.push(evalVDomNode(child, objectRegistry, environment, thisValue));
-		}
-	}
 
-	return {
+	const vNode: VNode = {
 		tag: node.tag,
 		isComponent: objectRegistry.classes.has(node.tag),
+		parent: null,
 		component: null,
 		props: props,
 		children: children,
 		dom: null
 	};
+
+	for (const child of node.children) {
+		if (child instanceof ASTVDomTextNode) {
+			children.push(child.value);
+		} else {
+			const childVNode = evalExpression(child, objectRegistry, environment, eventPipeline, thisValue) as VNode;
+			childVNode.parent = vNode;
+			children.push(childVNode);
+		}
+	}
+
+	return vNode;
 }
 
-export function evalReturn(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
+export function evalReturn(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
 	try {
-		return evalBlock(blockNodes, objectRegistry, environment, thisValue, returnType);
+		return evalBlock(blockNodes, objectRegistry, environment, eventPipeline, thisValue, returnType);
 	} catch (executionStop) {
 		if (executionStop instanceof ExecutionStop) {
 			return castValue(executionStop.returnValue.value, executionStop.returnType?.name);
@@ -895,9 +942,9 @@ export function evalReturn(blockNodes: ASTNode[], objectRegistry: ObjectRegistry
 	}
 }
 
-export function evalBlock(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
+export function evalBlock(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {
 	for (const blockNode of blockNodes) {
-		const returnValue: any = evalNode(blockNode, objectRegistry, environment, thisValue);
+		const returnValue: any = evalNode(blockNode, objectRegistry, environment, eventPipeline, thisValue);
 		if (returnValue instanceof ReturnValue) {
 			throw new ExecutionStop(returnValue, returnType);
 		}
@@ -937,7 +984,7 @@ export function evalAnnotationProperties(annotation: ASTAnnotationNode): { [key:
 	return properties;
 }
 
-export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode, args: any[], objectRegistry: ObjectRegistry, environment: Environment): any {
+export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode, args: any[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): any {
 	const methodEnv = new Environment(environment);
 
 	methodEnv.define(GRAMMAR.THIS, instance);
@@ -950,7 +997,14 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalReturn([returnValue(result)], objectRegistry, methodEnv, instance, methodNode.returnType);
+		return evalReturn(
+			[returnValue(result)],
+			objectRegistry,
+			methodEnv,
+			eventPipeline,
+			instance,
+			methodNode.returnType
+		);
 	}
 
 	for (let i = 0; i < methodNode.parameters.length; i++) {
@@ -964,7 +1018,7 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 		let value;
 		if (!argument) {
 			value = parameter.defaultValue
-				? evalNode(parameter.defaultValue, objectRegistry, methodEnv, instance)
+				? evalNode(parameter.defaultValue, objectRegistry, methodEnv, eventPipeline, instance)
 				: null;
 		} else {
 			value = args[i];
@@ -973,10 +1027,10 @@ export function callInstanceMethod(instance: Instance, methodNode: ASTMethodNode
 		methodEnv.define(parameter.name, value);
 	}
 
-	return evalReturn(methodNode.children, objectRegistry, methodEnv, instance, methodNode.returnType);
+	return evalReturn(methodNode.children, objectRegistry, methodEnv, eventPipeline, instance, methodNode.returnType);
 }
 
-export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry, span: SourceSpan | null = null): Instance {
+export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry): Instance {
 	if (value instanceof Instance) {
 		return value;
 	}

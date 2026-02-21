@@ -717,7 +717,7 @@ export function parseLambda(parser: Parser): ASTLambdaNode {
 }
 
 export function looksLikeLambda(parser: Parser): boolean {
-	const start = parser.position();
+	const start: number = parser.position();
 
 	if (parser.peek().value !== GRAMMAR.BRACE_OPEN) {
 		return false;
@@ -735,7 +735,7 @@ export function looksLikeLambda(parser: Parser): boolean {
 		}
 	}
 
-	const isLambda = parser.peek().value === GRAMMAR.ARROW;
+	const isLambda: boolean = parser.peek().value === GRAMMAR.ARROW;
 	parser.seekAt(start)
 	return isLambda;
 }
@@ -750,7 +750,7 @@ export function parseExpressionStatement(parser: Parser): ASTExpressionNode {
 
 
 export function parseExpression(parser: Parser, precedence: number = 0): ASTNode {
-	let expr = parsePostfix(parser, parseUnary(parser));
+	let expr: ASTNode = parsePostfix(parser, parseUnary(parser));
 
 	while (true) {
 		const token = parser.peek();
@@ -802,18 +802,36 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 	parser.consumeIfText();
 
 	const props = new Map<string, ASTNode>();
-	while (!parser.peekIs(GRAMMAR.GREATER_THAN) && !parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
+	while (true) {
+
+		if (parser.peekIs(GRAMMAR.GREATER_THAN)) {
+			break;
+		}
+
+		if (parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
+			break;
+		}
+
 		const nameToken: Token = parser.expectIdentifier();
 		parser.expectOperator(GRAMMAR.ASSIGN);
 
 		let value: ASTNode;
+
 		if (parser.peekIs(GRAMMAR.BRACE_OPEN)) {
-			value = parseLambda(parser);
+			if (looksLikeLambda(parser)) {
+				value = parseLambda(parser);
+			} else {
+				parser.next();
+				value = parseExpression(parser);
+				parser.expectPunctuation(GRAMMAR.BRACE_CLOSE);
+			}
 		} else {
 			value = parseExpression(parser);
 		}
 
 		props.set(nameToken.value, value);
+
+		parser.consumeIfText();
 	}
 
 	parser.expectOperator(GRAMMAR.GREATER_THAN);
@@ -894,7 +912,7 @@ export function parsePrimary(parser: Parser): ASTNode {
 		return parseLambda(parser);
 	}
 
-	const token = parser.next();
+	const token: Token = parser.next();
 
 	if (token.value === GRAMMAR.BRACKET_SQUARE_OPEN) {
 		parser.rewind();

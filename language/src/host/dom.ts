@@ -28,9 +28,21 @@ export class HTMLElementCreator implements ElementCreator {
 
 		if (vNode.isComponent && vNode.component === null) {
 			vNode.component = this.applicationRuntime.createInstance(vNode.tag);
-			vNode.dom = this.create(
-				this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode
-			);
+
+			for (const [propertyKey, value] of Object.entries(vNode.props)) {
+				if (vNode.component.hasPublicProperty(propertyKey)) {
+					vNode.component.setPublicProperty(propertyKey, value);
+				}
+			}
+
+			const element: HTMLElement = this
+				.create(this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode) as HTMLElement;
+
+			for (const [propertyKey, value] of Object.entries(vNode.props)) {
+				element.setAttribute(propertyKey, String(value));
+			}
+
+			vNode.dom = element;
 
 			return vNode.dom;
 		}
@@ -48,8 +60,8 @@ export class HTMLElementCreator implements ElementCreator {
 		for (const [propertyKey, value] of Object.entries(vNode.props)) {
 			if (Events.isEvent(propertyKey)) {
 				this.applicationRuntime.addEventHandler(element, propertyKey, value as LambdaFunctionCall);
-			} else if (typeof value === 'string') {
-				element.setAttribute(propertyKey, value as string);
+			} else {
+				element.setAttribute(propertyKey, String(value));
 			}
 		}
 

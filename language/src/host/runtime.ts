@@ -6,6 +6,7 @@ import Events from "./events";
 import {type Instance} from "../core/interpreter/interpreter_objects";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {EventHandlerRegistry} from "./registry";
+import LyraEvents from "../core/event/events";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;
@@ -132,7 +133,11 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		this.eventPipeline
 		    .on(Events.DOM_EVENT, ({invoke}: any): void => {
 			    invoke();
-			    this.performRender();
+		    });
+
+		this.eventPipeline
+		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, (payload): void => {
+			    this.requestRender();
 		    });
 	}
 

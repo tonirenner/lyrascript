@@ -8,24 +8,38 @@ import {Interpreter} from "./interpreter/interpreter";
 import {FetchFileLoader} from "./loaders";
 import {ASTNode} from "./ast";
 import {Parser} from "./parser/parser";
+import {EventPipeline} from "./event/pipeline";
 
 export class LyraScriptProgram {
 	private globalEnvironment: Environment = new Environment();
 	private globalObjectRegistry: ObjectRegistry = new ObjectRegistry();
+	private globalEventPipeline: EventPipeline;
 
 	private typeChecker: TypeChecker = new TypeChecker(this.globalObjectRegistry);
-
 	private linker: Linker = new Linker(this.globalEnvironment, this.globalObjectRegistry, new FetchFileLoader());
 
-	private interpreter: Interpreter = new Interpreter(this.globalEnvironment, this.globalObjectRegistry);
-
-	private testSuite: TestSuites = new TestSuites(this.globalEnvironment, this.globalObjectRegistry);
+	private interpreter: Interpreter;
+	private testSuite: TestSuites;
 
 	private readonly isDebug: boolean = false;
 	private startTime: number = 0;
 
-	constructor(isDebug: boolean = false) {
+	constructor(isDebug: boolean = false, globalEventPipeline: EventPipeline = new EventPipeline()) {
 		this.isDebug = isDebug;
+
+		this.interpreter = new Interpreter(
+			this.globalEnvironment,
+			this.globalObjectRegistry,
+			globalEventPipeline
+		);
+
+		this.testSuite = new TestSuites(
+			this.globalEnvironment,
+			this.globalObjectRegistry,
+			globalEventPipeline
+		);
+
+		this.globalEventPipeline = globalEventPipeline;
 	}
 
 	getGlobalObjectRegistry(): ObjectRegistry {
@@ -35,6 +49,10 @@ export class LyraScriptProgram {
 
 	getGlobalEnvironment(): Environment {
 		return this.globalEnvironment;
+	}
+
+	getGlobalEventPipeline(): EventPipeline {
+		return this.globalEventPipeline;
 	}
 
 	async execute(source: Source): Promise<void> {

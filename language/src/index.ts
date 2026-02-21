@@ -6,7 +6,7 @@ import {Tokenizer} from "./core/tokenizer/tokenizer";
 import {Token} from "./core/grammar";
 import {LyraScriptProgram} from "./core/program";
 import {EventPipeline} from "./core/event/pipeline";
-import {bindStateToEvent, State} from "./core/event/state";
+import {State} from "./core/event/state";
 import {HTMLElementCreator} from "./host/dom";
 
 export {WebLyraScript} from "./host/engine";
@@ -19,7 +19,6 @@ const Lyra = {
 	EventPipeline,
 	HTMLElementCreator,
 	State,
-	bindStateToEvent,
 	Program: (isDebug: boolean): LyraScriptProgram => Program(isDebug),
 	execute: (source: Source, isDebug: boolean = false): Promise<void> => execute(source, isDebug),
 	executeFromString: (code: string, isDebug: boolean = false): Promise<void> => executeFromString(code, isDebug),

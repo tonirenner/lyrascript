@@ -27,15 +27,15 @@ export interface Engine {
 
 export class WebLyraScript implements Engine {
 	private readonly program: LyraScriptProgram;
-	private objectRegistry: ObjectRegistry = new ObjectRegistry();
-	private environment: Environment = new Environment();
+	private globalObjectRegistry: ObjectRegistry;
+	private globalEnvironment: Environment;
 	private rootInstance: Instance | null = null;
 
-	constructor(
-		private readonly eventPipeline: EventPipeline = new EventPipeline(),
-		isDebug: boolean = false
-	) {
-		this.program = new LyraScriptProgram(isDebug);
+
+	constructor(private globalEventPipeline: EventPipeline = new EventPipeline(), isDebug: boolean = false) {
+		this.program = new LyraScriptProgram(isDebug, this.globalEventPipeline);
+		this.globalObjectRegistry = this.program.getGlobalObjectRegistry();
+		this.globalEnvironment = this.program.getGlobalEnvironment();
 	}
 
 	public getRootInstance(): Instance {
@@ -47,7 +47,11 @@ export class WebLyraScript implements Engine {
 
 	public createInstance(className: string): Instance {
 		return this.getClassDefinition(className)
-		           .constructNewInstanceWithoutArguments(this.objectRegistry, this.environment);
+		           .constructNewInstanceWithoutArguments(
+			           this.globalObjectRegistry,
+			           this.globalEnvironment,
+			           this.globalEventPipeline
+		           );
 	}
 
 	public callRootInstanceMethod(methodName: string, args: any[]): any {
@@ -61,34 +65,34 @@ export class WebLyraScript implements Engine {
 			instance,
 			instance.findeMethodNode(methodName),
 			args,
-			this.objectRegistry,
-			this.environment
+			this.globalObjectRegistry,
+			this.globalEnvironment,
+			this.globalEventPipeline
 		);
 	}
 
 	public async executeEntryFile(url: string, className: string): Promise<void> {
 		return this.program.execute(await fetchSource(url))
 		           .then(() => {
-			           this.objectRegistry = this.program.getGlobalObjectRegistry();
-			           this.environment = this.program.getGlobalEnvironment();
 			           this.rootInstance = this.createInstance(className);
 		           });
 	}
 
 	public createEvent(event: Event): Instance {
-		return lyraEventClassDef.constructNativeInstance(this.objectRegistry, [event]);
+		return lyraEventClassDef.constructNativeInstance(this.globalObjectRegistry, [event]);
 	}
 
 	public createEventHandler(handler: LambdaFunctionCall, eventName: string): (event: Event) => void {
 		return (event: Event): void => {
-			this.eventPipeline.emit(
+			this.globalEventPipeline.emit(
 				eventName,
 				{
 					invoke: (): any => {
-						handler.evalCall(
-							handler.functionEnv.get(GRAMMAR.THIS) as Instance,
-							this.createEvent(event)
-						);
+						const instance: Instance = handler.functionEnv.get(GRAMMAR.THIS);
+
+						handler.evalCall(instance, this.createEvent(event));
+
+						instance.markDirty(this.globalEventPipeline);
 					},
 					event
 				}
@@ -98,6 +102,6 @@ export class WebLyraScript implements Engine {
 
 
 	private getClassDefinition(className: string): ClassDefinition {
-		return this.objectRegistry.classes.get(className);
+		return this.globalObjectRegistry.classes.get(className);
 	}
 }

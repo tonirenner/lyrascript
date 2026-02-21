@@ -47,7 +47,7 @@ class ${CLASS_NAME}<T> {
 	
 	public set(value: T): void;
 	
-	public subscribe(fn: (T) -> void): number;
+	public subscribe(fn: (T) -> mixed): number;
 	
 	public unsubscribe(id: number): boolean;
 }`

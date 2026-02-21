@@ -7,7 +7,9 @@
 <body>
 <div id="app"></div>
 <script type="module">
-	import {WebApplicationRuntime} from '../dist/language.js';
+	import Lyra, {WebApplicationRuntime} from '../dist/language.js';
+
+	console.log(await Lyra.tokenizeUrl('/lyrascript/tests/vdom.lyra'));
 
 	const runtime = new WebApplicationRuntime(document.getElementById('app'), true);
 	runtime.start('/lyrascript/tests/vdom.lyra')
