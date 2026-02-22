@@ -1,0 +1,38 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Neon Gradient -->
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff00ff"/>
+            <stop offset="100%" stop-color="#00ffff"/>
+        </linearGradient>
+
+        <!-- Glow -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4"/>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Glass Blur -->
+        <filter id="glassBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="5"/>
+        </filter>
+    </defs>
+
+    <!-- Hintergrund-Glas-Kreis -->
+    <circle cx="100" cy="100" r="90" fill="white" fill-opacity="0.02" filter="url(#glassBlur)"/>
+
+    <!-- Neon Initialen -->
+    <text x="50%" y="55%" font-family="monospace" font-size="80" fill="url(#gradient)" text-anchor="middle"
+          alignment-baseline="middle" filter="url(#glow)">
+        LS
+    </text>
+
+    <!-- Subtle Shadow -->
+    <text x="50%" y="55%" font-family="monospace" font-size="80" fill="black" text-anchor="middle"
+          alignment-baseline="middle" opacity="0.1">
+        LS
+    </text>
+</svg>
