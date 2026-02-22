@@ -1,6 +1,5 @@
 ![LyraScript](icons/lyrascript.svg)
 
-# LyraScript
 
 LyraScript is a modern scripting language with a static type system and an integrated VDOM runtime.
 
