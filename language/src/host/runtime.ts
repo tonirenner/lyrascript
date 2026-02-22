@@ -109,6 +109,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		super(new WebLyraScript(eventPipeline, isDebug), eventPipeline, eventHandlerRegistry);
 
 		this.patcher = new HTMLElementPatcher(mountPoint, this, this.vdom);
+
+		this.exposeRuntime();
 	}
 
 	public override async start(url: string, className: string = 'App'): Promise<void> {
@@ -180,5 +182,14 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 				    instance
 			    );
 		    });
+	}
+
+	private exposeRuntime(): void {
+		const global: any = window as Window;
+
+		global.__LYRA__ = global.__LYRA__ || {
+			version: '0.0.1',
+			runtime: this,
+		};
 	}
 }
