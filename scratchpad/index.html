@@ -30,6 +30,12 @@
             opacity: 0.8;
         }
 
+        header h1 > img {
+            vertical-align: middle;
+            width: 24px;
+            height: 24px;
+        }
+
         button {
             background: #2d6cdf;
             color: white;
@@ -104,8 +110,11 @@
 <body>
 
 <header>
-    <h1>Lyra Scratchpad</h1>
-    <button id="runBtn">Run (Ctrl + Enter)</button>
+    <h1>
+        <img src="./../icons/ls.svg" alt="LyraScript">
+        Lyra Scratchpad
+    </h1>
+    <button id="run-button">Run (Ctrl + Enter)</button>
 </header>
 
 <main>
@@ -164,7 +173,7 @@ app.run();
 	const tokensEl = document.getElementById('tokens');
 	const astEl = document.getElementById('ast');
 	const stderrEl = document.getElementById('stderr');
-	const runBtn = document.getElementById('runBtn');
+	const runButton = document.getElementById('run-button');
 
 	const output = new ScratchpadOutput();
 
@@ -212,7 +221,7 @@ app.run();
 		}
 	}
 
-	runBtn.onclick = run;
+	runButton.onclick = run;
 
 	document.addEventListener('keydown', e => {
 		if (e.ctrlKey && e.key === 'Enter') {
