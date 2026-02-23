@@ -3,8 +3,6 @@ const Sources = {
 	LYRA_PAGE: 'LYRA_PAGE'
 };
 
-document.body.style.border = "5px solid red";
-
 const script = document.createElement('script');
 script.src = chrome.runtime.getURL('bridge.js');
 script.onload = () => script.remove();
@@ -18,18 +16,11 @@ document.documentElement.appendChild(script);
 
 function dispatchMessageFromBridge() {
 	window.addEventListener('message', (event) => {
-		if (event.source !== window) {
+		if (event.source !== window || event.data?.source !== Sources.LYRA_PAGE) {
 			return;
 		}
 
-		if (event.data?.source !== Sources.LYRA_PAGE) {
-			return;
-		}
-
-		chrome.runtime.sendMessage({
-			                           type: event.data.type,
-			                           version: event.data.payload
-		                           });
+		chrome.runtime.sendMessage({type: event.data.type, version: event.data.payload});
 	});
 }
 

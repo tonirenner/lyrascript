@@ -26,26 +26,32 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 			} else {
 				console.warn('lyra runtime could not be found');
 			}
-
-			console.info('request registry ...');
-			chrome.tabs.sendMessage(
-				sender.tab.id,
-				{
-					type: 'GET_REGISTRY'
-				}
-			);
+			break;
+		}
+		case MessageTypes.GET_REGISTRY: {
+			chrome.tabs.sendMessage(msg.tabId, {type: MessageTypes.GET_REGISTRY})
 			break;
 		}
 	}
-
-
 });
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-
-	if (msg.type === MessageTypes.REGISTRY_DATA) {
-		console.log(msg)
-		console.log("Registry:", msg.version.instances);
+chrome.runtime.onConnect.addListener((port) => {
+	if (port.name !== 'lyra-devtools') {
+		return;
 	}
 
+	port.onMessage.addListener((msg) => {
+		switch (msg.type) {
+			case MessageTypes.GET_REGISTRY: {
+				chrome.tabs.sendMessage(msg.tabId, {
+					type: MessageTypes.GET_REGISTRY
+				});
+				break;
+			}
+		}
+	});
+
+	chrome.runtime.onMessage.addListener((msg) => {
+		port.postMessage(msg);
+	});
 });
