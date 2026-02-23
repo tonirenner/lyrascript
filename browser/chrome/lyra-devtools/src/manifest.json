@@ -13,8 +13,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*/*",
-        "http://*/*"
+        "<all_urls>"
       ],
       "js": [
         "content.js"
@@ -24,7 +23,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "page_bridge.js"
+        "bridge.js",
+        "devtools.js"
       ],
       "matches": [
         "<all_urls>"
