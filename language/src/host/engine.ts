@@ -89,7 +89,7 @@ export class WebLyraScript implements Engine {
 	}
 
 	public createEvent(event: Event): Instance {
-		return lyraEventClassDef.constructNativeInstance(this._globalObjectRegistry, [event]);
+		return lyraEventClassDef.constructNativeInstance([event]);
 	}
 
 	public createEventHandler(handler: LambdaFunctionCall, eventName: string): (event: Event) => void {
