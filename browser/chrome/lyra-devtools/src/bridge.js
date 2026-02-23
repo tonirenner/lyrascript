@@ -15,7 +15,6 @@ const lyra = window['__LYRA__'] || null;
 
 (function () {
 	sendMessageToExtension(MessageTypes.LYRA_CHECK, {
-		type: MessageTypes.LYRA_CHECK,
 		foundRuntime: !!lyra,
 		version: lyra?.version
 	});
