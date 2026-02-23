@@ -74,12 +74,14 @@ function sendMessageToExtension(type, payload) {
  */
 function onMessageFromExtension(callback) {
 	window.addEventListener('message', (event) => {
+
 		if (event.source !== window) {
 			return;
 		}
 		if (event.data?.source !== Sources.LYRA_EXTENSION) {
 			return;
 		}
+		console.log(event);
 		callback(event.data);
 	})
 }
