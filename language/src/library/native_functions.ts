@@ -3,9 +3,9 @@ import {TYPE_ENUM} from "../core/grammar";
 import {throwNativeError} from "../core/errors";
 
 export class NativeFunction {
-	name: string;
-	parameterNodes: ASTParameterNode[] = [];
-	returnType: ASTTypeNode;
+	readonly name: string;
+	readonly parameterNodes: ASTParameterNode[] = [];
+	readonly returnType: ASTTypeNode;
 
 	constructor(name: string, parameters: ASTParameterNode[], returnType: ASTTypeNode) {
 		this.name = name;
@@ -15,13 +15,13 @@ export class NativeFunction {
 }
 
 export class NativeFunctionTypeRegistry {
-	functions: Map<string, NativeFunction> = new Map();
+	readonly functions: Map<string, NativeFunction> = new Map();
 
-	has(name: string): boolean {
+	public has(name: string): boolean {
 		return this.functions.has(name);
 	}
 
-	get(name: string): NativeFunction {
+	public get(name: string): NativeFunction {
 		const nativeFunction: NativeFunction | undefined = this.functions.get(name);
 		if (!nativeFunction) {
 			throwNativeError(`Function ${name} not found.`);
@@ -29,7 +29,7 @@ export class NativeFunctionTypeRegistry {
 		return nativeFunction;
 	}
 
-	set(name: string, parameters: ASTParameterNode[], returnType: ASTTypeNode): NativeFunctionTypeRegistry {
+	public set(name: string, parameters: ASTParameterNode[], returnType: ASTTypeNode): NativeFunctionTypeRegistry {
 		this.functions.set(name, new NativeFunction(name, parameters, returnType));
 		return this;
 	}
@@ -41,7 +41,7 @@ export class NativeFunctions {
 	/**
 	 * @return {Object.<string, function>}
 	 */
-	getGlobalFunctions(): { [key: string]: (...args: any[]) => any } {
+	public getGlobalFunctions(): { [key: string]: (...args: any[]) => any } {
 		return {
 			[NativeFunctions.PRINT]: (...args) => {
 				console.log(...args);
@@ -49,7 +49,7 @@ export class NativeFunctions {
 		};
 	}
 
-	getGlobalFunctionTypeRegistry(): NativeFunctionTypeRegistry {
+	public getGlobalFunctionTypeRegistry(): NativeFunctionTypeRegistry {
 		const functions = new NativeFunctionTypeRegistry();
 		functions.set(
 			NativeFunctions.PRINT,

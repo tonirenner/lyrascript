@@ -8,7 +8,7 @@ import {StateType} from "./classes/state";
 import {EventType} from "./classes/event";
 
 export class NativeClasses {
-	registry: Map<string, NativeClass> = new Map();
+	readonly registry: Map<string, NativeClass> = new Map();
 
 	constructor() {
 		this.registry.set(Assert.CLASS_NAME, new Assert());

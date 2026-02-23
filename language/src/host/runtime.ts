@@ -46,11 +46,11 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._eventPipeline;
 	}
 
-	renderRootComponent(): VNode {
+	public renderRootComponent(): VNode {
 		return this.renderComponent(this._engine.getRootInstance());
 	}
 
-	renderComponent(instance: Instance): VNode {
+	public renderComponent(instance: Instance): VNode {
 		return this.callMethod(instance, 'render', []) as VNode
 	}
 

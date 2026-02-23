@@ -5,9 +5,9 @@ import {throwRuntimeError} from "../core/errors";
 import type {Source} from "../core/parser/parser_source";
 
 export class NativeClass {
-	name: string;
-	nativeInstance: any;
-	nativeClassSource: Source;
+	readonly name: string;
+	readonly nativeInstance: any;
+	readonly nativeClassSource: Source;
 	isAutoloadAble: boolean = false;
 
 	constructor(name: string, nativeInstance: any, source: Source) {
