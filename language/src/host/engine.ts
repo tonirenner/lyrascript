@@ -14,6 +14,10 @@ export interface Engine {
 
 	createInstance(className: string): Instance;
 
+	getObjectRegistry(): ObjectRegistry;
+
+	getEnvironment(): Environment;
+
 	getRootInstance(): Instance;
 
 	callRootInstanceMethod(methodName: string, args: any[]): any;
@@ -27,15 +31,23 @@ export interface Engine {
 
 export class WebLyraScript implements Engine {
 	private readonly program: LyraScriptProgram;
-	private readonly globalObjectRegistry: ObjectRegistry;
-	private readonly globalEnvironment: Environment;
+	private readonly _globalObjectRegistry: ObjectRegistry;
+	private readonly _globalEnvironment: Environment;
 	private rootInstance: Instance | null = null;
 
 
 	constructor(private globalEventPipeline: EventPipeline = new EventPipeline(), isDebug: boolean = false) {
 		this.program = new LyraScriptProgram(isDebug, this.globalEventPipeline);
-		this.globalObjectRegistry = this.program.getGlobalObjectRegistry();
-		this.globalEnvironment = this.program.getGlobalEnvironment();
+		this._globalObjectRegistry = this.program.getGlobalObjectRegistry();
+		this._globalEnvironment = this.program.getGlobalEnvironment();
+	}
+
+	getObjectRegistry(): ObjectRegistry {
+		return this._globalObjectRegistry;
+	}
+
+	getEnvironment(): Environment {
+		return this._globalEnvironment;
 	}
 
 	public getRootInstance(): Instance {
@@ -48,8 +60,8 @@ export class WebLyraScript implements Engine {
 	public createInstance(className: string): Instance {
 		return this.getClassDefinition(className)
 		           .constructNewInstanceWithoutArguments(
-			           this.globalObjectRegistry,
-			           this.globalEnvironment,
+			           this._globalObjectRegistry,
+			           this._globalEnvironment,
 			           this.globalEventPipeline
 		           );
 	}
@@ -63,8 +75,8 @@ export class WebLyraScript implements Engine {
 			instance,
 			instance.findeMethodNode(methodName),
 			args,
-			this.globalObjectRegistry,
-			this.globalEnvironment,
+			this._globalObjectRegistry,
+			this._globalEnvironment,
 			this.globalEventPipeline
 		);
 	}
@@ -77,7 +89,7 @@ export class WebLyraScript implements Engine {
 	}
 
 	public createEvent(event: Event): Instance {
-		return lyraEventClassDef.constructNativeInstance(this.globalObjectRegistry, [event]);
+		return lyraEventClassDef.constructNativeInstance(this._globalObjectRegistry, [event]);
 	}
 
 	public createEventHandler(handler: LambdaFunctionCall, eventName: string): (event: Event) => void {
@@ -98,6 +110,6 @@ export class WebLyraScript implements Engine {
 
 
 	private getClassDefinition(className: string): ClassDefinition {
-		return this.globalObjectRegistry.classes.get(className);
+		return this._globalObjectRegistry.classes.get(className);
 	}
 }

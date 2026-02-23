@@ -252,7 +252,7 @@ export function constructEmptyInstance(node: ASTClassNode, objectRegistry: Objec
 		objectRegistry.classes.set(node.name, classDef);
 	}
 
-	return classDef.constructEmptyInstance(objectRegistry);
+	return classDef.constructEmptyInstance();
 }
 
 export function constructNativeInstance(expr: ASTNewNode, classDef: ClassDefinition, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
@@ -426,7 +426,7 @@ export function evalArray(expr: ASTArrayNode, objectRegistry: ObjectRegistry, en
 	}
 
 	const classDef: ClassDefinition = objectRegistry.classes.get('Array');
-	const instance: Instance = classDef.constructEmptyInstance(objectRegistry);
+	const instance: Instance = classDef.constructEmptyInstance();
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(values));
 
 	return instance;
@@ -1052,7 +1052,7 @@ export function autoBoxIfNeeded(value: any, objectRegistry: ObjectRegistry): Ins
 
 export function createBoxedInstance(className: string, primitiveValue: any, objectRegistry: ObjectRegistry): Instance {
 	const classDef: ClassDefinition = objectRegistry.classes.get(className);
-	const instance: Instance = classDef.constructEmptyInstance(objectRegistry);
+	const instance: Instance = classDef.constructEmptyInstance();
 
 	instance.__nativeInstance = new classDef.nativeInstance(fromLyraValue(primitiveValue));
 

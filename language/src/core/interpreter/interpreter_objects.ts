@@ -307,14 +307,12 @@ export class ClassDefinition {
 		throwRuntimeError(`Field ${name} not found in class ${this.name}.`);
 	}
 
-	constructEmptyInstance(objectRegistry: ObjectRegistry): Instance {
-		const instance = new Instance(this);
-		objectRegistry.instances.register(instance);
-		return instance;
+	constructEmptyInstance(): Instance {
+		return new Instance(this);
 	}
 
-	constructNativeInstance(objectRegistry: ObjectRegistry, args: any[] = []): Instance {
-		const instance: Instance = this.constructEmptyInstance(objectRegistry);
+	constructNativeInstance(args: any[] = []): Instance {
+		const instance: Instance = this.constructEmptyInstance();
 		instance.__nativeInstance = new this.nativeInstance(...args);
 		return instance;
 	}
@@ -325,12 +323,13 @@ export class ClassDefinition {
 
 	constructNewInstance(args: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
 		const newNode = new ASTNewNode(args, new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, this.name));
-
 		return this.constructInstanceByNewNode(newNode, objectRegistry, environment, eventPipeline);
 	}
 
 	constructInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
-		const instance = this.constructEmptyInstance(objectRegistry);
+		const instance: Instance = this.constructEmptyInstance();
+
+		objectRegistry.instances.register(instance);
 
 		instance.initializeInstanceFields(objectRegistry, environment, eventPipeline);
 
@@ -367,7 +366,10 @@ export class ClassDefinition {
 	}
 
 	constructNativeInstanceByNewNode(expr: ASTNewNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline): Instance {
-		const instance: Instance = this.constructEmptyInstance(objectRegistry);
+		const instance: Instance = this.constructEmptyInstance();
+
+		objectRegistry.instances.register(instance);
+
 		const constructor: ClassMethodDefinition | null = this.constructorMethod;
 		const constructorEnv: Environment = new Environment(environment);
 
