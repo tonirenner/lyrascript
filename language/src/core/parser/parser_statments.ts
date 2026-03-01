@@ -834,6 +834,14 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 		parser.consumeIfText();
 	}
 
+	if (parser.peekIs(GRAMMAR.XML_CLOSE_TAG)) {
+		parser.next();
+
+		const node = new ASTVDomNode(tag, props, []);
+		node.span = spanFrom(startToken, parser.peek());
+		return node;
+	}
+
 	parser.expectOperator(GRAMMAR.GREATER_THAN);
 
 	const children: ASTNode[] = [];
