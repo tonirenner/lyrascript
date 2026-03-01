@@ -847,13 +847,12 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 	const children: ASTNode[] = [];
 	while (!parser.peekIs(GRAMMAR.XML_OPEN_CLOSE_TAG)) {
 
-		if (parser.peek().type === TokenType.OPERATOR) {
+		if (parser.peek().value === GRAMMAR.LESS_THAN) {
 			children.push(parseVDomElement(parser));
 			continue;
 		}
 
 		children.push(parseVDomText(parser));
-
 	}
 
 	parser.expectOperator(GRAMMAR.XML_OPEN_CLOSE_TAG);
