@@ -21,7 +21,7 @@ export class Tokenizer {
 		let line: number = 1;
 		let column: number = 0;
 
-		const ifIsConsumingLineComment = (): boolean => {
+		const ifIsConsumingLineComment: () => boolean = (): boolean => {
 			const lineComment: Token | null = this.matchLineCommentAt(i);
 			if (lineComment) {
 				tokens.push(lineComment.withLineAndColumn(line, column));
@@ -34,7 +34,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingString = (): boolean => {
+		const ifIsConsumingString: () => boolean = (): boolean => {
 			const string: Token | null = this.matchStringAt(i);
 			if (string) {
 				tokens.push(string.withLineAndColumn(line, column));
@@ -46,7 +46,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingPunctuation = (): boolean => {
+		const ifIsConsumingPunctuation: () => boolean = (): boolean => {
 			const punctuation: Token | null = this.matchPunctuationAt(i);
 			if (punctuation) {
 				tokens.push(punctuation.withLineAndColumn(line, column));
@@ -58,7 +58,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingIdentifier = (): boolean => {
+		const ifIsConsumingIdentifier: () => boolean = (): boolean => {
 			const identifier: Token | null = this.matchIdentifierAt(i);
 			if (identifier) {
 				tokens.push(identifier.withLineAndColumn(line, column));
@@ -78,7 +78,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingNumber = (): boolean => {
+		const ifIsConsumingNumber: () => boolean = (): boolean => {
 			const number: Token | null = this.matchNumberAt(i);
 			if (number) {
 				tokens.push(number.withLineAndColumn(line, column));
@@ -90,7 +90,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingOperator = (): boolean => {
+		const ifIsConsumingOperator: () => boolean = (): boolean => {
 			const operator: Token | null = this.matchOperatorAt(i);
 			if (operator) {
 				tokens.push(operator.withLineAndColumn(line, column));
@@ -102,7 +102,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingAnnotation = (): boolean => {
+		const ifIsConsumingAnnotation: () => boolean = (): boolean => {
 			const annotation: Token | null = this.matchAnnotationAt(i);
 			if (annotation) {
 				tokens.push(annotation.withLineAndColumn(line, column));
@@ -255,7 +255,7 @@ export class Tokenizer {
 		let i: number = startIndex;
 		let textBuffer: string = '';
 
-		const ifIsConsumingString = (): boolean => {
+		const ifIsConsumingString: () => boolean = (): boolean => {
 			const string: Token | null = this.matchStringAt(i);
 			if (string) {
 				flushTextBuffer();
@@ -268,7 +268,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingPunctuation = (): boolean => {
+		const ifIsConsumingPunctuation: () => boolean = (): boolean => {
 			const punctuation: Token | null = this.matchPunctuationAt(i, Rules.DOM_PUNCTUATIONS);
 			if (punctuation) {
 				flushTextBuffer();
@@ -281,10 +281,15 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingIdentifier = (): boolean => {
+		const ifIsConsumingIdentifier: () => boolean = (): boolean => {
 			const identifier: Token | null = this.matchIdentifierAt(i);
 			if (identifier) {
+				if ([GRAMMAR.CLASS].includes(identifier.value)) {
+					identifier.type = TokenType.IDENTIFIER;
+				}
+
 				flushTextBuffer();
+
 				tokens.push(identifier.withLineAndColumn(line, column));
 				i = identifier.end;
 
@@ -294,7 +299,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingNumber = (): boolean => {
+		const ifIsConsumingNumber: () => boolean = (): boolean => {
 			const number: Token | null = this.matchNumberAt(i);
 			if (number) {
 				flushTextBuffer();
@@ -308,7 +313,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const ifIsConsumingOperator = (): boolean => {
+		const ifIsConsumingOperator: () => boolean = (): boolean => {
 			const operator: Token | null = this.matchOperatorAt(i, Rules.DOM_OPERATORS);
 			if (operator) {
 				flushTextBuffer();
@@ -322,7 +327,7 @@ export class Tokenizer {
 			return false;
 		}
 
-		const flushTextBuffer = (): void => {
+		const flushTextBuffer: () => void = (): void => {
 			if (textBuffer.length > 0) {
 				tokens.push(
 					new Token(
@@ -338,7 +343,7 @@ export class Tokenizer {
 		};
 
 
-		let ignoreWhitespace = false;
+		let ignoreWhitespace: boolean = false;
 		while (i < this.source.length) {
 			const char: string = this.source.charAt(i);
 
@@ -387,7 +392,7 @@ export class Tokenizer {
 
 		flushTextBuffer();
 
-		return {tokens, newIndex: i, line, column};
+		return {tokens: tokens, newIndex: i, line: line, column: column};
 	}
 }
 

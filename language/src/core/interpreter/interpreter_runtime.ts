@@ -41,7 +41,7 @@ import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInsta
 import {throwRuntimeError} from "../errors";
 import {AutoboxedTypes} from "../types/autoboxing";
 import {LyraArray} from "../../library/classes/array";
-import type {VNode} from "../vdom/vdom";
+import type {VChild} from "../vdom/vdom";
 import type {EventPipeline} from "../event/pipeline";
 
 const nativeClasses = new NativeClasses();
@@ -521,13 +521,14 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 		const constructorEnv = new Environment(environment);
 		constructorEnv.define(GRAMMAR.THIS, thisValue);
 
-		bindMethodParameters(expr,
-		                     constructorMethod.parameters,
-		                     objectRegistry,
-		                     constructorEnv,
-		                     environment,
-		                     eventPipeline,
-		                     thisValue
+		bindMethodParameters(
+			expr,
+			constructorMethod.parameters,
+			objectRegistry,
+			constructorEnv,
+			environment,
+			eventPipeline,
+			thisValue
 		);
 
 		for (const child of constructorMethod.children) {
@@ -540,7 +541,7 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 	if (expr.callee.type === ASTNodeType.MEMBER) {
 		if (expr.callee instanceof ASTMemberNode) {
 			if (expr.callee.object.type === ASTNodeType.IDENTIFIER) {
-				const className = expr.callee.object.name;
+				const className: string = expr.callee.object.name;
 
 				if (objectRegistry.classes.has(className)) {
 					return evalStaticCall(expr, className, objectRegistry, environment, eventPipeline, thisValue);
@@ -556,8 +557,8 @@ export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, envi
 }
 
 export function evalFunctionCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null) {
-	const functionCall = evalExpression(expr.callee, objectRegistry, environment, eventPipeline, thisValue);
-	const args = evalCallArguments(expr, objectRegistry, environment, eventPipeline, thisValue);
+	const functionCall: any = evalExpression(expr.callee, objectRegistry, environment, eventPipeline, thisValue);
+	const args: any[] = evalCallArguments(expr, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (functionCall instanceof LambdaFunctionCall) {
 		return functionCall.evalCall(thisValue, ...args);
@@ -898,37 +899,61 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
 }
 
-export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): VNode {
+export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): VChild {
 	const props: Record<string, any> = {};
 
 	for (const [name, value] of node.props) {
 		props[name] = evalExpression(value, objectRegistry, environment, eventPipeline, thisValue);
 	}
 
-	const children: Array<VNode | string> = [];
+	const isComponent = objectRegistry.classes.has(node.tag);
 
+	const children: VChild[] = [];
+	let textBuffer: string[] = [];
 
-	const vNode: VNode = {
-		tag: node.tag,
-		isComponent: objectRegistry.classes.has(node.tag),
-		parent: null,
-		component: null,
-		props: props,
-		children: children,
-		dom: null
-	};
+	const flushTextBuffer = () => {
+		if (textBuffer.length === 0) {
+			return;
+		}
+		children.push({
+			              type: 'text',
+			              value: textBuffer.join(''),
+			              dom: undefined
+		              });
+		textBuffer = [];
+	}
+
 
 	for (const child of node.children) {
 		if (child instanceof ASTVDomTextNode) {
-			children.push(child.value);
-		} else {
-			const childVNode = evalExpression(child, objectRegistry, environment, eventPipeline, thisValue) as VNode;
-			childVNode.parent = vNode;
-			children.push(childVNode);
+			textBuffer.push(child.value);
+		} else if (child instanceof ASTVDomNode) {
+			children.push(evalVDomNode(child, objectRegistry, environment, eventPipeline, thisValue) as VChild);
 		}
+
+		flushTextBuffer();
 	}
 
-	return vNode;
+	flushTextBuffer();
+
+	if (isComponent) {
+		return {
+			type: 'component',
+			className: node.tag,
+			props: {...props, children},
+			subTree: undefined,
+			instance: undefined,
+			dom: undefined
+		};
+	}
+
+	return {
+		type: 'element',
+		tag: node.tag,
+		props,
+		children,
+		dom: undefined
+	};
 }
 
 export function evalReturn(blockNodes: ASTNode[], objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null, returnType: ASTTypeNode | null = null): any {

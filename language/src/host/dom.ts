@@ -1,21 +1,21 @@
 /// <reference lib="dom" />
 
-import type {VNode} from "../core/vdom/vdom";
+import type {Props, VChild, VText} from "../core/vdom/vdom";
 import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import Events from "./events";
 import type {ApplicationRuntime} from "./runtime";
 import {VDOM} from "./registry";
 
 export interface ElementCreator {
-	create(vNode: VNode | string): Node;
+	create(vNode: VChild): Node;
 }
 
 export interface ElementPatcher {
-	patch(oldVNode: VNode | string | null, newVNode: VNode | string): void
+	patch(oldVNode: VChild | null, newNode: VChild): void
 }
 
 export class HTMLElementCreator implements ElementCreator {
-	private textBuffer: string[] = [];
+	private textBuffer: VText[] = [];
 
 	constructor(
 		private readonly applicationRuntime: ApplicationRuntime,
@@ -23,74 +23,51 @@ export class HTMLElementCreator implements ElementCreator {
 	) {
 	}
 
-	public create(vNode: VNode | string): Node {
-		if (typeof vNode === "string") {
-			return document.createTextNode(vNode);
+	public create(vNode: VChild): Node {
+		if (vNode.type === 'text') {
+			const textNode: Text = document.createTextNode(vNode.value);
+			vNode.dom = textNode;
+			return textNode;
 		}
 
-		if (vNode.isComponent && vNode.component === null) {
-			vNode.component = this.applicationRuntime.createInstance(vNode.tag);
+		if (vNode.type === 'component') {
+			vNode.instance = this.applicationRuntime.createInstance(vNode.className);
 
-			for (const [propertyKey, value] of Object.entries(vNode.props)) {
-				if (vNode.component.hasPublicProperty(propertyKey)) {
-					vNode.component.setPublicProperty(propertyKey, value);
+			for (const [key, value] of Object.entries(vNode.props ?? {})) {
+				if (key === 'children') {
+					continue;
+				}
+				if (vNode.instance.hasPublicProperty(key)) {
+					vNode.instance.setPublicProperty(key, value);
 				}
 			}
 
-			const subTree = this.applicationRuntime.callMethod(vNode.component, 'render', []) as VNode;
-
-			this.vdom.register(vNode.component, subTree);
-
-			const element: HTMLElement = this.create(subTree) as HTMLElement;
-
-			for (const [propertyKey, value] of Object.entries(vNode.props)) {
-				element.setAttribute(propertyKey, String(value));
+			if (!vNode.subTree) {
+				vNode.subTree = this.applicationRuntime.renderComponent(vNode.instance) as VChild;
 			}
 
+			this.vdom.register(vNode.instance, vNode.subTree);
+
+			const element: HTMLElement = this.create(vNode.subTree) as HTMLElement;
 			vNode.dom = element;
-
-			return vNode.dom;
-		}
-
-		const flushTextBuffer: () => void = (): void => {
-			const text: Node | null = this.flushTextBuffer();
-			if (text) {
-				element.appendChild(text);
-			}
+			return element;
 		}
 
 		const element: HTMLElement = document.createElement(vNode.tag) as HTMLElement;
 		vNode.dom = element;
 
-		for (const [propertyKey, value] of Object.entries(vNode.props)) {
-			if (Events.isEvent(propertyKey)) {
-				this.applicationRuntime.addEventHandler(element, propertyKey, value as LambdaFunctionCall);
+		for (const [key, value] of Object.entries(vNode.props ?? {})) {
+			if (Events.isEvent(key)) {
+				this.applicationRuntime.addEventHandler(element, key, value as LambdaFunctionCall);
 			} else {
-				element.setAttribute(propertyKey, String(value));
+				element.setAttribute(key, String(value));
 			}
 		}
 
 		for (const child of vNode.children) {
-			if (typeof child === 'string') {
-				this.textBuffer.push(child);
-			} else {
-				element.appendChild(this.create(child) as HTMLElement);
-			}
-
-			flushTextBuffer();
+			element.appendChild(this.create(child) as HTMLElement);
 		}
 
-		flushTextBuffer();
-
-		return element;
-	}
-
-	private flushTextBuffer(): Node | null {
-		if (this.textBuffer.length === 0) {
-			return null;
-		}
-		const element: Text = document.createTextNode(this.textBuffer.join(''));
-		this.textBuffer = [];
 		return element;
 	}
 }
@@ -102,73 +79,64 @@ export class HTMLElementPatcher implements ElementPatcher {
 	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime, vdom)) {
 	}
 
-	public patch(oldVNode: VNode | string | null, newVNode: VNode | string): void {
-		if (oldVNode) {
-			this.patchNode(this.mountPoint, oldVNode, newVNode);
+	public patch(oldNode: VChild | null, newNode: VChild): void {
+		if (!oldNode) {
+			const element: Node = this.elementCreator.create(newNode);
+			this.mountPoint.appendChild(element);
+			newNode.dom = element;
 			return;
 		}
 
-		const element: Node = this.elementCreator.create(newVNode);
-
-		this.mountPoint.appendChild(element);
-
-		if (typeof newVNode !== 'string') {
-			newVNode.dom = element;
-		}
+		this.patchNode(this.mountPoint, oldNode, newNode);
 	}
 
-	private patchNode(parent: Node, oldNode: VNode | string, newNode: VNode | string): void {
-
-		if (typeof oldNode === 'string' && typeof newNode === 'string') {
-			if (oldNode !== newNode) {
-				const textNode: ChildNode | null = parent.firstChild;
-				if (textNode) {
-					textNode.textContent = newNode;
-				}
+	private patchNode(parent: Node, oldNode: VChild, newNode: VChild): void {
+		if (oldNode.type === 'text' && newNode.type === 'text') {
+			const textNode: Node = oldNode.dom!;
+			if (textNode.textContent !== newNode.value) {
+				textNode.textContent = newNode.value;
 			}
+			newNode.dom = textNode;
 			return;
 		}
 
-		if (typeof oldNode === 'string' || typeof newNode === 'string') {
-			const newElement: Node = this.elementCreator.create(newNode);
-			parent.replaceChild(newElement, parent.firstChild!);
-			if (typeof newNode !== 'string') {
-				newNode.dom = newElement;
-			}
-			return;
-		}
-
-		if (oldNode.tag !== newNode.tag) {
+		if (oldNode.type !== newNode.type) {
 			const newElement: Node = this.elementCreator.create(newNode);
 			parent.replaceChild(newElement, oldNode.dom!);
 			newNode.dom = newElement;
 			return;
 		}
 
-		if (newNode.isComponent && newNode.component === null) {
-			newNode.component = oldNode.component;
-			const newElement: Node = this.elementCreator.create(
-				this.applicationRuntime.renderComponent(oldNode.component!)
-			);
-			parent.replaceChild(newElement, oldNode.dom!);
+		if (newNode.type === 'component') {
+			const newElement: Node = this.elementCreator.create(newNode);
+			if (!oldNode.dom) {
+				parent.appendChild(newElement);
+			} else if (oldNode.dom !== newElement) {
+				parent.replaceChild(newElement, oldNode.dom!);
+			}
 			newNode.dom = newElement;
 			return;
 		}
 
-		const dom: Node = oldNode.dom!;
+		const dom: HTMLElement = oldNode.dom as HTMLElement;
 		newNode.dom = dom;
 
-		this.updateProperties(dom as HTMLElement, oldNode.props, newNode.props);
-		this.patchChildren(dom, oldNode.children, newNode.children);
+		if (oldNode.type !== 'text' && newNode.type !== 'text') {
+			this.updateProperties(dom, oldNode.props ?? {}, newNode.props ?? {});
+
+			if (oldNode.type === 'element' && newNode.type === 'element') {
+				this.patchChildren(dom, oldNode.children, newNode.children);
+			}
+		}
 	}
 
-	private updateProperties(element: HTMLElement, oldProperties: Record<string, any>, newProperties: Record<string, any>): void {
-		for (const propertyKey in oldProperties) {
-			if (!(propertyKey in newProperties)) {
-				if (Events.isEvent(propertyKey)) {
-					this.applicationRuntime.removeEventHandler(element, propertyKey);
+	private updateProperties(element: HTMLElement, oldProperties: Props, newProperties: Props): void {
+		for (const key in oldProperties) {
+			if (!(key in newProperties)) {
+				if (Events.isEvent(key)) {
+					this.applicationRuntime.removeEventHandler(element, key);
 				} else {
-					element.removeAttribute(propertyKey);
+					element.removeAttribute(key);
 				}
 			}
 		}
@@ -192,29 +160,28 @@ export class HTMLElementPatcher implements ElementPatcher {
 		}
 	}
 
-	private patchChildren(parent: Node, oldChildren: (VNode | string)[], newChildren: (VNode | string)[]): void {
-		const max: number = Math.max(oldChildren.length, newChildren.length);
+	private patchChildren(parent: Node, oldChildren: VChild[], newChildren: VChild[]): void {
+		const oldLength: number = oldChildren.length;
+		const newLength: number = newChildren.length;
+		const commonLength: number = Math.min(oldLength, newLength);
 
-		for (let i: number = 0; i < max; i++) {
+		for (let i: number = 0; i < commonLength; i++) {
+			this.patchNode(parent, oldChildren[i] as VChild, newChildren[i] as VChild);
+		}
 
-			const oldChild: VNode | string | undefined = oldChildren[i];
-			const newChild: VNode | string | undefined = newChildren[i];
+		for (let i: number = commonLength; i < newLength; i++) {
+			const newChild: VChild = newChildren[i] as VChild;
+			const newElement: HTMLMapElement = this.elementCreator.create(newChild) as HTMLMapElement;
+			parent.appendChild(newElement);
 
-			if (!oldChild && newChild) {
-				parent.appendChild(this.elementCreator.create(newChild));
-				continue;
-			}
+			newChild.dom = newElement;
+		}
 
-			const parentChildNode: ChildNode | undefined = parent.childNodes[i];
-			if (parentChildNode) {
-				if (oldChild && !newChild) {
-					parent.removeChild(parentChildNode);
-					continue;
-				}
-
-				if (newChild && oldChild) {
-					this.patchNode(parentChildNode.parentNode!, oldChild, newChild);
-				}
+		for (let i: number = oldLength - 1; i >= newLength; i--) {
+			const oldChild: VChild = oldChildren[i] as VChild;
+			const dom: Node | undefined = oldChild.dom;
+			if (dom) {
+				parent.removeChild(dom);
 			}
 		}
 	}

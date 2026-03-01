@@ -32,7 +32,7 @@ export class Autoboxing {
 	);
 
 	static autoboxIfNeeded(objectType: Type, objectRegistry: ObjectRegistry): ClassRefType | Type {
-		const className = Autoboxing.CLASSNAME_MAP.get(objectType);
+		const className: string | undefined = Autoboxing.CLASSNAME_MAP.get(objectType);
 		if (className) {
 			return new ClassRefType(objectRegistry.types.getClassSymbol(className));
 		}

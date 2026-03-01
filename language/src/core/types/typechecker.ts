@@ -697,7 +697,7 @@ export class TypeChecker {
 
 	private checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
 		const lambdaScope = new TypeScope(scope);
-		const parameters = node.parameters.map(parameterNode => {
+		const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
 			const parameterSymbol: ParameterSymbol = this.parameterNodeToSymbol(parameterNode);
 
 			lambdaScope.defineType(parameterNode.name, parameterSymbol.parameterType);

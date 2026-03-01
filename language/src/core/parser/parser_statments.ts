@@ -753,12 +753,12 @@ export function parseExpression(parser: Parser, precedence: number = 0): ASTNode
 	let expr: ASTNode = parsePostfix(parser, parseUnary(parser));
 
 	while (true) {
-		const token = parser.peek();
+		const token: Token = parser.peek();
 		if (!token) {
 			break;
 		}
 
-		let tokenPrecedence = lookupPrecedence(token);
+		let tokenPrecedence: number = lookupPrecedence(token);
 		if (tokenPrecedence < precedence) {
 			break;
 		}
@@ -771,9 +771,9 @@ export function parseExpression(parser: Parser, precedence: number = 0): ASTNode
 
 		if (GRAMMAR.MATH_OPERATORS.includes(token.value)
 			|| GRAMMAR.LOGIC_OPERATORS.includes(token.value)) {
-			const startToken = parser.next();
-			const right = parseExpression(parser, tokenPrecedence + 1);
-			const endToken = parser.peek();
+			const startToken: Token = parser.next();
+			const right: ASTNode = parseExpression(parser, tokenPrecedence + 1);
+			const endToken: Token = parser.peek();
 
 			const node = new ASTBinaryNode(expr, right, token.value);
 			node.span = spanFrom(startToken, endToken);
@@ -826,7 +826,7 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 				parser.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 			}
 		} else {
-			value = parseExpression(parser);
+			value = parsePrimary(parser);
 		}
 
 		props.set(nameToken.value, value);
@@ -871,6 +871,7 @@ export function parseVDomText(parser: Parser): ASTVDomTextNode {
 			TokenType.OPERATOR,
 			TokenType.KEYWORD,
 			TokenType.PUNCTUATION,
+			TokenType.NUMBER,
 			TokenType.TEXT
 		]
 	);
@@ -964,7 +965,7 @@ export function parsePrimary(parser: Parser): ASTNode {
 
 	if (token.value === GRAMMAR.NEW) {
 
-		let typeAnnotation = parseType(parser);
+		let typeAnnotation: ASTTypeNode = parseType(parser);
 
 		parser.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
 
@@ -972,7 +973,7 @@ export function parsePrimary(parser: Parser): ASTNode {
 	}
 
 	if (token.value === GRAMMAR.PARENTHESES_OPEN) {
-		const expr = parseExpression(parser);
+		const expr: ASTNode = parseExpression(parser);
 		parser.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
 		return expr;
 	}

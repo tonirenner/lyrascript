@@ -101,10 +101,10 @@ export class LyraScriptProgram {
 		this.debug(ast);
 
 		return this.linker.linkSources(ast)
-		           .then(() => {
+		           .then((): void => {
 			           this.typeChecker.collectAllSymbolsFromRegistry(this.globalObjectRegistry);
 		           })
-		           .then(() => {
+		           .then((): ASTNode => {
 			           this.debugMeasureStartTime();
 			           this.typeChecker.check(ast);
 			           this.debugMeasureEndTime('typechecker');

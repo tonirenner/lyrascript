@@ -1,6 +1,6 @@
 import {type Engine, WebLyraScript} from "./engine";
 import {type ElementPatcher, HTMLElementPatcher} from "./dom";
-import type {VNode} from "../core/vdom/vdom";
+import type {VChild} from "../core/vdom/vdom";
 import {EventPipeline} from "../core/event/pipeline";
 import Events from "./events";
 import {type Instance} from "../core/interpreter/interpreter_objects";
@@ -21,9 +21,7 @@ export interface ApplicationRuntime {
 
 	callMethod(instance: Instance, methodName: string, args: any[]): any;
 
-	renderRootComponent(): VNode;
-
-	renderComponent(instance: Instance): VNode;
+	renderComponent(instance: Instance): VChild;
 
 	addEventHandler(element: HTMLElement, propertyKey: string, handler: LambdaFunctionCall): void;
 
@@ -46,12 +44,8 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._eventPipeline;
 	}
 
-	public renderRootComponent(): VNode {
-		return this.renderComponent(this._engine.getRootInstance());
-	}
-
-	public renderComponent(instance: Instance): VNode {
-		return this.callMethod(instance, 'render', []) as VNode
+	public renderComponent(instance: Instance): VChild {
+		return this.callMethod(instance, 'render', []) as VChild
 	}
 
 	public start(url: string, className: string): Promise<void> {
@@ -97,7 +91,6 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	private readonly vdom: VDOM = new VDOM();
 	private readonly patcher: ElementPatcher;
 
-	private currentVNode: VNode | null = null;
 	private isRendering: boolean = false;
 
 	constructor(
@@ -113,63 +106,38 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		this.exposeRuntime();
 	}
 
-	public override async start(url: string, className: string = 'App'): Promise<void> {
+	public override async start(url: string, className: string = 'Program'): Promise<void> {
 		await this.engine.executeEntryFile(url, className);
 
-		this.listenToDomEvents();
+		this.registerEventListeners();
 
-		this.requestFullRender();
+		this.requestComponentRender(this.engine.getRootInstance());
 	}
 
-	public requestFullRender(): void {
+
+	public requestComponentRender(instance: Instance, oldChild?: VChild): void {
 		if (this.isRendering) {
 			return;
 		}
 
-		queueMicrotask((): void => {
-			this.performFullRender();
-		});
+		queueMicrotask((): void => this.performComponentRender(instance, oldChild));
 	}
 
-	public requestComponentRender(oldVNode: VNode, instance: Instance): void {
-		if (this.isRendering) {
-			return;
-		}
-
-		queueMicrotask((): void => {
-			this.performComponentRender(oldVNode, instance);
-		});
-	}
-
-	private performFullRender(): void {
+	private performComponentRender(instance: Instance, oldChild: VChild | null = null): void {
 		this.isRendering = true;
 
-		const next: VNode = this.renderRootComponent();
+		const nextChild: VChild = this.renderComponent(instance);
 
-		this.patcher.patch(this.currentVNode, next);
+		this.patcher.patch(oldChild, nextChild);
 
-		this.currentVNode = next;
-
-		this.vdom.register(this.engine.getRootInstance(), next);
-
-		this.isRendering = false;
-	}
-
-	private performComponentRender(oldVNode: VNode, instance: Instance): void {
-		this.isRendering = true;
-
-		const next: VNode = this.renderComponent(instance);
-
-		this.patcher.patch(oldVNode, next);
-
-		this.vdom.register(instance, next);
+		this.vdom.register(instance, nextChild);
 
 		instance.markClean(this.eventPipeline);
 
 		this.isRendering = false;
 	}
 
-	private listenToDomEvents(): void {
+	private registerEventListeners(): void {
 		this.eventPipeline
 		    .on(Events.DOM_EVENT, ({invoke}: any): void => {
 			    invoke();
@@ -177,10 +145,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.eventPipeline
 		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, ({instance}: any): void => {
-			    this.requestComponentRender(
-				    this.vdom.getNodeByInstance(instance),
-				    instance
-			    );
+			    this.requestComponentRender(instance, this.vdom.findNodeByComponent(instance) as VChild);
 		    });
 	}
 

@@ -12,7 +12,7 @@ export class Dependency {
 	url: string;
 	ast: ASTNode | null = null;
 
-	constructor(names: string[], url: string) {
+	constructor(names: string[], url: string = '.') {
 		this.names = names;
 		this.url = url;
 	}
@@ -52,31 +52,40 @@ export class DependencyLoader {
 			return new Map();
 		}
 
-		const defaultDependencies = this.defaultDependencies();
-		for (const dependency of defaultDependencies.values()) {
+		const dependencies: Map<string, Dependency> = this.collectClassDependencies(ast);
+		for (const dependency of dependencies.values()) {
+			if (dependency.url === '.') {
+				continue;
+			}
 			await this.parseDependency(dependency);
+			await this.collectDependencies(dependency, dependencies);
 		}
 
-		const dependencies = this.collectClassDependencies(ast);
+		return dependencies;
+	}
+
+	async collectDefaultDependencies(): Promise<Map<string, Dependency>> {
+		const dependencies: Map<string, Dependency> = this.defaultDependencies();
+
 		for (const dependency of dependencies.values()) {
 			await this.parseDependency(dependency);
 			await this.collectDependencies(dependency, dependencies);
 		}
 
-		return new Map([...defaultDependencies, ...dependencies]);
+		return dependencies;
 	}
 
 	defaultDependencies(): Map<string, Dependency> {
-		const dependencies = [
+		const dependencies: Dependency[] = [
 			new Dependency(['Iterator', 'Iterable'], '/library/contracts.lyra')
 		];
 
-		const map = new Map();
+		const defaultDependencies = new Map();
 		for (const dependency of dependencies) {
-			map.set(dependency.url, dependency);
+			defaultDependencies.set(dependency.url, dependency);
 		}
 
-		return map;
+		return defaultDependencies;
 	}
 
 	collectClassDependencies(ast: ASTNode): Map<string, Dependency> {
@@ -86,6 +95,7 @@ export class DependencyLoader {
 			if (node.type === ASTNodeType.IMPORT) {
 				if (node instanceof ASTImportNode) {
 					if (node.from === null) {
+						classDependencies.set(node.names[0], new Dependency(node.names));
 						continue;
 					}
 					if (classDependencies.has(node.from)) {
@@ -101,7 +111,7 @@ export class DependencyLoader {
 		return classDependencies;
 	}
 
-	parseFile(url: string): Promise<ASTNode> {
+	async parseFile(url: string): Promise<ASTNode> {
 		return this.fileLoader
 		           .load(url)
 		           .then(code => this.parserSource(new Source(code, url)));

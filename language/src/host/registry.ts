@@ -1,4 +1,4 @@
-import type {VNode} from "../core/vdom/vdom";
+import {type VNode} from "../core/vdom/vdom";
 import type {Instance} from "../core/interpreter/interpreter_objects";
 
 export class EventHandlerRegistry {
@@ -35,7 +35,11 @@ export class VDOM {
 		this.instanceMap.set(instance.id, node);
 	}
 
-	public getNodeByInstance(instance: Instance): VNode {
+	public unregister(instance: Instance): void {
+		this.instanceMap.delete(instance.id);
+	}
+
+	public findNodeByComponent(instance: Instance): VNode {
 		const vNode: VNode | undefined = this.instanceMap.get(instance.id);
 		if (!vNode) {
 			throw new Error(`Instance with id ${instance.id} not found.`);

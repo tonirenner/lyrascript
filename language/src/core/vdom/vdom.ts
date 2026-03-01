@@ -1,11 +1,30 @@
 import type {Instance} from "../interpreter/interpreter_objects";
 
+export type VChild = VText | VElement | VComponent;
+export type Props = Record<string, unknown>;
+
 export interface VNode {
-	tag: string;
-	isComponent: boolean;
-	parent: VNode | null;
-	component: Instance | null;
-	props: Record<string, unknown>;
-	children: Array<VNode | string>;
-	dom: Node | null
+	type: 'component' | 'element' | 'text';
+	dom?: Node;
 }
+
+export interface VElement extends VNode {
+	type: 'element';
+	tag: string;
+	props?: Props;
+	children: VChild[];
+}
+
+export interface VComponent extends VNode {
+	type: 'component';
+	className: string;
+	instance?: Instance;
+	props?: Props & { children?: VChild[] };
+	subTree?: VChild;
+}
+
+export interface VText extends VNode {
+	type: 'text';
+	value: string;
+}
+
