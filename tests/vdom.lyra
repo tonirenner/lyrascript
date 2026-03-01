@@ -1,33 +1,8 @@
-import System;
+import {App} from "/lyrascript/tests/app.lyra";
 
-class Component {
-    private count: State<number> = new State<number>(0);
-    public className:string = "Component";
-    private counter:number = 0;
-
-
-    constructor() {
-        this.count.subscribe({value:number -> System.log(this.count.get())});
-    }
+class Program {
 
     public render(): VNode {
-
-        if ( this.counter % 2 == 0 ) {
-            return vdom <span className={this.className} onClick={e ->  this.counter = this.counter + 1 }>Hello from Component ^^</span>;
-        }
-
-        return vdom <span className={this.className} onClick={e -> this.counter = this.counter + 1 }>Hello from Component</span>;
-    }
-}
-
-
-class App
-{
-    public render(): VNode {
-        return vdom <span>
-                        <Component></Component>
-                        <b> Hello World</b>
-                        by LyraScript!
-                    </span>;
+        return vdom <App/>;
     }
 }

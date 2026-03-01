@@ -1,0 +1,69 @@
+import System;
+
+class Toggle {
+
+    private visible: boolean = true;
+
+    constructor() {
+
+    }
+
+    public render(): VNode {
+
+        if (this.visible) {
+            return vdom
+                <div class="box" onClick={e -> this.visible = false}>
+                    Click to hide me 👀
+                </div>;
+        }
+
+        return vdom
+            <div class="box" onClick={e -> this.visible = true}>
+                Now Im hidden... click to show ✨
+            </div>;
+    }
+}
+
+
+class Counter {
+
+    private count: number = 0;
+
+    constructor() {
+
+    }
+
+    public render(): VNode {
+        return vdom
+            <div>
+                <p>Count: {this.count}</p>
+                <button onClick={e -> this.count = this.count + 1}>
+                    +1
+                </button>
+            </div>;
+    }
+}
+
+
+class App {
+
+    public render(): VNode {
+        return vdom
+            <div>
+                <h1>Lyra Demo</h1>
+
+                <Toggle/>
+
+                <Counter/>
+
+                <b>Simple. Clean. Reactive.</b>
+            </div>;
+    }
+}
+
+
+class Program {
+    public render(): VNode {
+        return vdom <App/>;
+    }
+}
