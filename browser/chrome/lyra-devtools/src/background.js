@@ -1,9 +1,7 @@
 const MessageTypes = {
-	LYRA_CHECK: 'LYRA_CHECK',
-	PING: 'PING',
-	PONG: 'PONG',
-	GET_REGISTRY: 'GET_REGISTRY',
-	REGISTRY_DATA: 'REGISTRY_DATA'
+	CHECK_RUNTIME: 'CHECK_RUNTIME',
+	GET_TREE: 'GET_TREE',
+	TREE_DATA: 'TREE_DATA',
 };
 
 const lyra = {
@@ -12,15 +10,15 @@ const lyra = {
 };
 
 chrome.runtime.onInstalled.addListener(() => {
-	console.log('Extension installiert');
+	console.info('Extension installed');
 });
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-	switch (msg.type) {
-		case MessageTypes.LYRA_CHECK: {
-			if (msg.version.foundRuntime) {
+chrome.runtime.onMessage.addListener((event, sender) => {
+	switch (event.type) {
+		case MessageTypes.CHECK_RUNTIME: {
+			if (event.payload.foundRuntime) {
 				lyra.tabId = sender.tab.id;
-				lyra.version = msg.version.version;
+				lyra.version = event.payload.version;
 
 				console.info('detect lyra runtime', lyra);
 			} else {
@@ -28,30 +26,26 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 			}
 			break;
 		}
-		case MessageTypes.GET_REGISTRY: {
-			chrome.tabs.sendMessage(msg.tabId, {type: MessageTypes.GET_REGISTRY})
+		case MessageTypes.GET_TREE: {
+			chrome.tabs.sendMessage(event.tabId, {type: MessageTypes.GET_TREE})
 			break;
 		}
 	}
 });
 
-chrome.runtime.onConnect.addListener((port) => {
+chrome.runtime.onConnect.addListener(port => {
 	if (port.name !== 'lyra-devtools') {
 		return;
 	}
 
-	port.onMessage.addListener((msg) => {
-		switch (msg.type) {
-			case MessageTypes.GET_REGISTRY: {
-				chrome.tabs.sendMessage(msg.tabId, {
-					type: MessageTypes.GET_REGISTRY
-				});
+	port.onMessage.addListener(event => {
+		switch (event.type) {
+			case MessageTypes.GET_TREE: {
+				chrome.tabs.sendMessage(event.tabId, {type: MessageTypes.GET_TREE});
 				break;
 			}
 		}
 	});
 
-	chrome.runtime.onMessage.addListener((msg) => {
-		port.postMessage(msg);
-	});
+	chrome.runtime.onMessage.addListener(event => port.postMessage(event));
 });

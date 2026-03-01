@@ -20,17 +20,19 @@ function dispatchMessageFromBridge() {
 			return;
 		}
 
-		chrome.runtime.sendMessage({type: event.data.type, version: event.data.payload});
+		chrome.runtime.sendMessage({type: event.data.type, payload: event.data.payload});
 	});
 }
 
 function dispatchMessageFromExtension() {
-	chrome.runtime.onMessage.addListener((msg) => {
-		const message = {
-			source: Sources.LYRA_EXTENSION,
-			type: msg.type,
-			payload: msg.payload
-		};
-		window.postMessage(message, '*');
+	chrome.runtime.onMessage.addListener((message) => {
+		window.postMessage(
+			{
+				source: Sources.LYRA_EXTENSION,
+				type: message.type,
+				payload: message.payload
+			},
+			'*'
+		);
 	});
 }

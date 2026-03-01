@@ -1,9 +1,7 @@
 const MessageTypes = {
-	LYRA_CHECK: 'LYRA_CHECK',
-	PING: 'PING',
-	PONG: 'PONG',
-	GET_REGISTRY: 'GET_REGISTRY',
-	REGISTRY_DATA: 'REGISTRY_DATA'
+	CHECK_RUNTIME: 'CHECK_RUNTIME',
+	GET_TREE: 'GET_TREE',
+	TREE_DATA: 'TREE_DATA',
 };
 
 const Sources = {
@@ -14,47 +12,61 @@ const Sources = {
 const lyra = window['__LYRA__'] || null;
 
 (function () {
-	sendMessageToExtension(MessageTypes.LYRA_CHECK, {
+	sendMessageToExtension(MessageTypes.CHECK_RUNTIME, {
 		foundRuntime: !!lyra,
 		version: lyra?.version
 	});
-	onMessageFromExtension(payload => {
-		const {type} = payload;
-		switch (type) {
-			case MessageTypes.PING: {
-				sendMessageToExtension(MessageTypes.PONG, {ok: true});
-				break;
-			}
-			case MessageTypes.GET_REGISTRY: {
-				sendMessageToExtension(
-					MessageTypes.REGISTRY_DATA,
-					{instances: listInstances(lyra?.runtime.engine)}
-				);
+	onMessageFromExtension(event => {
+		switch (event.type) {
+			case MessageTypes.GET_TREE: {
+				sendMessageToExtension(MessageTypes.TREE_DATA, fetchTree(lyra?.runtime));
 				break;
 			}
 		}
 	});
 })();
 
+/**
+ * @param {WebApplicationRuntime} runtime
+ * @return {VNode}
+ */
+function fetchTree(runtime) {
+	return mapVNode(runtime.getTree());
+}
 
 /**
- * @param {Engine} engine
- * @return {{id:string, name:string, isDirty:boolean}}
+ * @param {VNode|string|null} vNode
+ * @return {any}
  */
-function listInstances(engine) {
-	const instances = [];
-	engine.getObjectRegistry()
-	      .instances
-	      .allInstances()
-	      .forEach(instance => {
-		      instances.push({
-			                     id: instance.id,
-			                     name: instance.__classDef.name,
-			                     isDirty: instance.__isDirty
-		                     });
-	      });
+function mapVNode(vNode) {
+	console.log('mapVNode', vNode);
+	if (!vNode) {
+		return null;
+	}
 
-	return instances;
+	if (typeof vNode === 'string') {
+		return vNode;
+	}
+
+	const component = vNode.isComponent ? {
+		id: vNode.component.id,
+		name: vNode.component.__classDef.name,
+		isDirty: vNode.component.__isDirty
+	} : null;
+
+	const children = [];
+
+	vNode.children.forEach(child => {
+		return children.push(mapVNode(child));
+	});
+
+	return {
+		tag: vNode.tag,
+		isComponent: vNode.isComponent,
+		component: component,
+		props: vNode.props,
+		children: children,
+	};
 }
 
 /**
@@ -63,9 +75,7 @@ function listInstances(engine) {
  * @return void
  */
 function sendMessageToExtension(type, payload) {
-	const message = {source: Sources.LYRA_PAGE, type: type, payload: payload};
-
-	window.postMessage(message, '*');
+	window.postMessage({source: Sources.LYRA_PAGE, type: type, payload: payload}, '*');
 }
 
 /**
