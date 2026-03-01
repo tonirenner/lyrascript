@@ -46,6 +46,10 @@ class User extends Person {
     public static execLambda(fn: (number, number) -> number): void
     {
         System.print(fn(1,2).toString());
+
+        let lambda = { isVisible: boolean -> System.log("lambda :: " + isVisible.toString()) };
+
+        lambda(true);
     }
 
     public testThis(): User {
