@@ -90,7 +90,7 @@ export abstract class AbstractFunctionCall {
 export class LambdaFunctionCall extends AbstractFunctionCall {
 	evalCall(...args: any[]): any {
 		const node: ASTLambdaNode = this.getLambdaNode();
-		const closureEnv: Environment = this.createClosureEnvironment();
+		const closureEnv: Environment = new Environment(this.functionEnv);
 
 		for (let i: number = 0; i < node.parameters.length; i++) {
 			const parameter: ASTParameterNode | null = node.parameters[i] || null;
@@ -108,16 +108,6 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 			this.thisValue,
 			node.returnType
 		);
-	}
-
-	createClosureEnvironment(): Environment {
-		const environment = new Environment(this.functionEnv);
-
-		if (this.thisValue) {
-			environment.define(GRAMMAR.THIS, this.thisValue);
-		}
-
-		return environment;
 	}
 }
 
@@ -600,14 +590,16 @@ export function evalStaticCall(expr: ASTCallNode, className: string, objectRegis
 	}
 
 	if (classDef.nativeInstance && classDef.nativeInstance[methodDef.name]) {
-		const args = evalMethodArguments(expr,
-		                                 methodDef.parameters,
-		                                 objectRegistry,
-		                                 environment,
-		                                 eventPipeline,
-		                                 thisValue)
-		const rawArgs = args.map(fromLyraValue);
-		const result = classDef.nativeInstance[methodDef.name](...rawArgs);
+		const args: any[] = evalMethodArguments(
+			expr,
+			methodDef.parameters,
+			objectRegistry,
+			environment,
+			eventPipeline,
+			thisValue
+		);
+		const rawArgs: any[] = args.map(fromLyraValue);
+		const result: any = classDef.nativeInstance[methodDef.name](...rawArgs);
 
 		if (result instanceof LyraNativeObject) {
 			return wrapNativeInstance(result, objectRegistry);
@@ -636,7 +628,7 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	}
 
 	// Objekt auswerten (u | this | super)
-	let target = evalExpression(expr.callee.object, objectRegistry, environment, eventPipeline, thisValue);
+	let target: any = evalExpression(expr.callee.object, objectRegistry, environment, eventPipeline, thisValue);
 
 	target = autoBoxIfNeeded(target, objectRegistry);
 
@@ -644,7 +636,7 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 		throwRuntimeError('Instance call on non-object', expr.callee.span);
 	}
 
-	let classDef = target.__classDef;
+	let classDef: ClassDefinition = target.__classDef;
 
 	// super.method()
 	if (expr.callee.object.type === ASTNodeType.IDENTIFIER && expr.callee.object.name === 'super') {
@@ -656,9 +648,12 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	}
 
 
-	const methodDef: ClassMethodDefinition | null = resolveInstanceMethod(classDef,
-	                                                                      objectRegistry,
-	                                                                      expr.callee.property);
+	const methodDef: ClassMethodDefinition | null = resolveInstanceMethod(
+		classDef,
+		objectRegistry,
+		expr.callee.property
+	);
+
 	if (!methodDef) {
 		throwRuntimeError(`Method ${expr.callee.property} not found on ${classDef.name}`, expr.callee.span);
 	}
@@ -667,7 +662,7 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	methodEnv.define(GRAMMAR.THIS, target);
 
 	if (target.__nativeInstance && methodDef.name in target.__nativeInstance) {
-		const args = evalMethodArguments(
+		const args: any[] = evalMethodArguments(
 			expr,
 			methodDef.parameters,
 			objectRegistry,
@@ -675,19 +670,22 @@ export function evalInstanceCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 			eventPipeline,
 			thisValue
 		);
-		const rawArgs = args.map(fromLyraValue);
-		const result = target.__nativeInstance[methodDef.name](...rawArgs);
+
+		const rawArgs: any = args.map(fromLyraValue);
+		const result: any = target.__nativeInstance[methodDef.name](...rawArgs);
 
 		if (result instanceof LyraNativeObject) {
 			return wrapNativeInstance(result, objectRegistry);
 		}
 
-		return evalReturn([returnValue(result)],
-		                  objectRegistry,
-		                  methodEnv,
-		                  eventPipeline,
-		                  target,
-		                  methodDef.returnType);
+		return evalReturn(
+			[returnValue(result)],
+			objectRegistry,
+			methodEnv,
+			eventPipeline,
+			target,
+			methodDef.returnType
+		);
 	}
 
 	bindMethodParameters(expr, methodDef.parameters, objectRegistry, methodEnv, environment, eventPipeline, thisValue);
