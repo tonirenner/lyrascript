@@ -30,6 +30,7 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
 } from "../ast";
@@ -741,7 +742,7 @@ export function looksLikeLambda(parser: Parser): boolean {
 }
 
 export function parseExpressionStatement(parser: Parser): ASTExpressionNode {
-	const expr = parseExpression(parser);
+	const expr: ASTNode = parseExpression(parser);
 
 	parser.expectPunctuation(GRAMMAR.SEMICOLON);
 
@@ -864,7 +865,13 @@ export function parseVDomElement(parser: Parser): ASTVDomNode {
 	return node;
 }
 
-export function parseVDomText(parser: Parser): ASTVDomTextNode {
+export function parseVDomText(parser: Parser): ASTVDomTextNode | ASTVDomExpressionNode {
+	if (parser.consumeIfPunctuation(GRAMMAR.BRACE_OPEN)) {
+		const expression: ASTNode = parseExpression(parser);
+		parser.expectPunctuation(GRAMMAR.BRACE_CLOSE);
+		return new ASTVDomExpressionNode(expression);
+	}
+
 	const token: Token = parser.expectOneOf(
 		[
 			TokenType.IDENTIFIER,

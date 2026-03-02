@@ -31,6 +31,7 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
 } from "../ast";
@@ -924,7 +925,7 @@ export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 		props[name] = evalExpression(value, objectRegistry, environment, eventPipeline, thisValue);
 	}
 
-	const isComponent = objectRegistry.classes.has(node.tag);
+	const isComponent: boolean = objectRegistry.classes.has(node.tag);
 
 	const children: VChild[] = [];
 	let textBuffer: string[] = [];
@@ -941,12 +942,19 @@ export function evalVDomNode(node: ASTVDomNode, objectRegistry: ObjectRegistry, 
 		textBuffer = [];
 	}
 
-
 	for (const child of node.children) {
-		if (child instanceof ASTVDomTextNode) {
-			textBuffer.push(child.value);
-		} else if (child instanceof ASTVDomNode) {
-			children.push(evalVDomNode(child, objectRegistry, environment, eventPipeline, thisValue) as VChild);
+		switch (true) {
+			case child instanceof ASTVDomTextNode: {
+				textBuffer.push(child.value);
+				break;
+			}
+			case child instanceof ASTVDomExpressionNode: {
+				textBuffer.push(evalExpression(child.expr, objectRegistry, environment, eventPipeline, thisValue));
+				break;
+			}
+			case child instanceof ASTVDomNode: {
+				children.push(evalVDomNode(child, objectRegistry, environment, eventPipeline, thisValue) as VChild);
+			}
 		}
 
 		flushTextBuffer();

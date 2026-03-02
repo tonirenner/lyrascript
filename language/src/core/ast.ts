@@ -21,6 +21,7 @@ export class ASTNodeType {
 	static RETURN = GRAMMAR.RETURN;
 	static VDOM = 'vdom_declaration';
 	static VDOM_TEXT = 'vdom_text_declaration';
+	static VDOM_EXPRESSION = 'vdom_expression';
 	static UNARY = 'unary_expression';
 	static LAMBDA = 'lambda_expression';
 	static ARRAY = 'array_declaration';
@@ -431,5 +432,14 @@ export class ASTVDomTextNode extends ASTNode {
 	constructor(value: string) {
 		super(ASTNodeType.VDOM_TEXT);
 		this.value = value;
+	}
+}
+
+export class ASTVDomExpressionNode extends ASTNode {
+	expr: ASTNode;
+
+	constructor(expr: ASTNode) {
+		super(ASTNodeType.VDOM_EXPRESSION);
+		this.expr = expr;
 	}
 }
