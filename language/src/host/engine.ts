@@ -5,7 +5,6 @@ import {ObjectRegistry} from "../core/interpreter/interpreter_registry";
 import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
 import {EventType} from "../library/classes/event";
 import {EventPipeline} from "../core/event/pipeline";
-import {GRAMMAR} from "../core/grammar";
 
 const lyraEventClassDef: ClassDefinition = new EventType().getClassDefinition();
 
@@ -98,9 +97,7 @@ export class WebLyraScript implements Engine {
 				eventName,
 				{
 					invoke: (): any => {
-						const instance: Instance = handler.functionEnv.get(GRAMMAR.THIS);
-
-						handler.evalCall(instance, this.createEvent(event));
+						handler.evalCall(this.createEvent(event));
 					},
 					event
 				}

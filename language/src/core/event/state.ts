@@ -42,7 +42,7 @@ export class State<T = any> {
 
 	private wrapCallback(fn: LambdaFunctionCall) {
 		return (value: T): void => {
-			fn.evalCall(null, toLyraValue(value));
+			fn.evalCall(toLyraValue(value));
 		}
 	}
 }

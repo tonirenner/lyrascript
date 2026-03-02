@@ -36,7 +36,7 @@ import {
 } from "../ast";
 import {GRAMMAR, TYPE_ENUM} from "../grammar";
 import {NativeClasses} from "../../library/native_classes";
-import {NativeFunction, NativeFunctions, NativeFunctionTypeRegistry} from "../../library/native_functions";
+import {NativeFunctions, NativeFunctionTypeRegistry} from "../../library/native_functions";
 import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "./interpreter_conversion";
 import {throwRuntimeError} from "../errors";
 import {AutoboxedTypes} from "../types/autoboxing";
@@ -49,43 +49,50 @@ const nativeFunctions = new NativeFunctions();
 const globalFunctions = nativeFunctions.getGlobalFunctions();
 const globalFunctionTypeRegistry: NativeFunctionTypeRegistry = nativeFunctions.getGlobalFunctionTypeRegistry();
 
-export class AbstractFunctionCall {
-	node: ASTNode;
-	objectRegistry: ObjectRegistry;
-	functionEnv: Environment;
-	eventPipeline: EventPipeline;
+export abstract class AbstractFunctionCall {
+	private readonly node: ASTNode;
+	protected readonly functionEnv: Environment;
+	protected readonly objectRegistry: ObjectRegistry;
+	protected readonly eventPipeline: EventPipeline;
+	protected readonly thisValue: Instance | null = null;
 
-	constructor(node: ASTNode, objectRegistry: ObjectRegistry, functionEnv: Environment, eventPipeline: EventPipeline) {
+	constructor(
+		node: ASTNode,
+		objectRegistry: ObjectRegistry,
+		functionEnv: Environment,
+		eventPipeline: EventPipeline,
+		thisValue: Instance | null = null
+	) {
 		this.node = node;
 		this.objectRegistry = objectRegistry;
 		this.functionEnv = functionEnv;
 		this.eventPipeline = eventPipeline;
+		this.thisValue = thisValue;
 	}
 
-	getASTCallNode(): ASTCallNode {
+	protected getCallNode(): ASTCallNode {
 		if (!(this.node instanceof ASTCallNode)) {
 			throwRuntimeError(`Invalid native function call ${this.node.type}.`, this.node.span);
 		}
 		return this.node;
 	}
 
-	/**
-	 * @return {ASTLambdaNode}
-	 */
-	getASTLambdaNode(): ASTLambdaNode {
+	protected getLambdaNode(): ASTLambdaNode {
 		if (!(this.node instanceof ASTLambdaNode)) {
 			throwRuntimeError(`Invalid lambda call ${this.node.type}.`, this.node.span);
 		}
 		return this.node;
 	}
+
+	abstract evalCall(...args: any[]): any;
 }
 
 export class LambdaFunctionCall extends AbstractFunctionCall {
-	evalCall(thisValue: Instance | null, ...args: any[]): any {
-		const node: ASTLambdaNode = this.getASTLambdaNode();
-		const closureEnv = new Environment(this.functionEnv);
+	evalCall(...args: any[]): any {
+		const node: ASTLambdaNode = this.getLambdaNode();
+		const closureEnv: Environment = this.createClosureEnvironment();
 
-		for (let i = 0; i < node.parameters.length; i++) {
+		for (let i: number = 0; i < node.parameters.length; i++) {
 			const parameter: ASTParameterNode | null = node.parameters[i] || null;
 			if (!parameter) {
 				continue;
@@ -98,17 +105,27 @@ export class LambdaFunctionCall extends AbstractFunctionCall {
 			this.objectRegistry,
 			closureEnv,
 			this.eventPipeline,
-			thisValue,
+			this.thisValue,
 			node.returnType
 		);
+	}
+
+	createClosureEnvironment(): Environment {
+		const environment = new Environment(this.functionEnv);
+
+		if (this.thisValue) {
+			environment.define(GRAMMAR.THIS, this.thisValue);
+		}
+
+		return environment;
 	}
 }
 
 export class NativeFunctionCall extends AbstractFunctionCall {
-	evalCall(thisValue: Instance | null, ...args: any[]): any {
-		const callNode: ASTCallNode = this.getASTCallNode();
+	evalCall(...args: any[]): any {
+		const callNode: ASTCallNode = this.getCallNode();
 
-		let result: any = this.resolveCall(thisValue)[callNode.callee.name](...args);
+		let result: any = this.resolveCall()(...args);
 		if (result instanceof LyraNativeObject) {
 			result = wrapNativeInstance(result, this.objectRegistry);
 		} else {
@@ -120,22 +137,25 @@ export class NativeFunctionCall extends AbstractFunctionCall {
 			this.objectRegistry,
 			this.functionEnv,
 			this.eventPipeline,
-			thisValue,
-			this.lookupFunctionType(callNode.callee.name).returnType
+			this.thisValue,
+			globalFunctionTypeRegistry.get(callNode.callee.name).returnType
 		);
 	}
 
-	lookupFunctionType(name: string): NativeFunction {
-		return globalFunctionTypeRegistry.get(name);
-	}
+	resolveCall(): any {
+		const node: ASTCallNode | null = this.getCallNode();
 
-	resolveCall(thisValue: Instance | null): any {
-		const node: ASTCallNode | null = this.getASTCallNode();
 		if (node === null) {
 			throwRuntimeError('Invalid function call.');
 		}
 
-		return evalExpression(node.callee, this.objectRegistry, this.functionEnv, this.eventPipeline, thisValue);
+		return evalExpression(
+			node.callee,
+			this.objectRegistry,
+			this.functionEnv,
+			this.eventPipeline,
+			this.thisValue
+		)[node.callee.name];
 	}
 }
 
@@ -189,7 +209,7 @@ export function evalNode(
 		}
 		case ASTNodeType.VARIABLE: {
 			if (node instanceof ASTVariableNode) {
-				const value = node.init
+				const value: any = node.init
 					? evalExpression(node.init, objectRegistry, environment, eventPipeline, thisValue)
 					: null;
 				environment.define(node.name, value);
@@ -359,7 +379,7 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.LAMBDA: {
 			if (expr instanceof ASTLambdaNode) {
-				return evalLambda(expr, objectRegistry, environment, eventPipeline);
+				return evalLambda(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid lambda expression ${expr.type}`, expr.span);
 		}
@@ -459,8 +479,8 @@ export function evalIndex(expr: ASTIndexNode, objectRegistry: ObjectRegistry, en
 	return value;
 }
 
-export function evalLambda(node: ASTLambdaNode, objectRegistry: ObjectRegistry, lambdaEnv: Environment, eventPipeline: EventPipeline): LambdaFunctionCall {
-	return new LambdaFunctionCall(node, objectRegistry, lambdaEnv, eventPipeline)
+export function evalLambda(node: ASTLambdaNode, objectRegistry: ObjectRegistry, lambdaEnv: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): LambdaFunctionCall {
+	return new LambdaFunctionCall(node, objectRegistry, lambdaEnv, eventPipeline, thisValue)
 }
 
 export function evalAssign(expr: ASTAssignmentNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
@@ -561,10 +581,10 @@ export function evalFunctionCall(expr: ASTCallNode, objectRegistry: ObjectRegist
 	const args: any[] = evalCallArguments(expr, objectRegistry, environment, eventPipeline, thisValue);
 
 	if (functionCall instanceof LambdaFunctionCall) {
-		return functionCall.evalCall(thisValue, ...args);
+		return functionCall.evalCall(...args);
 	}
 
-	return (new NativeFunctionCall(expr, objectRegistry, environment, eventPipeline)).evalCall(thisValue, ...args);
+	return (new NativeFunctionCall(expr, objectRegistry, environment, eventPipeline, thisValue)).evalCall(...args);
 }
 
 export function evalStaticCall(expr: ASTCallNode, className: string, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
