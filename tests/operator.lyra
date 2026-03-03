@@ -1,0 +1,32 @@
+import System;
+
+class OperatorTest {
+
+   private value: number;
+
+   constructor(value: number = 0) {
+        this.value = value;
+    }
+
+    public operator +(other: OperatorTest): OperatorTest {
+        return new OperatorTest(this.value + other.value);
+    }
+
+    public operator ==(other: OperatorTest): OperatorTest {
+        return this.value == other.value;
+    }
+
+    public operator -(): OperatorTest {
+        let value = this.value;
+        return new OperatorTest(-value);
+    }
+}
+
+let a = new OperatorTest(1);
+let b = new OperatorTest(1);
+let c = a + b;
+let d = new OperatorTest(2);
+
+System.log(c);
+System.log(a == b);
+System.log(-d);

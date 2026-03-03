@@ -1,45 +1,47 @@
 import {GRAMMAR, TYPE_ENUM} from "./grammar";
 import {Modifiers, SuperClass} from "./interpreter/interpreter_objects";
 import {SourceSpan} from "./parser/parser_source";
+import {throwParserError} from "./errors.ts";
 
 export class ASTNodeType {
-	static PROGRAMM = 'program';
-	static INDEX = 'index';
-	static IDENTIFIER = 'identifier';
-	static ANNOTATION = 'annotation';
-	static PARAMETER = 'parameter';
-	static IMPORT = GRAMMAR.IMPORT;
-	static NUMBER = TYPE_ENUM.NUMBER;
-	static STRING = TYPE_ENUM.STRING;
-	static BOOLEAN = TYPE_ENUM.BOOLEAN;
-	static NULL = TYPE_ENUM.NULL;
-	static NEW = GRAMMAR.NEW;
-	static CLASS = GRAMMAR.CLASS;
-	static INTERFACE = GRAMMAR.INTERFACE;
-	static CONSTRUCTOR = GRAMMAR.CONSTRUCTOR;
-	static THIS = GRAMMAR.THIS;
-	static RETURN = GRAMMAR.RETURN;
-	static VDOM = 'vdom_declaration';
-	static VDOM_TEXT = 'vdom_text_declaration';
-	static VDOM_EXPRESSION = 'vdom_expression';
-	static UNARY = 'unary_expression';
-	static LAMBDA = 'lambda_expression';
-	static ARRAY = 'array_declaration';
-	static TYPE = 'type_declaration';
-	static FIELD = 'field_declaration';
-	static MEMBER = 'member_expression';
-	static METHOD = 'method_declaration';
-	static CALL = 'call_expression';
-	static VARIABLE = 'variable_declaration';
-	static EXPRESSION = 'expression_statement';
-	static BINARY = 'binary_expression';
-	static ASSIGNMENT = 'assignment_expression';
-	static IF = 'if_statement';
-	static THEN = 'then_statement';
-	static ELSE = 'else_statement';
-	static MATCH = 'match_statement';
-	static MATCH_CASE = 'match_case_statement';
-	static FOREACH = 'foreach_statement';
+	static PROGRAMM: string = 'program';
+	static INDEX: string = 'index';
+	static IDENTIFIER: string = 'identifier';
+	static ANNOTATION: string = 'annotation';
+	static PARAMETER: string = 'parameter';
+	static IMPORT: string = GRAMMAR.IMPORT;
+	static NUMBER: string = TYPE_ENUM.NUMBER;
+	static STRING: string = TYPE_ENUM.STRING;
+	static BOOLEAN: string = TYPE_ENUM.BOOLEAN;
+	static NULL: string = TYPE_ENUM.NULL;
+	static NEW: string = GRAMMAR.NEW;
+	static CLASS: string = GRAMMAR.CLASS;
+	static INTERFACE: string = GRAMMAR.INTERFACE;
+	static CONSTRUCTOR: string = GRAMMAR.CONSTRUCTOR;
+	static THIS: string = GRAMMAR.THIS;
+	static RETURN: string = GRAMMAR.RETURN;
+	static OPERATOR: string = 'operator_declaration';
+	static VDOM: string = 'vdom_declaration';
+	static VDOM_TEXT: string = 'vdom_text_declaration';
+	static VDOM_EXPRESSION: string = 'vdom_expression';
+	static UNARY: string = 'unary_expression';
+	static LAMBDA: string = 'lambda_expression';
+	static ARRAY: string = 'array_declaration';
+	static TYPE: string = 'type_declaration';
+	static FIELD: string = 'field_declaration';
+	static MEMBER: string = 'member_expression';
+	static METHOD: string = 'method_declaration';
+	static CALL: string = 'call_expression';
+	static VARIABLE: string = 'variable_declaration';
+	static EXPRESSION: string = 'expression_statement';
+	static BINARY: string = 'binary_expression';
+	static ASSIGNMENT: string = 'assignment_expression';
+	static IF: string = 'if_statement';
+	static THEN: string = 'then_statement';
+	static ELSE: string = 'else_statement';
+	static MATCH: string = 'match_statement';
+	static MATCH_CASE: string = 'match_case_statement';
+	static FOREACH: string = 'foreach_statement';
 }
 
 export class ASTNode {
@@ -321,6 +323,50 @@ export class ASTMethodNode extends ASTNode {
 		this.typeParameters = typeParameters;
 		this.parameters = parameters;
 		this.returnType = returnType;
+	}
+}
+
+export class ASTOperatorNode extends ASTMethodNode {
+
+	static ALLOWED_OPERATORS: string[] = [
+		GRAMMAR.PLUS,
+		GRAMMAR.MINUS,
+		GRAMMAR.MULTIPLY,
+		GRAMMAR.DIVIDE,
+		GRAMMAR.MODULUS,
+		GRAMMAR.EQUAL,
+		GRAMMAR.NOT_EQUAL,
+		GRAMMAR.LESS_THAN,
+		GRAMMAR.LESS_EQUAL,
+		GRAMMAR.GREATER_THAN,
+		GRAMMAR.GREATER_EQUAL,
+		GRAMMAR.EXCLAMATION_MARK,
+		//"[]"
+	];
+
+	operator: string;
+
+	constructor(
+		operator: string,
+		annotations: ASTAnnotationNode[],
+		modifiers: Modifiers,
+		typeParameters: string[],
+		parameters: ASTParameterNode[],
+		returnType: ASTTypeNode | null = null,
+		children: ASTNode[] = [],
+	) {
+		super(
+			operator,                        // name = symbol
+			ASTNodeType.OPERATOR,
+			annotations,
+			modifiers,
+			typeParameters,
+			parameters,
+			returnType,
+			children
+		);
+
+		this.operator = operator;
 	}
 }
 

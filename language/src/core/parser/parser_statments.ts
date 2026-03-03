@@ -24,6 +24,7 @@ import {
 	ASTNewNode,
 	ASTNode,
 	ASTNodeType,
+	ASTOperatorNode,
 	ASTParameterNode,
 	ASTReturnNode,
 	ASTThenNode,
@@ -425,10 +426,10 @@ export function parseParameters(parser: Parser): ASTParameterNode[] {
 }
 
 export function parseClassMember(parser: Parser): ASTNode | null {
-	const startToken = parser.peek();
+	const startToken: Token = parser.peek();
 
-	const annotations = parseAnnotations(parser);
-	const modifiers = parseModifiers(
+	const annotations: ASTAnnotationNode[] = parseAnnotations(parser);
+	const modifiers: Modifiers = parseModifiers(
 		parser,
 		[
 			GRAMMAR.PUBLIC,
@@ -438,16 +439,20 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 		]
 	);
 
-	const nameToken = parser.expectOneOf([TokenType.IDENTIFIER, TokenType.KEYWORD]);
+	if (parser.peekIs(GRAMMAR.OPERATOR)) {
+		return parseOperatorMember(parser, startToken, annotations, modifiers);
+	}
 
-	let fieldType = null;
+	const nameToken: Token = parser.expectOneOf([TokenType.IDENTIFIER, TokenType.KEYWORD]);
+
+	let fieldType: any = null;
 	if (parser.peek().value === GRAMMAR.COLON) {
 		if (parser.consumeIfPunctuation(GRAMMAR.COLON)) {
 			fieldType = parseType(parser);
 		}
 	}
 
-	let init = null;
+	let init: any = null;
 	if (parser.consumeIfOperator(GRAMMAR.ASSIGN)) {
 		init = parseExpression(parser);
 	}
@@ -457,7 +462,7 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 			modifiers.private = true;
 		}
 
-		const semicolonToken = parser.expectPunctuation(GRAMMAR.SEMICOLON);
+		const semicolonToken: Token = parser.expectPunctuation(GRAMMAR.SEMICOLON);
 
 		const node = new ASTFieldNode(nameToken.value, modifiers, fieldType, init);
 		node.span = spanFrom(startToken, semicolonToken);
@@ -475,10 +480,10 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 		}
 
 		parser.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
-		const parameters = parseParameters(parser);
-		const parenthesesCloseToken = parser.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
+		const parameters: ASTParameterNode[] = parseParameters(parser);
+		const parenthesesCloseToken: Token = parser.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
 
-		let returnType = null;
+		let returnType: any = null;
 		if (parser.consumeIfPunctuation(GRAMMAR.COLON)) {
 			returnType = parseType(parser);
 		}
@@ -502,8 +507,46 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 	}
 
 	throwParserError(`Invalid class member: ${nameToken.value}`);
+}
 
-	return null;
+function parseOperatorMember(parser: Parser, startToken: Token, annotations: ASTAnnotationNode[], modifiers: Modifiers): ASTOperatorNode {
+
+	parser.expectKeyword(GRAMMAR.OPERATOR);
+
+	const operatorToken: Token = parser.expectOperator();
+
+	if (!modifiers.public && !modifiers.private) {
+		modifiers.public = true;
+	}
+
+	parser.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
+	const parameters: ASTParameterNode[] = parseParameters(parser);
+	parser.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
+
+	let returnType: ASTTypeNode | null = null;
+	if (parser.consumeIfPunctuation(GRAMMAR.COLON)) {
+		returnType = parseType(parser);
+	}
+
+	const children: ASTNode[] = parseBlock(parser);
+
+	const node = new ASTOperatorNode(
+		operatorToken.value,
+		annotations,
+		modifiers,
+		[],
+		parameters,
+		returnType,
+		children
+	);
+
+	node.span = spanFrom(startToken, operatorToken);
+
+	if (!ASTOperatorNode.ALLOWED_OPERATORS.includes(node.operator)) {
+		throwParserError(`Operator ${node.operator} is not overloadable.`, node.span)
+	}
+
+	return node;
 }
 
 export function parseBlock(parser: Parser): ASTNode[] {
@@ -911,12 +954,28 @@ export function parseUnary(parser: Parser): ASTNode | ASTUnaryNode {
 		return parseVDomExpression(parser);
 	}
 
-	if (token.value === GRAMMAR.EXCLAMATION_MARK) {
-		parser.next();
+	switch (token.value) {
+		case GRAMMAR.EXCLAMATION_MARK: {
+			parser.next();
 
-		const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
+			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
 
-		return new ASTUnaryNode(GRAMMAR.EXCLAMATION_MARK, unary);
+			return new ASTUnaryNode(GRAMMAR.EXCLAMATION_MARK, unary);
+		}
+		case GRAMMAR.MINUS: {
+			parser.next();
+
+			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
+
+			return new ASTUnaryNode(GRAMMAR.MINUS, unary);
+		}
+		case GRAMMAR.PLUS: {
+			parser.next();
+
+			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
+
+			return new ASTUnaryNode(GRAMMAR.PLUS, unary);
+		}
 	}
 
 	return parsePrimary(parser);

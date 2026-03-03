@@ -478,6 +478,12 @@ export class TypeChecker {
 		const right: Type = this.checkExpression(expr.right, scope);
 		const op: string = expr.operator;
 
+		if (left instanceof ClassRefType && right instanceof ClassRefType) {
+			if (left.accepts(right)) {
+				return left;
+			}
+		}
+
 		if (GRAMMAR.ARITHMETIC.includes(op)) {
 			if (left.accepts(Types.NUMBER) && right.accepts(Types.NUMBER)) {
 				return Types.NUMBER;
@@ -684,13 +690,32 @@ export class TypeChecker {
 	}
 
 	private checkUnaryExpression(node: ASTUnaryNode, scope: TypeScope): Type {
-		const operand = this.checkExpression(node.argument, scope);
-		const op = node.operator;
-		if (op === GRAMMAR.EXCLAMATION_MARK) {
-			if (operand.equals(Types.BOOLEAN)) {
-				return Types.BOOLEAN;
+		const operand: Type = this.checkExpression(node.argument, scope);
+		const op: string = node.operator;
+
+		if (operand instanceof ClassRefType) {
+			return operand;
+		}
+
+		switch (op) {
+			case GRAMMAR.EXCLAMATION_MARK: {
+				if (operand.equals(Types.BOOLEAN)) {
+					return Types.BOOLEAN;
+				}
+				this.typeError(`Unary '!' requires boolean, got ${operand.name}`, node);
 			}
-			this.typeError(`Unary '!' requires boolean, got ${operand.name}`, node);
+			case GRAMMAR.MINUS: {
+				if (operand.equals(Types.NUMBER)) {
+					return Types.BOOLEAN;
+				}
+				this.typeError(`Unary '-' requires number, got ${operand.name}`, node);
+			}
+			case GRAMMAR.PLUS: {
+				if (operand.equals(Types.NUMBER)) {
+					return Types.BOOLEAN;
+				}
+				this.typeError(`Unary '+' requires number, got ${operand.name}`, node);
+			}
 		}
 		this.typeError(`Invalid unary operator ${op}`, node);
 	}

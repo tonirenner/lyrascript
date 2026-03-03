@@ -10,6 +10,7 @@ export class GRAMMAR {
 	static EXTENDS: string = 'extends';
 	static IMPLEMENTS: string = 'implements';
 	static CONSTRUCTOR: string = 'constructor';
+	static OPERATOR: string = 'operator';
 	static NEW: string = 'new';
 	static THIS: string = 'this';
 	static PUBLIC: string = 'public';
@@ -75,6 +76,7 @@ export class GRAMMAR {
 		GRAMMAR.STATIC,
 		GRAMMAR.READONLY,
 		GRAMMAR.RETURN,
+		GRAMMAR.OPERATOR,
 		GRAMMAR.LET,
 		GRAMMAR.NEW,
 		GRAMMAR.THIS,

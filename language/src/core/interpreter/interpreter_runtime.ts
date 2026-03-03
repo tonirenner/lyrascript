@@ -381,8 +381,19 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 }
 
 export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
-	const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, eventPipeline, thisValue))
-	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, eventPipeline, thisValue))
+	const left: any = castValue(evalExpression(expr.left, objectRegistry, environment, eventPipeline, thisValue));
+	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, eventPipeline, thisValue));
+
+	if (left instanceof Instance && right instanceof Instance) {
+		return callInstanceMethod(
+			left,
+			left.findeMethodNode(expr.operator),
+			[right],
+			objectRegistry,
+			environment,
+			eventPipeline
+		);
+	}
 
 	switch (expr.operator) {
 		case GRAMMAR.PLUS: {
@@ -908,11 +919,29 @@ export function callIteratorMethod(iterator: Instance, methodName: string, objec
 }
 
 export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
-	const value = evalExpression(node.argument, objectRegistry, environment, eventPipeline, thisValue);
+	const value: any = castValue(evalExpression(node.argument, objectRegistry, environment, eventPipeline, thisValue));
+
+	if (value instanceof Instance) {
+		return callInstanceMethod(
+			value,
+			value.findeMethodNode(node.operator),
+			[],
+			objectRegistry,
+			environment,
+			eventPipeline
+		);
+	}
 
 	switch (node.operator) {
-		case GRAMMAR.EXCLAMATION_MARK:
-			return !castValue(value);
+		case GRAMMAR.EXCLAMATION_MARK: {
+			return !value;
+		}
+		case GRAMMAR.MINUS: {
+			return -value;
+		}
+		case GRAMMAR.PLUS: {
+			return +value;
+		}
 	}
 
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
