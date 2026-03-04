@@ -26,6 +26,7 @@ import {
 	ASTNewNode,
 	ASTNode,
 	ASTNodeType,
+	ASTOperatorNode,
 	ASTParameterNode,
 	ASTReturnNode,
 	ASTTypeNode,
@@ -334,7 +335,7 @@ export function evalExpression(expr: ASTNode, objectRegistry: ObjectRegistry, en
 		}
 		case ASTNodeType.MEMBER: {
 			if (expr instanceof ASTMemberNode) {
-				return evalMember(expr, environment);
+				return evalMember(expr, objectRegistry, environment, eventPipeline, thisValue);
 			}
 			throwRuntimeError(`Invalid member expression ${expr.type}`, expr.span);
 		}
@@ -385,6 +386,24 @@ export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, 
 	const right: any = castValue(evalExpression(expr.right, objectRegistry, environment, eventPipeline, thisValue));
 
 	if (left instanceof Instance && right instanceof Instance) {
+
+		if (left.__classDef.nativeInstance && right.__classDef.nativeInstance) {
+
+			const methodName: string | undefined = ASTOperatorNode.OPERATOR_METHOD_MAP.get(expr.operator);
+			if (!methodName) {
+				throwRuntimeError(`Unknown operator ${expr.operator}`);
+			}
+
+			return callInstanceMethod(
+				left,
+				left.findeMethodNode(methodName),
+				[right],
+				objectRegistry,
+				environment,
+				eventPipeline
+			);
+		}
+
 		return callInstanceMethod(
 			left,
 			left.findeMethodNode(expr.operator),
@@ -514,8 +533,16 @@ export function evalAssign(expr: ASTAssignmentNode, objectRegistry: ObjectRegist
 	return value;
 }
 
-export function evalMember(expr: ASTMemberNode, environment: Environment): any {
-	const object: any = environment.get(expr.object.name);
+export function evalMember(expr: ASTMemberNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
+	const object: Instance | null = evalExpression(expr.object,
+	                                               objectRegistry,
+	                                               environment,
+	                                               eventPipeline,
+	                                               thisValue) as Instance;
+
+	if (!object) {
+		throwRuntimeError(`Member access on null.`, expr.span);
+	}
 
 	if (expr.property in object.__instanceFields) {
 		return object.__instanceFields[expr.property];
@@ -524,6 +551,8 @@ export function evalMember(expr: ASTMemberNode, environment: Environment): any {
 	if (expr.property in object.__staticFields) {
 		return object.__staticFields[expr.property];
 	}
+
+	throwRuntimeError(`Property '${expr.property}' not found`, expr.span);
 }
 
 export function evalCall(expr: ASTCallNode, objectRegistry: ObjectRegistry, environment: Environment, eventPipeline: EventPipeline, thisValue: Instance | null = null): any {
@@ -943,6 +972,7 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 			return +value;
 		}
 	}
+
 
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
 }

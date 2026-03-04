@@ -1,7 +1,6 @@
 import {GRAMMAR, TYPE_ENUM} from "./grammar";
 import {Modifiers, SuperClass} from "./interpreter/interpreter_objects";
 import {SourceSpan} from "./parser/parser_source";
-import {throwParserError} from "./errors.ts";
 
 export class ASTNodeType {
 	static PROGRAMM: string = 'program';
@@ -343,6 +342,23 @@ export class ASTOperatorNode extends ASTMethodNode {
 		GRAMMAR.EXCLAMATION_MARK,
 		//"[]"
 	];
+
+	static OPERATOR_METHOD_MAP: Map<string, string> = new Map(
+		[
+			[GRAMMAR.PLUS, '__add'],
+			[GRAMMAR.MINUS, '__subtract'],
+			[GRAMMAR.MULTIPLY, '__multiply'],
+			[GRAMMAR.DIVIDE, '__divide'],
+			[GRAMMAR.MODULUS, '__modulus'],
+			[GRAMMAR.EQUAL, '__equal'],
+			[GRAMMAR.NOT_EQUAL, '__not_equal'],
+			[GRAMMAR.LESS_THAN, '__less_than'],
+			[GRAMMAR.LESS_EQUAL, '__less_equal'],
+			[GRAMMAR.GREATER_THAN, '__greater_than'],
+			[GRAMMAR.GREATER_EQUAL, '__greater_equal'],
+			[GRAMMAR.EXCLAMATION_MARK, '__not'],
+		]
+	);
 
 	operator: string;
 

@@ -9,6 +9,7 @@ class OperatorTest {
     }
 
     public operator +(other: OperatorTest): OperatorTest {
+    System.log(this.value + other.value);
         return new OperatorTest(this.value + other.value);
     }
 
@@ -18,6 +19,7 @@ class OperatorTest {
 
     public operator -(): OperatorTest {
         let value = this.value;
+
         return new OperatorTest(-value);
     }
 }
@@ -26,7 +28,20 @@ let a = new OperatorTest(1);
 let b = new OperatorTest(1);
 let c = a + b;
 let d = new OperatorTest(2);
+let e = 1;
 
 System.log(c);
 System.log(a == b);
 System.log(-d);
+System.log(-e);
+
+
+let x = new Number(1);
+let y = new Number(2);
+
+System.log(x + y);
+System.log(x - y);
+System.log(x * y);
+System.log(x / y);
+
+

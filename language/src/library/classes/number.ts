@@ -5,11 +5,27 @@ import {Source} from "../../core/parser/parser_source";
 const CLASS_NAME = 'Number';
 
 export class LyraNumber extends LyraNativeObject {
-	value: number;
+	private readonly value: number;
 
 	constructor(value: number) {
 		super(CLASS_NAME);
 		this.value = value;
+	}
+
+	public __add(other: LyraNumber): LyraNumber {
+		return new LyraNumber(this.value + other.value);
+	}
+
+	public __subtract(other: LyraNumber): LyraNumber {
+		return new LyraNumber(this.value - other.value);
+	}
+
+	public __multiply(other: LyraNumber): LyraNumber {
+		return new LyraNumber(this.value * other.value);
+	}
+
+	public __divide(other: LyraNumber): LyraNumber {
+		return new LyraNumber(this.value / other.value);
 	}
 
 	override toString(): string {
@@ -27,7 +43,23 @@ export class NumberType extends NativeClass {
 			new Source(
 				`
 class ${CLASS_NAME} {
-	public constructor(value);
+	public constructor(value: number);
+	
+	public operator +(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __add(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator -(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __subtract(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator *(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __multiply(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator /(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __divide(other: ${CLASS_NAME}): ${CLASS_NAME};
 
 	public toString(): string;
 }`
