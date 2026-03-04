@@ -12,6 +12,14 @@ export class LyraNumber extends LyraNativeObject {
 		this.value = value;
 	}
 
+	public toNumber(): number {
+		return this.value;
+	}
+
+	override toString(): string {
+		return this.value.toString();
+	}
+
 	public __add(other: LyraNumber): LyraNumber {
 		return new LyraNumber(this.value + other.value);
 	}
@@ -27,10 +35,6 @@ export class LyraNumber extends LyraNativeObject {
 	public __divide(other: LyraNumber): LyraNumber {
 		return new LyraNumber(this.value / other.value);
 	}
-
-	override toString(): string {
-		return this.value.toString();
-	}
 }
 
 export class NumberType extends NativeClass {
@@ -44,6 +48,10 @@ export class NumberType extends NativeClass {
 				`
 class ${CLASS_NAME} {
 	public constructor(value: number);
+	
+	public toNumber(): number;
+	
+	public toString(): string;
 	
 	public operator +(other: ${CLASS_NAME}): ${CLASS_NAME};
 	
@@ -60,8 +68,46 @@ class ${CLASS_NAME} {
 	public operator /(other: ${CLASS_NAME}): ${CLASS_NAME};
 	
 	private __divide(other: ${CLASS_NAME}): ${CLASS_NAME};
-
-	public toString(): string;
+	
+	public operator %(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __modulus(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator ==(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __equal(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator !=(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __not_equal(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator <(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __less_than(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator <=(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __less_equal(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator >(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __greater_than(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator >=(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	private __greater_equal(other: ${CLASS_NAME}): ${CLASS_NAME};
+	
+	public operator !(): boolean;
+	
+	private __not(): boolean;
+	
+	public operator u+(): ${CLASS_NAME};
+	
+	private __unary_plus(): ${CLASS_NAME};
+	
+	public operator u-(): ${CLASS_NAME};
+	
+	private __unary_minus(): ${CLASS_NAME};
 }`
 			));
 

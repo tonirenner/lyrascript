@@ -30,7 +30,7 @@ export class Parser {
 	}
 
 	expect(tokenType: string, keyword: string | null = null): Token {
-		const token = this
+		const token: Token | null = this
 			.stream()
 			.next();
 

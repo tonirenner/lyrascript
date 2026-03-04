@@ -389,7 +389,7 @@ export function evalBinary(expr: ASTBinaryNode, objectRegistry: ObjectRegistry, 
 
 		if (left.__classDef.nativeInstance && right.__classDef.nativeInstance) {
 
-			const methodName: string | undefined = ASTOperatorNode.OPERATOR_METHOD_MAP.get(expr.operator);
+			const methodName: string | undefined = ASTOperatorNode.OVERLOADABLE_OPERATOR_METHOD_MAP.get(expr.operator);
 			if (!methodName) {
 				throwRuntimeError(`Unknown operator ${expr.operator}`);
 			}
@@ -951,9 +951,17 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 	const value: any = castValue(evalExpression(node.argument, objectRegistry, environment, eventPipeline, thisValue));
 
 	if (value instanceof Instance) {
+		let op: string = node.operator;
+
+		if (op === GRAMMAR.PLUS) {
+			op = GRAMMAR.UNARY_PLUS;
+		} else if (op === GRAMMAR.MINUS) {
+			op = GRAMMAR.UNARY_MINUS;
+		}
+
 		return callInstanceMethod(
 			value,
-			value.findeMethodNode(node.operator),
+			value.findeMethodNode(op),
 			[],
 			objectRegistry,
 			environment,

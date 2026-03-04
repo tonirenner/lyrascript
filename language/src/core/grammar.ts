@@ -49,6 +49,8 @@ export class GRAMMAR {
 	static MULTIPLY: string = '*';
 	static MODULUS: string = '%';
 
+	static UNARY_PLUS: string = 'u+';
+	static UNARY_MINUS: string = 'u-';
 	static EXCLAMATION_MARK: string = '!';
 	static QUESTION_MARK: string = '?';
 	static LESS_THAN: string = '<';

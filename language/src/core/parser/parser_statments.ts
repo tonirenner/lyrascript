@@ -513,7 +513,16 @@ function parseOperatorMember(parser: Parser, startToken: Token, annotations: AST
 
 	parser.expectKeyword(GRAMMAR.OPERATOR);
 
-	const operatorToken: Token = parser.expectOperator();
+	let operatorToken: Token;
+	try {
+		operatorToken = parser.expectOperator();
+
+	} catch (e) {
+		parser.rewind();
+		parser.expectIdentifier('u');
+		operatorToken = parser.expectOperator();
+		operatorToken.value = 'u' + operatorToken.value;
+	}
 
 	if (!modifiers.public && !modifiers.private) {
 		modifiers.public = true;
@@ -542,7 +551,7 @@ function parseOperatorMember(parser: Parser, startToken: Token, annotations: AST
 
 	node.span = spanFrom(startToken, operatorToken);
 
-	if (!ASTOperatorNode.ALLOWED_OPERATORS.includes(node.operator)) {
+	if (!ASTOperatorNode.OVERLOADABLE_OPERATORS.includes(node.operator)) {
 		throwParserError(`Operator ${node.operator} is not overloadable.`, node.span)
 	}
 

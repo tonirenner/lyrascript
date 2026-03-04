@@ -6,7 +6,7 @@ const ARRAY_CLASS_NAME = 'Array';
 const ARRAY_ITERATOR_CLASS_NAME = 'ArrayIterator';
 
 export class LyraArray extends LyraNativeObject {
-	values: any[];
+	public values: any[];
 
 	constructor(values: any[] = []) {
 		super(ARRAY_CLASS_NAME);
@@ -14,25 +14,25 @@ export class LyraArray extends LyraNativeObject {
 		this.values = values;
 	}
 
-	iterator(): LyraArrayIterator {
+	public iterator(): LyraArrayIterator {
 		return new LyraArrayIterator(this);
 	}
 
-	length(): number {
+	public length(): number {
 		return this.values.length;
 	}
 
-	push(value: any): void {
+	public push(value: any): void {
 		this.values.push(value);
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	get(index: number): any {
+	public get(index: number): any {
 		return this.values[index] ?? null;
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	removeAt(index: number): void {
+	public removeAt(index: number): void {
 		this.values = this.values.splice(index, 1);
 	}
 
@@ -60,7 +60,7 @@ export class ArrayType extends NativeClass {
 			new Source(
 				`
 class ${ARRAY_CLASS_NAME}<T> implements Iterable<T> {
-	public constructor(values = []);
+	public constructor(values: Array<T> = []);
 	
 	public iterator(): Iterator<T>;
 	
@@ -90,15 +90,15 @@ export class LyraArrayIterator extends LyraNativeObject {
 		this.values = array.values;
 	}
 
-	rewind() {
+	public rewind() {
 		this.index = 0;
 	}
 
-	hasNext(): boolean {
+	public hasNext(): boolean {
 		return this.index < this.values.length;
 	}
 
-	next(): void {
+	public next(): void {
 		if (this.index + 1 > this.values.length) {
 			return;
 		}
@@ -107,7 +107,7 @@ export class LyraArrayIterator extends LyraNativeObject {
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	previous(): void {
+	public previous(): void {
 		if (this.index + 1 < 0) {
 			return;
 		}
@@ -116,11 +116,11 @@ export class LyraArrayIterator extends LyraNativeObject {
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	key(): number {
+	public key(): number {
 		return this.index;
 	}
 
-	current(): any {
+	public current(): any {
 		return this.values[this.index];
 	}
 }

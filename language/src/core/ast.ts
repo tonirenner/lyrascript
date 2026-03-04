@@ -327,7 +327,7 @@ export class ASTMethodNode extends ASTNode {
 
 export class ASTOperatorNode extends ASTMethodNode {
 
-	static ALLOWED_OPERATORS: string[] = [
+	static OVERLOADABLE_OPERATORS: string[] = [
 		GRAMMAR.PLUS,
 		GRAMMAR.MINUS,
 		GRAMMAR.MULTIPLY,
@@ -340,10 +340,12 @@ export class ASTOperatorNode extends ASTMethodNode {
 		GRAMMAR.GREATER_THAN,
 		GRAMMAR.GREATER_EQUAL,
 		GRAMMAR.EXCLAMATION_MARK,
+		GRAMMAR.UNARY_PLUS,
+		GRAMMAR.UNARY_MINUS,
 		//"[]"
 	];
 
-	static OPERATOR_METHOD_MAP: Map<string, string> = new Map(
+	static OVERLOADABLE_OPERATOR_METHOD_MAP: Map<string, string> = new Map(
 		[
 			[GRAMMAR.PLUS, '__add'],
 			[GRAMMAR.MINUS, '__subtract'],
@@ -357,6 +359,8 @@ export class ASTOperatorNode extends ASTMethodNode {
 			[GRAMMAR.GREATER_THAN, '__greater_than'],
 			[GRAMMAR.GREATER_EQUAL, '__greater_equal'],
 			[GRAMMAR.EXCLAMATION_MARK, '__not'],
+			[GRAMMAR.UNARY_PLUS, '__unary_plus'],
+			[GRAMMAR.UNARY_MINUS, '__unary_minus'],
 		]
 	);
 
