@@ -68,10 +68,10 @@ tokenize → parse → link → typecheck → interpret
     - 🚧 Kurzfristig (NEXT)
     - 🔐 Sichtbarkeit & Sicherheit
 - [X] readonly Modifier
-- [ ] kombinierbar mit public / private
-- [ ] Schützt vor Mutation in Subklassen und von Außen
+- [x] kombinierbar mit public / private
+- [x] Schützt vor Mutation in Subklassen und von Außen
 - [ ] Zugriffskontrolle im Interpreter
-- [ ] Zugriffskontrolle im TypeChecker
+- [x] Zugriffskontrolle im TypeChecker
   🔁 Control Flow
 - [X] if / else
 - [X] match (Kotlin when-ähnlich)
@@ -101,14 +101,14 @@ tokenize → parse → link → typecheck → interpret
 DOM als Sprachkonzept, nicht Framework.
 Geplant
 
-- [ ] interface DomRenderable { dom(): VNode }
-- [ ] JSX als Syntax (kein Runtime-Parsing)
-- [ ] JSX → AST → VDOM
-- [ ] {expr} Einbettung
+- [x] interface DomRenderable { render(): VNode }
+- [x] JSX als Syntax (kein Runtime-Parsing)
+- [x] JSX → AST → VDOM
+- [x] {expr} Einbettung
   Primitive → TextNode
   Objekt mit dom() → aufrufen
-- [ ] Minimaler DOM-Renderer
-- [ ] VDOM-Patching (JS-seitig)
+- [x] Minimaler DOM-Renderer
+- [x] VDOM-Patching (JS-seitig)
   ⚙️ Tooling & Zukunft
 - [ ] PHPStorm Plugin (Syntax Highlighting)
 - [ ] Optional:
