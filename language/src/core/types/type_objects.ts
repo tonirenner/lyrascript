@@ -452,10 +452,12 @@ export class TypeScope {
 	readonly typeBindings: Map<string, Type> = new Map();
 
 	currentObjectSymbol: ClassSymbol | InterfaceSymbol | null;
+	currentMethodSymbol: MethodSymbol | null = null;
 
 	constructor(parent: TypeScope | null = null) {
 		this.parent = parent;
 		this.currentObjectSymbol = parent?.currentObjectSymbol ?? null;
+		this.currentMethodSymbol = parent?.currentMethodSymbol ?? null;
 	}
 
 	defineType(name: string, type: Type): void {

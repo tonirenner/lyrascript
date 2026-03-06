@@ -1,5 +1,6 @@
 import {
 	ASTArrayNode,
+	ASTAssignmentNode,
 	ASTBinaryNode,
 	ASTCallNode,
 	ASTClassNode,
@@ -139,8 +140,10 @@ export class TypeChecker {
 			});
 
 			if (objectSymbol.constructorMethodSymbol) {
-				const constructorSymbol = objectSymbol.constructorMethodSymbol;
+				const constructorSymbol: MethodSymbol = objectSymbol.constructorMethodSymbol;
 				const constructorScope = new TypeScope(instanceScope);
+
+				constructorScope.currentMethodSymbol = constructorSymbol;
 
 				objectSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
 					constructorScope.defineTypeBinding(
@@ -166,13 +169,15 @@ export class TypeChecker {
 					);
 				});
 
+				methodScope.currentMethodSymbol = methodSymbol;
+
 				for (const parameterSymbol of methodSymbol.parameterSymbols) {
 					methodScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
 				}
 
-				const hasBody = methodSymbol.body && methodSymbol.body.length > 0;
+				const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
 				if (hasBody) {
-					const actual = this.checkBody(methodSymbol.body, methodScope);
+					const actual: Type = this.checkBody(methodSymbol.body, methodScope);
 					this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
 				}
 			}
@@ -187,13 +192,15 @@ export class TypeChecker {
 					);
 				});
 
+				staticScope.currentMethodSymbol = methodSymbol;
+
 				for (const parameterSymbol of methodSymbol.parameterSymbols) {
 					staticScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
 				}
 
-				const hasBody = methodSymbol.body && methodSymbol.body.length > 0;
+				const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
 				if (hasBody) {
-					const actual = this.checkBody(methodSymbol.body, staticScope);
+					const actual: Type = this.checkBody(methodSymbol.body, staticScope);
 					this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
 				}
 			}
@@ -222,13 +229,15 @@ export class TypeChecker {
 					);
 				});
 
+				methodScope.currentMethodSymbol = methodSymbol;
+
 				for (const parameterSymbol of methodSymbol.parameterSymbols) {
 					methodScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
 				}
 
-				const hasBody = methodSymbol.body && methodSymbol.body.length > 0;
+				const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
 				if (hasBody) {
-					const actual = this.checkBody(methodSymbol.body, methodScope);
+					const actual: Type = this.checkBody(methodSymbol.body, methodScope);
 					this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
 				}
 			}
@@ -244,15 +253,15 @@ export class TypeChecker {
 	}
 
 	private checkImplementsInterface(classSymbol: ClassSymbol, interfaceRefType: InterfaceRefType): void {
-		const interfaceSymbol = interfaceRefType.interfaceSymbol;
+		const interfaceSymbol: InterfaceSymbol = interfaceRefType.interfaceSymbol;
 
-		const substitutionMap = buildTypeSubstitutionMap(
+		const substitutionMap: Map<string, Type> = buildTypeSubstitutionMap(
 			interfaceSymbol.typeParameterSymbols,
 			interfaceRefType.typeArguments
 		);
 
 		for (const interfaceMethodSymbol of interfaceSymbol.instanceMethodSymbols.values()) {
-			const classMethodSymbol = this.resolveInstanceMethode(
+			const classMethodSymbol: MethodSymbol = this.resolveInstanceMethode(
 				classSymbol,
 				interfaceMethodSymbol.name
 			);
@@ -392,6 +401,13 @@ export class TypeChecker {
 			case ASTNodeType.NULL:
 				return Types.NULL;
 
+			case ASTNodeType.ASSIGNMENT: {
+				if (expr instanceof ASTAssignmentNode) {
+					return this.checkAssignment(expr, scope);
+				}
+				break;
+			}
+
 			case ASTNodeType.VDOM: {
 				if (expr instanceof ASTVDomNode) {
 					return this.checkVDomNode(expr);
@@ -516,6 +532,48 @@ export class TypeChecker {
 		}
 
 		this.typeError(`Invalid binary operation`, expr);
+	}
+
+
+	private checkAssignment(node: ASTAssignmentNode, scope: TypeScope): Type {
+		const leftType: Type = this.checkExpression(node.left, scope);
+		const rightType: Type = this.checkExpression(node.right, scope);
+
+		this.checkAssignable(leftType, rightType, node.right);
+
+		this.checkReadonly(node.left, scope);
+
+		return leftType;
+	}
+
+	private checkReadonly(node: ASTNode, scope: TypeScope): void {
+		if (node instanceof ASTMemberNode) {
+			const objectType: Type = this.checkExpression(node.object, scope);
+			if (!(objectType instanceof ClassRefType)) {
+				this.typeError(`Cannot assign to non-object`, node);
+			}
+
+			const classSymbol: ClassSymbol = objectType.classSymbol;
+			const staticFieldSymbol: FieldSymbol | null = classSymbol.resolveStaticFieldSymbol(node.property);
+			if (staticFieldSymbol) {
+				return;
+			}
+
+			const instanceFieldSymbol: FieldSymbol | null = classSymbol.resolveInstanceFieldSymbol(node.property);
+			if (!instanceFieldSymbol) {
+				this.typeError(`Unknown member ${node.property}`, node);
+			}
+
+			const inConstructor: boolean = scope.currentMethodSymbol?.name === GRAMMAR.CONSTRUCTOR;
+			let isThis: boolean = false;
+			if (scope.currentObjectSymbol instanceof ClassSymbol) {
+				isThis = scope.currentObjectSymbol === objectType.classSymbol;
+			}
+
+			if (!(inConstructor && isThis)) {
+				this.typeError(`Cannot assign to readonly property '${instanceFieldSymbol.name}'`, node);
+			}
+		}
 	}
 
 	private checkFieldAccess(node: ASTMemberNode, classSymbol: ClassSymbol, fieldSymbol: FieldSymbol, scope: TypeScope): void {
@@ -1212,14 +1270,17 @@ export class TypeChecker {
 
 				methodSymbol.owner = interfaceSymbol;
 
-				memberNode.typeParameters.forEach(name => {
+				memberNode.typeParameters.forEach((name: string): void => {
 					methodSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
 					methodScope.defineTypeBinding(name, new TypeVariable(name));
 				});
 
 				methodSymbol.parameterSymbols = memberNode
 					.parameters
-					.map(parameterNode => this.parameterNodeToSymbol(parameterNode, methodScope));
+					.map((parameterNode: ASTParameterNode): ParameterSymbol => this.parameterNodeToSymbol(
+						parameterNode,
+						methodScope
+					));
 
 				methodSymbol.returnType = memberNode.returnType
 					? this.wrapType(memberNode.returnType, methodScope)
