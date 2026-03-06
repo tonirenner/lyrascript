@@ -719,13 +719,13 @@ export function parseArray(parser: Parser): ASTArrayNode {
 }
 
 export function parseLambda(parser: Parser): ASTLambdaNode {
-	const startToken = parser.expectPunctuation(GRAMMAR.BRACE_OPEN);
+	const startToken: Token = parser.expectPunctuation(GRAMMAR.BRACE_OPEN);
 
 	const parameters: ASTParameterNode[] = [];
 	while (parser.peek().value !== GRAMMAR.ARROW) {
-		const name = parser.expectIdentifier().value;
-		let type = null;
-		let defaultValue = null;
+		const name: string = parser.expectIdentifier().value;
+		let type: any = null;
+		let defaultValue: any = null;
 
 		if (parser.consumeIfPunctuation(GRAMMAR.COLON)) {
 			type = parseType(parser);
@@ -964,30 +964,19 @@ export function parseUnary(parser: Parser): ASTNode | ASTUnaryNode {
 	}
 
 	switch (token.value) {
-		case GRAMMAR.EXCLAMATION_MARK: {
-			parser.next();
-
-			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
-
-			return new ASTUnaryNode(GRAMMAR.EXCLAMATION_MARK, unary);
-		}
-		case GRAMMAR.MINUS: {
-			parser.next();
-
-			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
-
-			return new ASTUnaryNode(GRAMMAR.MINUS, unary);
-		}
+		case GRAMMAR.EXCLAMATION_MARK:
+		case GRAMMAR.MINUS:
 		case GRAMMAR.PLUS: {
 			parser.next();
 
-			const unary: ASTNode | ASTUnaryNode = parseUnary(parser);
+			const argument: ASTNode | ASTUnaryNode = parseUnary(parser);
 
-			return new ASTUnaryNode(GRAMMAR.PLUS, unary);
+			return new ASTUnaryNode(token.value, argument);
+		}
+		default: {
+			return parsePrimary(parser);
 		}
 	}
-
-	return parsePrimary(parser);
 }
 
 export function parsePrimary(parser: Parser): ASTNode {

@@ -764,13 +764,13 @@ export class TypeChecker {
 			}
 			case GRAMMAR.MINUS: {
 				if (operand.equals(Types.NUMBER)) {
-					return Types.BOOLEAN;
+					return Types.NUMBER;
 				}
 				this.typeError(`Unary '-' requires number, got ${operand.name}`, node);
 			}
 			case GRAMMAR.PLUS: {
 				if (operand.equals(Types.NUMBER)) {
-					return Types.BOOLEAN;
+					return Types.NUMBER;
 				}
 				this.typeError(`Unary '+' requires number, got ${operand.name}`, node);
 			}

@@ -981,7 +981,6 @@ export function evalUnary(node: ASTUnaryNode, objectRegistry: ObjectRegistry, en
 		}
 	}
 
-
 	throwRuntimeError(`Unsupported unary operator ${node.operator}`, node.span);
 }
 
