@@ -1,6 +1,6 @@
 import {ObjectRegistry} from "../runtime/registry";
 import {ASTImportNode, ASTNode, ASTNodeType} from "../ast";
-import {Source} from "../parser/parser_source";
+import {Source} from "../parser/source";
 import {Parser} from "../parser/parser";
 import {Environment} from "../runtime/objects.ts";
 import type {AbstractFileLoader} from "./loaders.ts";

@@ -1,5 +1,5 @@
-import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./ast.ts";
-import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/interpreter_statements.ts";
+import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./ast";
+import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/evaluation";
 import {ClassDefinition, type Environment, Instance} from "./runtime/objects";
 import type {ObjectRegistry} from "./runtime/registry";
 import type {EventPipeline} from "./event/pipeline";

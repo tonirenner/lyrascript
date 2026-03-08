@@ -11,7 +11,7 @@ import {
 } from "../ast";
 import {throwRuntimeError} from "../errors";
 import type {ObjectRegistry} from "./registry";
-import {evalExpression, evalMethodArguments, evalNode} from "../interpreter/interpreter_statements";
+import {evalExpression, evalMethodArguments, evalNode} from "../interpreter/evaluation";
 import {castValue, fromLyraValue, LyraNativeObject} from "./conversion";
 import type {EventPipeline} from "../event/pipeline";
 import LyraEvents from "../event/events";

@@ -36,7 +36,7 @@ import {
 	ASTVDomTextNode
 } from "../ast";
 import {throwParserError} from "../errors";
-import {spanFrom} from "./parser_source";
+import {spanFrom} from "./source";
 
 export function createMixedType(): ASTTypeNode {
 	return new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, TYPE_ENUM.MIXED);

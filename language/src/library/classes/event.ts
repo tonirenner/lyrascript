@@ -1,6 +1,6 @@
 import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/runtime/interpreter_conversion.ts";
-import {Source} from "../../core/parser/parser_source";
+import {LyraNativeObject} from "../../core/runtime/conversion";
+import {Source} from "../../core/parser/source";
 
 const CLASS_NAME = 'LyraEvents';
 

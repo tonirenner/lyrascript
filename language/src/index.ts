@@ -1,6 +1,6 @@
 import {Parser} from "./core/parser/parser";
 import {wrapJsError} from "./core/errors";
-import {fetchSource, Source} from "./core/parser/parser_source";
+import {fetchSource, Source} from "./core/parser/source";
 import {ASTNode} from "./core/ast";
 import {Tokenizer} from "./core/tokenizer.ts";
 import {Token} from "./core/grammar";

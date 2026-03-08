@@ -1,8 +1,8 @@
 import {LyraScriptProgram} from "../core/program";
-import {fetchSource} from "../core/parser/parser_source";
-import {ClassDefinition, Environment, Instance} from "../core/runtime/objects.ts";
+import {fetchSource} from "../core/parser/source";
+import {ClassDefinition, Environment, Instance} from "../core/runtime/objects";
 import {ObjectRegistry} from "../core/runtime/registry.ts";
-import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/interpreter_statements";
+import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/evaluation";
 import {EventType} from "../library/classes/event";
 import {EventPipeline} from "../core/event/pipeline";
 

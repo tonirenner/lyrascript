@@ -1,4 +1,4 @@
-import {Source, SourceSpan} from "./parser/parser_source";
+import {Source, SourceSpan} from "./parser/source";
 
 class ErrorTypes {
 	static TYPE_ERROR: string = 'TypeError';

@@ -1,8 +1,8 @@
 import {Token, TokenType} from "../grammar";
 import {TokenStream} from "../tokenizer";
-import {parseProgram} from "./parser_statments";
+import {parseProgram} from "./statements";
 import {throwParserError} from "../errors";
-import {Source} from "./parser_source";
+import {Source} from "./source";
 
 
 export class Parser {
