@@ -1,7 +1,7 @@
 import {ASTNode} from '../ast.ts';
-import {Environment} from "./interpreter_objects";
-import {evalNode, registerNativeClasses, registerNativeFunctions} from "./interpreter_runtime";
-import {ObjectRegistry} from "./interpreter_registry";
+import {Environment} from "../runtime/objects.ts";
+import {evalNode, registerNativeClasses, registerNativeFunctions} from "./interpreter_statements";
+import {ObjectRegistry} from "../runtime/registry";
 import type {EventPipeline} from "../event/pipeline";
 
 export class Interpreter {

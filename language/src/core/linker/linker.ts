@@ -1,9 +1,9 @@
 import {Dependency, DependencyLoader} from "./dependencies";
 import {ASTImportNode, ASTNode} from "../ast";
 import {NativeClasses} from "../../library/native_classes";
-import {ClassDefinition, Environment, InterfaceDefinition} from "../interpreter/interpreter_objects";
-import {ObjectRegistry} from "../interpreter/interpreter_registry";
-import type {AbstractFileLoader} from "../loaders";
+import {ClassDefinition, Environment, InterfaceDefinition} from "../runtime/objects.ts";
+import {ObjectRegistry} from "../runtime/registry.ts";
+import type {AbstractFileLoader} from "./loaders.ts";
 import type {NativeClass} from "../../library/native_class";
 import {throwDependencyError} from "../errors";
 import type {SourceSpan} from "../parser/parser_source.ts";

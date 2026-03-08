@@ -1,5 +1,5 @@
 import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/interpreter/interpreter_conversion";
+import {LyraNativeObject} from "../../core/runtime/interpreter_conversion.ts";
 import {Source} from "../../core/parser/parser_source";
 
 const CLASS_NAME = 'Number';
@@ -34,6 +34,18 @@ export class LyraNumber extends LyraNativeObject {
 
 	public __divide(other: LyraNumber): LyraNumber {
 		return new LyraNumber(this.value / other.value);
+	}
+
+	private __not(): boolean {
+		return !this.value;
+	}
+
+	public __unary_plus(): LyraNumber {
+		return new LyraNumber(+this.value);
+	}
+
+	public __unary_minus(): LyraNumber {
+		return new LyraNumber(-this.value);
 	}
 }
 

@@ -37,7 +37,7 @@ Lyra consists of two major layers:
 - Interpreter
 - Symbol & Type Registry
 
-This layer has no DOM knowledge and can run in different environments.
+This layer has no DOM knowledge and can execute in different environments.
 
 ### 2. Application Runtime
 
@@ -61,10 +61,10 @@ bun install
 To build:
 
 ```bash
-bun run lyra:build
+bun execute lyra:build
 ```
 
-To run in a browser:
+To execute in a browser:
 
 ```
 open playground/index.html

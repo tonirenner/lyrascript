@@ -1,5 +1,5 @@
 import {ASTClassNode, ASTNodeType} from "../core/ast";
-import {ClassDefinition} from "../core/interpreter/interpreter_objects";
+import {ClassDefinition} from "../core/runtime/objects";
 import {Parser} from "../core/parser/parser";
 import {throwRuntimeError} from "../core/errors";
 import type {Source} from "../core/parser/parser_source";

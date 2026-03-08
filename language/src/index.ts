@@ -2,12 +2,14 @@ import {Parser} from "./core/parser/parser";
 import {wrapJsError} from "./core/errors";
 import {fetchSource, Source} from "./core/parser/parser_source";
 import {ASTNode} from "./core/ast";
-import {Tokenizer} from "./core/tokenizer/tokenizer";
+import {Tokenizer} from "./core/tokenizer.ts";
 import {Token} from "./core/grammar";
 import {LyraScriptProgram} from "./core/program";
 import {EventPipeline} from "./core/event/pipeline";
 import {State} from "./core/event/state";
 import {HTMLElementCreator} from "./host/dom";
+import type {Bytecode} from "./core/virtualmachine/opcodes.ts";
+
 
 export {WebLyraScript} from "./host/engine";
 export {WebApplicationRuntime} from "./host/runtime";
@@ -26,6 +28,10 @@ const Lyra = {
 	executeTest: (source: Source, isDebug: boolean = false): Promise<void> => executeTest(source, isDebug),
 	executeTestString: (code: string, isDebug: boolean = false): Promise<void> => executeTestString(code, isDebug),
 	executeTestUrl: (url: string, isDebug: boolean = false): Promise<void> => executeTestUrl(url, isDebug),
+	compileSource: (source: Source, isDebug: boolean = false): Promise<Bytecode[]> => compileSource(source,
+	                                                                                                isDebug),
+	compileFromUrl: (url: string, isDebug: boolean = false): Promise<Bytecode[]> => compileFromUrl(url, isDebug),
+	executeBytecode: (bytecode: Bytecode[], isDebug: boolean = false): void => executeBytecode(bytecode, isDebug),
 	tokenize: (source: Source): Token[] => tokenize(source),
 	tokenizeUrl: (url: string): Promise<Token[]> => tokenizeUrl(url),
 	parseTree: (source: Source): ASTNode => parseTree(source),
@@ -39,7 +45,7 @@ function Program(isDebug: boolean = false): LyraScriptProgram {
 async function execute(source: Source, isDebug: boolean = false): Promise<void> {
 	try {
 		return await Program(isDebug)
-			.execute(source);
+			.executeSource(source);
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error(wrapJsError(error, source)
@@ -47,6 +53,28 @@ async function execute(source: Source, isDebug: boolean = false): Promise<void> 
 		}
 		throw error;
 	}
+}
+
+async function compileSource(source: Source, isDebug: boolean = false): Promise<Bytecode[]> {
+	try {
+		return await Program(isDebug)
+			.compileSource(source);
+	} catch (error) {
+		if (error instanceof Error) {
+			console.error(wrapJsError(error, source)
+				              .format());
+		}
+		throw error;
+	}
+}
+
+async function compileFromUrl(url: string, isDebug: boolean = false): Promise<Bytecode[]> {
+	return await compileSource(await fetchSource(url), isDebug);
+}
+
+function executeBytecode(bytecode: Bytecode[], isDebug: boolean = false): void {
+	Program(isDebug)
+		.executeBytecode(bytecode);
 }
 
 async function executeFromUrl(url: string, isDebug: boolean = false): Promise<void> {
@@ -58,7 +86,7 @@ async function executeFromString(code: string, isDebug: boolean = false): Promis
 
 	try {
 		return await Program(isDebug)
-			.execute(source);
+			.executeSource(source);
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error(wrapJsError(error, source)

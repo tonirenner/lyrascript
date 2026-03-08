@@ -1,9 +1,9 @@
 import {GRAMMAR, TYPE_ENUM} from "./grammar";
-import {Modifiers, SuperClass} from "./interpreter/interpreter_objects";
+import {Modifiers, SuperClass} from "./runtime/objects";
 import {SourceSpan} from "./parser/parser_source";
 
 export class ASTNodeType {
-	static PROGRAMM: string = 'program';
+	static PROGRAM: string = 'program';
 	static INDEX: string = 'index';
 	static IDENTIFIER: string = 'identifier';
 	static ANNOTATION: string = 'annotation';

@@ -1,9 +1,9 @@
-import {ObjectRegistry} from "../interpreter/interpreter_registry";
+import {ObjectRegistry} from "../runtime/registry";
 import {ASTImportNode, ASTNode, ASTNodeType} from "../ast";
 import {Source} from "../parser/parser_source";
 import {Parser} from "../parser/parser";
-import {Environment} from "../interpreter/interpreter_objects";
-import type {AbstractFileLoader} from "../loaders";
+import {Environment} from "../runtime/objects.ts";
+import type {AbstractFileLoader} from "./loaders.ts";
 import {throwRuntimeError} from "../errors";
 
 export class Dependency {

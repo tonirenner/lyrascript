@@ -1,8 +1,8 @@
-import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "../ast";
-import {callInstanceMethod, evalAnnotationProperties} from "../interpreter/interpreter_runtime";
-import {ClassDefinition, type Environment, Instance} from "../interpreter/interpreter_objects";
-import type {ObjectRegistry} from "../interpreter/interpreter_registry";
-import type {EventPipeline} from "../event/pipeline";
+import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./ast.ts";
+import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/interpreter_statements.ts";
+import {ClassDefinition, type Environment, Instance} from "./runtime/objects";
+import type {ObjectRegistry} from "./runtime/registry";
+import type {EventPipeline} from "./event/pipeline";
 
 export class TestSuites {
 	private readonly environment: Environment;

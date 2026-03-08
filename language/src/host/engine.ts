@@ -1,8 +1,8 @@
 import {LyraScriptProgram} from "../core/program";
 import {fetchSource} from "../core/parser/parser_source";
-import {ClassDefinition, Environment, Instance} from "../core/interpreter/interpreter_objects";
-import {ObjectRegistry} from "../core/interpreter/interpreter_registry";
-import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
+import {ClassDefinition, Environment, Instance} from "../core/runtime/objects.ts";
+import {ObjectRegistry} from "../core/runtime/registry.ts";
+import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/interpreter_statements";
 import {EventType} from "../library/classes/event";
 import {EventPipeline} from "../core/event/pipeline";
 
@@ -81,7 +81,7 @@ export class WebLyraScript implements Engine {
 	}
 
 	public async executeEntryFile(url: string, className: string): Promise<void> {
-		return this.program.execute(await fetchSource(url))
+		return this.program.executeSource(await fetchSource(url))
 		           .then(() => {
 			           this.rootInstance = this.createInstance(className);
 		           });

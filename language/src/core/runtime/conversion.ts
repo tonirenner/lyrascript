@@ -1,7 +1,7 @@
 import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "../ast";
 import {GRAMMAR, TYPE_ENUM} from "../grammar";
-import {ClassDefinition, Instance} from "./interpreter_objects";
-import {ObjectRegistry} from "./interpreter_registry";
+import {ClassDefinition, Instance} from "./objects";
+import {ObjectRegistry} from "./registry";
 import {throwNativeError} from "../errors";
 
 interface SerializationObject {

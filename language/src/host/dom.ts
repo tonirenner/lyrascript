@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
-import type {Props, VChild, VText} from "../core/vdom/vdom";
-import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
+import type {Props, VChild, VText} from "../core/runtime/vdom";
+import {LambdaFunctionCall} from "../core/interpreter/interpreter_statements";
 import Events from "./events";
 import type {ApplicationRuntime} from "./runtime";
 import {VDOM} from "./registry";
@@ -37,7 +37,7 @@ export class HTMLElementCreator implements ElementCreator {
 				if (key === 'children') {
 					continue;
 				}
-				if (vNode.instance.hasPublicProperty(key)) {
+				if (vNode.instance?.hasPublicProperty(key)) {
 					vNode.instance.setPublicProperty(key, value);
 				}
 			}

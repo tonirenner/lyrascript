@@ -1,4 +1,4 @@
-import type {Instance} from "../interpreter/interpreter_objects";
+import type {Instance} from "./objects";
 
 export type VChild = VText | VElement | VComponent;
 export type Props = Record<string, unknown>;

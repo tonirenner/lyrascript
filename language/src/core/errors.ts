@@ -8,6 +8,7 @@ class ErrorTypes {
 	static INTERNAL_ERROR: string = 'InternalError';
 	static NATIVE_ERROR: string = 'NativeError';
 	static DEPENDENCY_ERROR: string = 'DependencyError';
+	static COMPILE_ERROR: string = 'CompileError';
 }
 
 export class LyraError extends Error {
@@ -109,6 +110,17 @@ export class LyraDependencyError extends LyraError {
 	}
 }
 
+export class LyraCompileError extends LyraError {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
+		super(
+			ErrorTypes.COMPILE_ERROR,
+			message,
+			span,
+			cause
+		);
+	}
+}
+
 export function throwTokenError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraTokenError(message, span, cause);
 }
@@ -131,6 +143,10 @@ export function throwNativeError(message: string, span: SourceSpan | null = null
 
 export function throwDependencyError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraDependencyError(message, span, cause);
+}
+
+export function throwCompileError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+	throw new LyraCompileError(message, span, cause);
 }
 
 /**

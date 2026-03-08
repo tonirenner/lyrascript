@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lyrascript Compiler</title>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+	import Lyra from '../dist/language.js';
+
+	console.log(await Lyra.tokenizeUrl('/lyrascript/tests/compiler.lyra'));
+
+	await Lyra.executeFromUrl('/lyrascript/tests/compiler.lyra', true);
+
+	const bytecode = await Lyra.compileFromUrl('/lyrascript/tests/compiler.lyra', true);
+
+	console.log(bytecode);
+
+	Lyra.executeBytecode(bytecode);
+</script>
+</body>
+</html>

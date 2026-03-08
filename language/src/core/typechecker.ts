@@ -21,7 +21,7 @@ import {
 	ASTUnaryNode,
 	ASTVariableNode,
 	ASTVDomNode
-} from '../ast.ts';
+} from './ast';
 import {
 	buildTypeSubstitutionMap,
 	ClassRefType,
@@ -42,13 +42,13 @@ import {
 	TypeScope,
 	TypeVariable,
 	wrapType
-} from "./type_objects";
-import {Autoboxing} from "./autoboxing";
-import {NativeFunction, NativeFunctions} from "../../library/native_functions";
-import {GRAMMAR} from "../grammar";
-import {throwTypeError} from "../errors.ts"
-import {ClassDefinition, InterfaceDefinition} from "../interpreter/interpreter_objects";
-import {ObjectRegistry} from "../interpreter/interpreter_registry";
+} from "./runtime/type_objects";
+import {Autoboxing} from "./runtime/autoboxing";
+import {NativeFunction, NativeFunctions} from "../library/native_functions";
+import {GRAMMAR} from "./grammar";
+import {throwTypeError} from "./errors"
+import {ClassDefinition, InterfaceDefinition} from "./runtime/objects";
+import {ObjectRegistry} from "./runtime/registry";
 
 
 const globalFunctionTypeRegistry = new NativeFunctions()

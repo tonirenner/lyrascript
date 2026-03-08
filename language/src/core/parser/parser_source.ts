@@ -1,4 +1,4 @@
-import {Tokenizer} from "../tokenizer/tokenizer";
+import {Tokenizer} from "../tokenizer.ts";
 import {throwDependencyError} from "../errors";
 import type {Token} from "../grammar";
 

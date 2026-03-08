@@ -9,7 +9,7 @@ import {
 	ASTTypeNode
 } from "../ast";
 import {throwTypeError} from "../errors";
-import {ObjectRegistry} from "../interpreter/interpreter_registry";
+import {ObjectRegistry} from "./registry";
 
 export class PrimitiveTypes {
 	static readonly NUMBER: string = TYPE_ENUM.NUMBER;

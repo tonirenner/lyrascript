@@ -124,8 +124,8 @@ import System;
 
 class App {
 
-    public run(): void {
-        System.print("Hello from App.run()");
+    public execute(): void {
+        System.print("Hello from App.execute()");
         System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
     }
 
@@ -133,7 +133,7 @@ class App {
 
 let app: App = new App();
 
-app.run();
+app.execute();
 
 		</textarea>
     </div>
@@ -191,7 +191,7 @@ app.run();
 	}
 
 
-	function run() {
+	function execute() {
 		output.clear();
 		render();
 

@@ -1,5 +1,5 @@
 import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "../interpreter/interpreter_registry";
+import {ObjectRegistry} from "./registry";
 import {throwRuntimeError} from "../errors";
 
 export class AutoboxedTypes {

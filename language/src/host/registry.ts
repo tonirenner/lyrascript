@@ -1,5 +1,5 @@
-import {type VNode} from "../core/vdom/vdom";
-import type {Instance} from "../core/interpreter/interpreter_objects";
+import {type VNode} from "../core/runtime/vdom";
+import type {Instance} from "../core/runtime/objects";
 
 export class EventHandlerRegistry {
 	private registry: WeakMap<HTMLElement, Record<string, Function>> = new WeakMap<HTMLElement, Record<string, Function>>();

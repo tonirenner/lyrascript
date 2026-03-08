@@ -1,6 +1,6 @@
 import {Parser} from "./parser";
 import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../grammar";
-import {Modifiers, SuperClass} from "../interpreter/interpreter_objects";
+import {Modifiers, SuperClass} from "../runtime/objects";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -127,7 +127,7 @@ export function parseProgram(parser: Parser): ASTNode {
 			}
 		}
 	}
-	return new ASTNode(ASTNodeType.PROGRAMM, children);
+	return new ASTNode(ASTNodeType.PROGRAM, children);
 }
 
 export function parseStatement(parser: Parser): ASTNode | null {

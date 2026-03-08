@@ -1,22 +1,28 @@
 import {Source} from "./parser/parser_source";
-import {Environment} from "./interpreter/interpreter_objects";
-import {ObjectRegistry} from "./interpreter/interpreter_registry";
-import {TypeChecker} from "./types/typechecker";
+import {Environment} from "./runtime/objects";
+import {ObjectRegistry} from "./runtime/registry";
+import {TypeChecker} from "./typechecker.ts";
 import {Linker} from "./linker/linker";
-import {TestSuites} from "./tests/testsuites";
+import {TestSuites} from "./testsuites.ts";
 import {Interpreter} from "./interpreter/interpreter";
-import {FetchFileLoader} from "./loaders";
+import {FetchFileLoader} from "./linker/loaders.ts";
 import {ASTNode} from "./ast";
 import {Parser} from "./parser/parser";
 import {EventPipeline} from "./event/pipeline";
+import {Compiler} from "./virtualmachine/compiler.ts";
+import {type Bytecode} from "./virtualmachine/opcodes.ts";
+import {VirtualMachine} from "./virtualmachine/virtualmachine.ts";
 
 export class LyraScriptProgram {
-	private globalEnvironment: Environment = new Environment();
-	private globalObjectRegistry: ObjectRegistry = new ObjectRegistry();
-	private globalEventPipeline: EventPipeline;
+	private readonly eventPipeline: EventPipeline;
+	private readonly compiler: Compiler = new Compiler();
+	private readonly virtualMachine: VirtualMachine = new VirtualMachine();
+	private environment: Environment = new Environment();
+	private objectRegistry: ObjectRegistry = new ObjectRegistry();
 
-	private typeChecker: TypeChecker = new TypeChecker(this.globalObjectRegistry);
-	private linker: Linker = new Linker(this.globalEnvironment, this.globalObjectRegistry, new FetchFileLoader());
+
+	private typeChecker: TypeChecker = new TypeChecker(this.objectRegistry);
+	private linker: Linker = new Linker(this.environment, this.objectRegistry, new FetchFileLoader());
 
 	private interpreter: Interpreter;
 	private testSuite: TestSuites;
@@ -28,36 +34,36 @@ export class LyraScriptProgram {
 		this.isDebug = isDebug;
 
 		this.interpreter = new Interpreter(
-			this.globalEnvironment,
-			this.globalObjectRegistry,
+			this.environment,
+			this.objectRegistry,
 			globalEventPipeline
 		);
 
 		this.testSuite = new TestSuites(
-			this.globalEnvironment,
-			this.globalObjectRegistry,
+			this.environment,
+			this.objectRegistry,
 			globalEventPipeline
 		);
 
-		this.globalEventPipeline = globalEventPipeline;
+		this.eventPipeline = globalEventPipeline;
 	}
 
 	getGlobalObjectRegistry(): ObjectRegistry {
-		return this.globalObjectRegistry;
+		return this.objectRegistry;
 	}
 
 
 	getGlobalEnvironment(): Environment {
-		return this.globalEnvironment;
+		return this.environment;
 	}
 
 	getGlobalEventPipeline(): EventPipeline {
-		return this.globalEventPipeline;
+		return this.eventPipeline;
 	}
 
-	async execute(source: Source): Promise<void> {
+	async executeSource(source: Source): Promise<void> {
 		return this.runPipeline(source)
-		           .then((ast: ASTNode) => {
+		           .then((ast: ASTNode): void => {
 			           this.debugMeasureStartTime();
 			           this.interpreter.run(ast);
 			           this.debugMeasureEndTime('interpreter');
@@ -66,11 +72,25 @@ export class LyraScriptProgram {
 
 	async executeTest(source: Source): Promise<void> {
 		return this.runPipeline(source)
-		           .then((ast: ASTNode) => {
+		           .then((ast: ASTNode): void => {
 			           this.debugMeasureStartTime();
 			           this.testSuite.run(ast);
 			           this.debugMeasureEndTime('test');
 		           });
+	}
+
+	async compileSource(source: Source): Promise<Bytecode[]> {
+		return this.runPipeline(source)
+		           .then((ast: ASTNode): Bytecode[] => {
+			           this.debugMeasureStartTime();
+			           const bytecode: Bytecode[] = this.compiler.compile(ast);
+			           this.debugMeasureEndTime('compiler');
+			           return bytecode;
+		           });
+	}
+
+	executeBytecode(bytecode: Bytecode[]): void {
+		console.log(this.virtualMachine.execute(bytecode));
 	}
 
 	debug(value: any): void {
@@ -102,7 +122,7 @@ export class LyraScriptProgram {
 
 		return this.linker.linkSources(ast)
 		           .then((): void => {
-			           this.typeChecker.collectAllSymbolsFromRegistry(this.globalObjectRegistry);
+			           this.typeChecker.collectAllSymbolsFromRegistry(this.objectRegistry);
 		           })
 		           .then((): ASTNode => {
 			           this.debugMeasureStartTime();

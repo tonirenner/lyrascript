@@ -1,10 +1,10 @@
 import {type Engine, WebLyraScript} from "./engine";
 import {type ElementPatcher, HTMLElementPatcher} from "./dom";
-import type {VChild} from "../core/vdom/vdom";
+import type {VChild} from "../core/runtime/vdom.ts";
 import {EventPipeline} from "../core/event/pipeline";
 import Events from "./events";
-import {type Instance} from "../core/interpreter/interpreter_objects";
-import {LambdaFunctionCall} from "../core/interpreter/interpreter_runtime";
+import {type Instance} from "../core/runtime/objects";
+import {LambdaFunctionCall} from "../core/interpreter/interpreter_statements";
 import {EventHandlerRegistry, VDOM} from "./registry";
 import LyraEvents from "../core/event/events";
 
