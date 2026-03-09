@@ -1,6 +1,6 @@
-import {GRAMMAR, Rules, Token, TokenType} from "./grammar";
-import {throwTokenError} from "./errors";
-import type {Source} from "./parser/parser_source";
+import {GRAMMAR, Rules, Token, TokenType} from "./shared/grammar.ts";
+import {throwTokenError} from "./shared/errors.ts";
+import type {Source} from "./parser/source.ts";
 
 export class Tokenizer {
 	private readonly rules = new Rules();

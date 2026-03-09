@@ -1,12 +1,12 @@
-import {Dependency, DependencyLoader} from "./dependencies";
-import {ASTImportNode, ASTNode} from "../ast";
-import {NativeClasses} from "../../library/native_classes";
-import {ClassDefinition, Environment, InterfaceDefinition} from "../runtime/objects.ts";
-import {ObjectRegistry} from "../runtime/registry.ts";
-import type {AbstractFileLoader} from "./loaders.ts";
-import type {NativeClass} from "../../library/native_class";
-import {throwDependencyError} from "../errors";
-import type {SourceSpan} from "../parser/parser_source.ts";
+import {Dependency, DependencyLoader} from "./linker/dependencies.ts";
+import {ASTImportNode, ASTNode} from "./shared/ast.ts";
+import {NativeClasses} from "../library/native_classes.ts";
+import type {AbstractFileLoader} from "./linker/loaders.ts";
+import type {NativeClass} from "../library/native_class.ts";
+import {throwDependencyError} from "./shared/errors.ts";
+import {ClassDefinition, type Environment, InterfaceDefinition} from "./shared/runtime_model.ts";
+import type {ObjectRegistry} from "./shared/runtime_registry.ts";
+import type {SourceSpan} from "./parser/source.ts";
 
 const nativeClasses = new NativeClasses();
 

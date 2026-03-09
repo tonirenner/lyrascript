@@ -1,13 +1,14 @@
-import {ASTClassNode, ASTInterfaceNode, ASTNode} from "../ast";
-import {ClassDefinition, Instance, InterfaceDefinition} from "./objects";
-import {ClassSymbol, InterfaceSymbol} from "./type_objects";
-import {throwRuntimeError} from "../errors";
+import {ASTClassNode, ASTInterfaceNode, ASTNode} from "./ast.ts";
+import {throwRuntimeError} from "./errors.ts";
+import {type ClassDefinition, InterfaceDefinition, RuntimeInstance} from "./runtime_model.ts";
+import {ASTModelFactory} from "./ast_model_factory.ts";
+import {type ClassSymbol, InterfaceSymbol} from "./type_objects.ts";
 
 export class ClassRegistry {
 	map: Map<string, ClassDefinition> = new Map();
 
 	register(node: ASTClassNode): void {
-		this.set(node.name, ClassDefinition.fromAST(node));
+		this.set(node.name, ASTModelFactory.createClass(node));
 	}
 
 	all(): IterableIterator<ClassDefinition> {
@@ -35,7 +36,7 @@ export class InterfaceRegistry {
 	map: Map<string, InterfaceDefinition> = new Map();
 
 	register(node: ASTInterfaceNode): void {
-		this.set(node.name, InterfaceDefinition.fromAST(node));
+		this.set(node.name, ASTModelFactory.createInterface(node));
 	}
 
 	all(): IterableIterator<InterfaceDefinition> {
@@ -48,21 +49,21 @@ export class InterfaceRegistry {
 }
 
 export class InstanceRegistry {
-	private instances: Map<string, Instance> = new Map<string, Instance>();
+	private instances: Map<string, RuntimeInstance> = new Map<string, RuntimeInstance>();
 
-	register(instance: Instance): void {
+	register(instance: RuntimeInstance): void {
 		this.instances.set(instance.id, instance);
 	}
 
-	unregister(instance: Instance): void {
+	unregister(instance: RuntimeInstance): void {
 		this.instances.delete(instance.id);
 	}
 
-	get(id: string): Instance | null {
+	get(id: string): RuntimeInstance | null {
 		return this.instances.get(id) || null;
 	}
 
-	allInstances(): Instance[] {
+	allInstances(): RuntimeInstance[] {
 		return Array.from(this.instances.values());
 	}
 }

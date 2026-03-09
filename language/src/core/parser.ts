@@ -1,8 +1,8 @@
-import {Token, TokenType} from "../grammar";
-import {TokenStream} from "../tokenizer";
-import {parseProgram} from "./statements";
-import {throwParserError} from "../errors";
-import {Source} from "./source";
+import {Token, TokenType} from "./shared/grammar.ts";
+import {TokenStream} from "./tokenizer.ts";
+import {parseProgram} from "./parser/statements.ts";
+import {throwParserError} from "./shared/errors.ts";
+import {Source} from "./parser/source.ts";
 
 
 export class Parser {

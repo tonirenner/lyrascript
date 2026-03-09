@@ -1,18 +1,19 @@
-import {getOpcodeName, Opcodes} from "./opcodes";
-import {ClassDefinition, Environment, Instance} from "../runtime/objects";
-import {ObjectRegistry} from "../runtime/registry";
-import {throwRuntimeError, throwVirtualMachineError} from "../errors";
-import {Stack} from "./stack.ts";
-import type {ByteCode, ByteCodeInstructions} from "./bytecode.ts";
-import {GRAMMAR} from "../grammar.ts";
-import type {ASTParameterNode} from "../ast.ts";
+import {getOpcodeName, Opcodes} from "./virtualmachine/opcodes.ts";
+import {throwRuntimeError, throwVirtualMachineError} from "./shared/errors.ts";
+import {Stack} from "./virtualmachine/stack.ts";
+import type {ByteCode, ByteCodeInstructions} from "./virtualmachine/bytecode.ts";
+import {GRAMMAR} from "./shared/grammar.ts";
+import type {ASTParameterNode} from "./shared/ast.ts";
+import {ClassDefinition, ClassMethodDefinition, Environment, RuntimeInstance} from "./shared/runtime_model.ts";
+import {ObjectRegistry} from "./shared/runtime_registry.ts";
+import {ASTRuntimeInstanceFactory} from "./shared/ast_instance_factory.ts";
 
 
 export class VirtualMachine {
 
 	private readonly stack: Stack = new Stack();
 
-	private currentThis: Instance | null = null;
+	private currentThis: RuntimeInstance | null = null;
 
 	constructor(
 		private readonly registry: ObjectRegistry,
@@ -90,7 +91,7 @@ export class VirtualMachine {
 					const className = byteCodeInstructions.next() as string;
 
 					const classDef: ClassDefinition = this.registry.classes.get(className);
-					const instance: Instance = classDef.constructEmptyInstance();
+					const instance: RuntimeInstance = ASTRuntimeInstanceFactory.createRuntimeInstance(classDef);
 
 					this.registry.instances.register(instance);
 
@@ -106,7 +107,7 @@ export class VirtualMachine {
 					const fieldName = byteCodeInstructions.next() as string;
 					const instance: any = this.stack.pop();
 
-					if (!(instance instanceof Instance)) {
+					if (!(instance instanceof RuntimeInstance)) {
 						throwRuntimeError("GET_FIELD on non-instance");
 					}
 
@@ -120,7 +121,7 @@ export class VirtualMachine {
 					const value: any = this.stack.pop();
 					const instance: any = this.stack.pop();
 
-					if (!(instance instanceof Instance)) {
+					if (!(instance instanceof RuntimeInstance)) {
 						throwRuntimeError("SET_FIELD on non-instance");
 					}
 
@@ -145,9 +146,9 @@ export class VirtualMachine {
 						args.unshift(this.stack.pop());
 					}
 
-					const instance: Instance = this.stack.pop();
+					const instance: RuntimeInstance = this.stack.pop();
 
-					const methodNode = instance.findeMethodNode(methodName);
+					const methodNode: ClassMethodDefinition = instance.findMethod(methodName);
 
 					const methodEnv = new Environment(this.environment);
 
@@ -164,11 +165,11 @@ export class VirtualMachine {
 						methodEnv.define(param.name, args[i]);
 					}
 
-					const previousThis: Instance | null = this.currentThis;
+					const previousThis: RuntimeInstance | null = this.currentThis;
 
 					this.currentThis = instance;
 
-					for (const child of methodNode.children) {
+					for (const child of methodNode.body()) {
 						// simple execution like interpreter
 						// return handling via stack
 					}

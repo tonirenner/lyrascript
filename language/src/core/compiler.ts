@@ -13,10 +13,10 @@ import {
 	ASTReturnNode,
 	ASTUnaryNode,
 	ASTVariableNode
-} from "../ast.ts";
-import {BinaryOpcodeMap, Opcodes, UnaryOpcodeMap} from "./opcodes";
-import {throwCompileError} from "../errors.ts";
-import {type ByteCode, ByteCodeInstructions} from "./bytecode.ts";
+} from "./shared/ast.ts";
+import {BinaryOpcodeMap, Opcodes, UnaryOpcodeMap} from "./virtualmachine/opcodes.ts";
+import {throwCompileError} from "./shared/errors.ts";
+import {type ByteCode, ByteCodeInstructions} from "./virtualmachine/bytecode.ts";
 
 export class Compiler {
 	private readonly instructions: ByteCode[] = [];

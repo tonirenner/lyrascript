@@ -1,5 +1,5 @@
-import {type VNode} from "../core/runtime/vdom";
-import type {Instance} from "../core/runtime/objects";
+import {type VNode} from "../core/runtime/runtime_vdom.ts";
+import type {RuntimeInstance} from "../core/runtime/runtime_model.ts";
 
 export class EventHandlerRegistry {
 	private registry: WeakMap<HTMLElement, Record<string, Function>> = new WeakMap<HTMLElement, Record<string, Function>>();
@@ -31,15 +31,15 @@ export class EventHandlerRegistry {
 export class VDOM {
 	private instanceMap: Map<string, VNode> = new Map<string, VNode>();
 
-	public register(instance: Instance, node: VNode): void {
+	public register(instance: RuntimeInstance, node: VNode): void {
 		this.instanceMap.set(instance.id, node);
 	}
 
-	public unregister(instance: Instance): void {
+	public unregister(instance: RuntimeInstance): void {
 		this.instanceMap.delete(instance.id);
 	}
 
-	public findNodeByComponent(instance: Instance): VNode {
+	public findNodeByComponent(instance: RuntimeInstance): VNode {
 		const vNode: VNode | undefined = this.instanceMap.get(instance.id);
 		if (!vNode) {
 			throw new Error(`Instance with id ${instance.id} not found.`);

@@ -1,6 +1,5 @@
-import {Parser} from "./parser";
-import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../grammar";
-import {Modifiers, SuperClass} from "../runtime/objects";
+import {Parser} from "../parser.ts";
+import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../shared/grammar.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -34,9 +33,10 @@ import {
 	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
-} from "../ast";
-import {throwParserError} from "../errors";
+} from "../shared/ast.ts";
+import {throwParserError} from "../shared/errors.ts";
 import {spanFrom} from "./source";
+import {Modifiers, SuperClass} from "../runtime/runtime_model.ts";
 
 export function createMixedType(): ASTTypeNode {
 	return new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, TYPE_ENUM.MIXED);
@@ -376,7 +376,7 @@ export function parseAnnotation(parser: Parser): ASTAnnotationNode {
 export function parseModifiers(parser: Parser, allowed: string[]): Modifiers {
 	const modifiers: { [index: string]: boolean } = {};
 
-	allowed.forEach(modifier => modifiers[modifier] = false);
+	allowed.forEach((modifier: string): boolean => modifiers[modifier] = false);
 
 	while (parser.peek().type === TokenType.KEYWORD && allowed.includes(parser.peek().value)) {
 		const modifier = parser.next().value;

@@ -1,17 +1,17 @@
-import {Source} from "./parser/source";
-import {Environment} from "./runtime/objects";
-import {ObjectRegistry} from "./runtime/runtime_registry";
+import {Source} from "./parser/source.ts";
+import {ObjectRegistry} from "./shared/runtime_registry.ts";
 import {TypeChecker} from "./typechecker.ts";
-import {Linker} from "./linker/linker";
+import {Linker} from "./linker.ts";
 import {TestSuites} from "./testsuites.ts";
-import {Interpreter} from "./interpreter/interpreter";
+import {Interpreter} from "./interpreter.ts";
 import {FetchFileLoader} from "./linker/loaders.ts";
-import {ASTNode} from "./ast";
-import {Parser} from "./parser/parser";
-import {EventPipeline} from "./event/pipeline";
-import {Compiler} from "./virtualmachine/compiler.ts";
-import {VirtualMachine} from "./virtualmachine/virtualmachine.ts";
+import {ASTNode} from "./shared/ast.ts";
+import {Parser} from "./parser.ts";
+import {EventPipeline} from "./event/pipeline.ts";
+import {Compiler} from "./compiler.ts";
+import {VirtualMachine} from "./virtualmachine.ts";
 import type {ByteCodeInstructions} from "./virtualmachine/bytecode.ts";
+import {Environment} from "./shared/runtime_model.ts";
 
 export class LyraScriptProgram {
 	private readonly environment: Environment = new Environment();

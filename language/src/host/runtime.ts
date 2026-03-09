@@ -1,12 +1,12 @@
-import {type Engine, WebLyraScript} from "./engine";
-import {type ElementPatcher, HTMLElementPatcher} from "./dom";
-import type {VChild} from "../core/runtime/vdom.ts";
-import {EventPipeline} from "../core/event/pipeline";
+import {type Engine, WebLyraScript} from "./engine.ts";
+import {type ElementPatcher, HTMLElementPatcher} from "./dom.ts";
+import type {VChild} from "../core/runtime/runtime_vdom.ts";
+import {EventPipeline} from "../core/event/pipeline.ts";
 import Events from "./events";
-import {type Instance} from "../core/runtime/objects";
-import {LambdaFunctionCall} from "../core/interpreter/interpreter_statements";
-import {EventHandlerRegistry, VDOM} from "./registry";
-import LyraEvents from "../core/event/events";
+import {EventHandlerRegistry, VDOM} from "./registry.ts";
+import LyraEvents from "../core/event/events.ts";
+import type {LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
+import type {RuntimeInstance} from "../core/runtime/runtime_model.ts";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;
@@ -15,13 +15,13 @@ export interface ApplicationRuntime {
 
 	start(url: string, className: string): Promise<void>;
 
-	createInstance(className: string): Instance;
+	createInstance(className: string): RuntimeInstance;
 
 	callRootInstanceMethod(methodName: string, args: any[]): any;
 
-	callMethod(instance: Instance, methodName: string, args: any[]): any;
+	callMethod(instance: RuntimeInstance, methodName: string, args: any[]): any;
 
-	renderComponent(instance: Instance): VChild;
+	renderComponent(instance: RuntimeInstance): VChild;
 
 	addEventHandler(element: HTMLElement, propertyKey: string, handler: LambdaFunctionCall): void;
 
@@ -44,7 +44,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._eventPipeline;
 	}
 
-	public renderComponent(instance: Instance): VChild {
+	public renderComponent(instance: RuntimeInstance): VChild {
 		return this.callMethod(instance, 'render', []) as VChild
 	}
 
@@ -52,7 +52,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		throw new Error("Method not implemented.");
 	}
 
-	public createInstance(className: string): Instance {
+	public createInstance(className: string): RuntimeInstance {
 		return this._engine.createInstance(className);
 	}
 
@@ -60,7 +60,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._engine.callRootInstanceMethod(methodName, args);
 	}
 
-	public callMethod(instance: Instance, methodName: string, args: any[] = []): any {
+	public callMethod(instance: RuntimeInstance, methodName: string, args: any[] = []): any {
 		return this._engine.callInstanceMethod(instance, methodName, args);
 	}
 
@@ -115,7 +115,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	}
 
 
-	public requestComponentRender(instance: Instance, oldChild?: VChild): void {
+	public requestComponentRender(instance: RuntimeInstance, oldChild?: VChild): void {
 		if (this.isRendering) {
 			return;
 		}
@@ -123,7 +123,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		queueMicrotask((): void => this.performComponentRender(instance, oldChild));
 	}
 
-	private performComponentRender(instance: Instance, oldChild: VChild | null = null): void {
+	private performComponentRender(instance: RuntimeInstance, oldChild: VChild | null = null): void {
 		this.isRendering = true;
 
 		const nextChild: VChild = this.renderComponent(instance);

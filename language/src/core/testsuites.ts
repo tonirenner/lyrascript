@@ -1,8 +1,10 @@
-import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./ast";
-import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/evaluation";
-import {ClassDefinition, type Environment, Instance} from "./runtime/objects";
-import type {ObjectRegistry} from "./runtime/registry";
-import type {EventPipeline} from "./event/pipeline";
+import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./shared/ast.js";
+import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/evaluation.js";
+import type {ObjectRegistry} from "./shared/runtime_registry.js";
+import type {EventPipeline} from "./event/pipeline.js";
+import {ClassDefinition, type Environment, RuntimeInstance} from "./shared/runtime_model.ts";
+import {ASTModelFactory} from "./shared/ast_model_factory.ts";
+import {ASTRuntimeInstanceFactory} from "./shared/ast_instance_factory.ts";
 
 export class TestSuites {
 	private readonly environment: Environment;
@@ -32,26 +34,36 @@ export class TestSuites {
 				if (!annotation) {
 					continue;
 				}
-				this.runTestCase(classNode, member, annotation);
+
+				this.runTestCase(classNode, member.name, annotation);
 			}
 		}
 	}
 
-	private runTestCase(classNode: ASTClassNode, methodNode: ASTMethodNode, annotation: ASTAnnotationNode): void {
-		const instance: Instance = ClassDefinition.fromAST(classNode)
-		                                          .constructNewInstanceWithoutArguments(
-			                                          this.objectRegistry,
-			                                          this.environment,
-			                                          this.eventPipeline
-		                                          );
+	private runTestCase(classNode: ASTClassNode, methodName: string, annotation: ASTAnnotationNode): void {
+
+		const classDef: ClassDefinition = ASTModelFactory.createClass(classNode)
+		const instance: RuntimeInstance = ASTRuntimeInstanceFactory.newRuntimeInstanceWithoutArguments(
+			classDef,
+			this.objectRegistry,
+			this.environment,
+			this.eventPipeline
+		);
 
 		const properties: { [index: string]: any } = evalAnnotationProperties(annotation);
-		const title: string = properties.title ?? `${classNode.name}.${methodNode.name}`;
+		const title: string = properties.title ?? `${classNode.name}.${methodName}`;
 
 		let errorMessage = null;
 
 		try {
-			callInstanceMethod(instance, methodNode, [], this.objectRegistry, this.environment, this.eventPipeline);
+			callInstanceMethod(
+				instance,
+				instance.findMethod(methodName),
+				[],
+				this.objectRegistry,
+				this.environment,
+				this.eventPipeline
+			);
 		} catch (error) {
 			errorMessage = error;
 		}

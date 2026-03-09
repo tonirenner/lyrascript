@@ -1,9 +1,9 @@
-import {Parser} from "./core/parser/parser";
-import {wrapJsError} from "./core/errors";
+import {Parser} from "./core/parser.ts";
+import {wrapJsError} from "./core/shared/errors.ts";
 import {fetchSource, Source} from "./core/parser/source";
-import {ASTNode} from "./core/ast";
+import {ASTNode} from "./core/shared/ast.ts";
 import {Tokenizer} from "./core/tokenizer.ts";
-import {Token} from "./core/grammar";
+import {Token} from "./core/shared/grammar.ts";
 import {LyraScriptProgram} from "./core/program";
 import {EventPipeline} from "./core/event/pipeline";
 import {State} from "./core/event/state";

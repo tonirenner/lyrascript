@@ -1,16 +1,9 @@
-import {ASTClassNode, ASTFieldNode, ASTInterfaceNode, ASTMethodNode, ASTNode, ASTParameterNode} from "../ast";
+import {ASTClassNode, ASTFieldNode, ASTInterfaceNode, ASTMethodNode, ASTNode} from "./ast.ts";
+import {ClassDefinition, ClassFieldDefinition, ClassMethodDefinition, InterfaceDefinition} from "./runtime_model.ts";
+import {GRAMMAR} from "./grammar.ts";
+import {throwRuntimeError} from "./errors.ts";
 
-import {
-	ClassDefinition,
-	ClassFieldDefinition,
-	ClassMethodDefinition,
-	InterfaceDefinition
-} from "../runtime/runtime_model";
-
-import {GRAMMAR} from "../grammar";
-import {throwRuntimeError} from "../errors";
-
-export class Factory {
+export class ASTModelFactory {
 
 	static createClass(node: ASTClassNode): ClassDefinition {
 
@@ -64,7 +57,6 @@ export class Factory {
 		);
 	}
 
-
 	static createInterface(node: ASTInterfaceNode): InterfaceDefinition {
 
 		const staticFields: ClassFieldDefinition[] = [];
@@ -90,7 +82,6 @@ export class Factory {
 		return new InterfaceDefinition(node.name, staticFields, instanceMethods);
 	}
 
-
 	static createField(node: ASTFieldNode): ClassFieldDefinition {
 
 		const type: string | null = node.fieldType
@@ -109,9 +100,6 @@ export class Factory {
 
 
 	static createMethod(node: ASTMethodNode): ClassMethodDefinition {
-
-		const parameters: string[] = node.parameters.map((parameterNode: ASTParameterNode): string => parameterNode.name);
-
 		const returnType: string | null = node.returnType
 			? node.returnType.name
 			: null;
@@ -120,7 +108,7 @@ export class Factory {
 
 		return new ClassMethodDefinition(
 			node.name,
-			parameters,
+			node.parameters,
 			returnType,
 			node.modifiers,
 			(): ASTNode[] => node.children,

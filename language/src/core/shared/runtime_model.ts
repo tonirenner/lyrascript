@@ -1,7 +1,7 @@
-import {throwRuntimeError} from "../errors";
-import type {EventPipeline} from "../event/pipeline";
-import LyraEvents from "../event/events";
-import {castValue} from "./runtime_conversion";
+import {throwRuntimeError} from "./errors.ts";
+import type {EventPipeline} from "../event/pipeline.ts";
+import LyraEvents from "../event/events.ts";
+import {toNativeValue} from "./conversion.ts";
 
 
 /* =========================================================
@@ -115,7 +115,7 @@ export class RuntimeInstance {
 			throwRuntimeError(`Field ${name} is not public.`);
 		}
 
-		this.__instanceFields[name] = castValue(value, expected);
+		this.__instanceFields[name] = toNativeValue(value, expected);
 	}
 
 	initializeFields(environment: Environment): void {
@@ -123,6 +123,93 @@ export class RuntimeInstance {
 	}
 }
 
+interface SerializationObject {
+	[index: string]: any;
+}
+
+/* =========================================================
+   LyraNativeObject
+   ========================================================= */
+
+export class LyraNativeObject {
+	className: string;
+
+	constructor(className: string) {
+		this.className = className;
+	}
+
+	public serialize(): SerializationObject {
+		const object: SerializationObject = {};
+
+		object[this.className] = Object
+			.keys(this)
+			.filter(key => key !== 'className')
+			.reduce((object: SerializationObject, key: string): SerializationObject => {
+				const copy: SerializationObject = Object.assign({}, this);
+				object[key] = copy[key];
+				return object;
+			}, {});
+
+		return object;
+	}
+
+	public toString(): string {
+		return JSON.stringify({className: this.className}, null, 2);
+	}
+}
+
+/* =========================================================
+   LyraNativeObjectView
+   ========================================================= */
+
+export class LyraObjectView extends LyraNativeObject {
+	private __instance: RuntimeInstance;
+
+	constructor(instance: RuntimeInstance) {
+		super(instance.__classDef.name);
+
+		this.__instance = instance;
+
+		return new Proxy(this, {
+			get: (_: any, name: string): any => {
+				if (name in this.__instance.__instanceFields) {
+					return this.__instance.__instanceFields[name];
+				}
+
+				if (name in this.__instance.__staticFields) {
+					return this.__instance.__staticFields[name];
+				}
+
+				if (name in this) {
+					const self: { [index: string]: any } = this;
+					return self[name];
+				}
+			},
+
+			set: (_: any, name: string, value: any): any => {
+				if (name in this.__instance.__instanceFields) {
+					this.__instance.__instanceFields[name] = value;
+				}
+
+				if (name in this.__instance.__staticFields) {
+					this.__instance.__staticFields[name] = value;
+				}
+			},
+		})
+	}
+
+	public override serialize(): SerializationObject {
+		const object: SerializationObject = {};
+
+		object[this.className] = {...this.__instance?.__instanceFields};
+
+		return object;
+	}
+
+	public override toString(): string {
+		return JSON.stringify(this.serialize(), null, 2);
+	}
+}
 
 /* =========================================================
    Modifiers
@@ -130,11 +217,11 @@ export class RuntimeInstance {
 
 export class Modifiers {
 
-	public readonly open: boolean = false;
-	public readonly public: boolean = false;
-	public readonly private: boolean = false;
-	public readonly static: boolean = false;
-	public readonly readonly: boolean = false;
+	public open: boolean = false;
+	public public: boolean = false;
+	public private: boolean = false;
+	public static: boolean = false;
+	public readonly: boolean = false;
 
 	constructor(attributes: { [index: string]: boolean } = {}) {
 		for (const attribute of Object.keys(attributes)) {
@@ -213,7 +300,7 @@ export class ClassFieldDefinition {
 export class ClassMethodDefinition {
 	constructor(
 		public readonly name: string,
-		public readonly parameters: string[],
+		public readonly parameters: any[],
 		public readonly returnType: string | null,
 		public readonly modifiers: Modifiers,
 		public readonly body: Function,
@@ -289,18 +376,6 @@ export class ClassDefinition {
 		return fieldDefinition;
 	}
 
-	constructEmptyInstance(): RuntimeInstance {
-		return new RuntimeInstance(this);
-	}
-
-	constructNativeInstance(args: any[] = []): RuntimeInstance {
-		const instance: RuntimeInstance = this.constructEmptyInstance();
-
-		instance.__nativeInstance = new this.nativeInstance(...args);
-
-		return instance;
-	}
-
 	initializeInstanceFields(instance: RuntimeInstance, environment: Environment): void {
 
 		if (instance.__fieldsInitialized) {
@@ -315,7 +390,7 @@ export class ClassDefinition {
 				? field.initializer(environment)
 				: null;
 
-			instance.__instanceFields[field.name] = castValue(rawValue, field.type);
+			instance.__instanceFields[field.name] = toNativeValue(rawValue, field.type);
 		}
 
 		for (const field of this.staticFields) {
@@ -323,7 +398,7 @@ export class ClassDefinition {
 				? field.initializer(environment)
 				: null;
 
-			instance.__staticFields[field.name] = castValue(rawValue, field.type);
+			instance.__staticFields[field.name] = toNativeValue(rawValue, field.type);
 		}
 
 		instance.__fieldsInitialized = true;

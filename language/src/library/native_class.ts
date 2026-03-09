@@ -1,8 +1,9 @@
-import {ASTClassNode, ASTNodeType} from "../core/ast";
-import {ClassDefinition} from "../core/runtime/objects";
-import {Parser} from "../core/parser/parser";
-import {throwRuntimeError} from "../core/errors";
-import type {Source} from "../core/parser/parser_source";
+import {ASTClassNode, ASTNode, ASTNodeType} from "../core/shared/ast.ts";
+import {Parser} from "../core/parser.ts";
+import {throwRuntimeError} from "../core/shared/errors.ts";
+import type {Source} from "../core/parser/source.ts";
+import type {ClassDefinition} from "../core/runtime/runtime_model.ts";
+import {ASTModelFactory} from "../core/runtime/ast_model_factory.ts";
 
 export class NativeClass {
 	readonly name: string;
@@ -17,12 +18,14 @@ export class NativeClass {
 	}
 
 	getClassDefinition(): ClassDefinition {
-		const ast = new Parser(this.nativeClassSource).parse();
+
+		const ast: ASTNode = new Parser(this.nativeClassSource).parse();
 
 		for (const node of ast.children) {
 			if (node.type === ASTNodeType.CLASS) {
 				if (node instanceof ASTClassNode && node.name === this.name) {
-					const classDef = ClassDefinition.fromAST(node);
+
+					const classDef: ClassDefinition = ASTModelFactory.createClass(node);
 
 					classDef.nativeInstance = this.nativeInstance;
 

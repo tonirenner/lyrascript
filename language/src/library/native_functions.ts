@@ -1,6 +1,6 @@
-import {ASTParameterNode, ASTTypeNode} from "../core/ast";
-import {TYPE_ENUM} from "../core/grammar";
-import {throwNativeError} from "../core/errors";
+import {ASTParameterNode, ASTTypeNode} from "../core/shared/ast.ts";
+import {TYPE_ENUM} from "../core/shared/grammar.ts";
+import {throwNativeError} from "../core/shared/errors.ts";
 
 export class NativeFunction {
 	readonly name: string;

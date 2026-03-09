@@ -1,29 +1,30 @@
-import {LyraScriptProgram} from "../core/program";
-import {fetchSource} from "../core/parser/source";
-import {ClassDefinition, Environment, Instance} from "../core/runtime/objects";
-import {ObjectRegistry} from "../core/runtime/registry.ts";
-import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/evaluation";
-import {EventType} from "../library/classes/event";
-import {EventPipeline} from "../core/event/pipeline";
+import {LyraScriptProgram} from "../core/program.ts";
+import {fetchSource} from "../core/parser/source.ts";
+import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
+import {EventType} from "../library/classes/event.ts";
+import {EventPipeline} from "../core/event/pipeline.ts";
+import {type ClassDefinition, Environment, RuntimeInstance} from "../core/runtime/runtime_model.ts";
+import type {ObjectRegistry} from "../core/runtime/runtime_registry.ts";
+import {ASTRuntimeInstanceFactory} from "../core/runtime/ast_instance_factory.ts";
 
 const lyraEventClassDef: ClassDefinition = new EventType().getClassDefinition();
 
 export interface Engine {
 	executeEntryFile(url: string, className: string): Promise<void>;
 
-	createInstance(className: string): Instance;
+	createInstance(className: string): RuntimeInstance;
 
 	getObjectRegistry(): ObjectRegistry;
 
 	getEnvironment(): Environment;
 
-	getRootInstance(): Instance;
+	getRootInstance(): RuntimeInstance;
 
 	callRootInstanceMethod(methodName: string, args: any[]): any;
 
-	callInstanceMethod(instance: Instance, methodName: string, args: Array<any>): any;
+	callInstanceMethod(instance: RuntimeInstance, methodName: string, args: Array<any>): any;
 
-	createEvent(event: Event): Instance;
+	createEvent(event: Event): RuntimeInstance;
 
 	createEventHandler(handler: LambdaFunctionCall, eventName: string): (event: Event) => void;
 }
@@ -32,7 +33,7 @@ export class WebLyraScript implements Engine {
 	private readonly program: LyraScriptProgram;
 	private readonly _globalObjectRegistry: ObjectRegistry;
 	private readonly _globalEnvironment: Environment;
-	private rootInstance: Instance | null = null;
+	private rootInstance: RuntimeInstance | null = null;
 
 
 	constructor(private globalEventPipeline: EventPipeline = new EventPipeline(), isDebug: boolean = false) {
@@ -49,30 +50,30 @@ export class WebLyraScript implements Engine {
 		return this._globalEnvironment;
 	}
 
-	public getRootInstance(): Instance {
+	public getRootInstance(): RuntimeInstance {
 		if (this.rootInstance === null) {
 			throw new Error('No root instance available.');
 		}
 		return this.rootInstance;
 	}
 
-	public createInstance(className: string): Instance {
-		return this.getClassDefinition(className)
-		           .constructNewInstanceWithoutArguments(
-			           this._globalObjectRegistry,
-			           this._globalEnvironment,
-			           this.globalEventPipeline
-		           );
+	public createInstance(className: string): RuntimeInstance {
+		return ASTRuntimeInstanceFactory.newRuntimeInstanceWithoutArguments(
+			this.getClassDefinition(className),
+			this._globalObjectRegistry,
+			this._globalEnvironment,
+			this.globalEventPipeline
+		)
 	}
 
 	public callRootInstanceMethod(methodName: string, args: any[]): any {
 		return this.callInstanceMethod(this.getRootInstance(), methodName, args);
 	}
 
-	public callInstanceMethod(instance: Instance, methodName: string, args: any[]): any {
+	public callInstanceMethod(instance: RuntimeInstance, methodName: string, args: any[]): any {
 		return callInstanceMethod(
 			instance,
-			instance.findeMethodNode(methodName),
+			instance.findMethod(methodName),
 			args,
 			this._globalObjectRegistry,
 			this._globalEnvironment,
@@ -87,8 +88,8 @@ export class WebLyraScript implements Engine {
 		           });
 	}
 
-	public createEvent(event: Event): Instance {
-		return lyraEventClassDef.constructNativeInstance([event]);
+	public createEvent(event: Event): RuntimeInstance {
+		return ASTRuntimeInstanceFactory.createNativeRuntimeInstance(lyraEventClassDef, [event]);
 	}
 
 	public createEventHandler(handler: LambdaFunctionCall, eventName: string): (event: Event) => void {

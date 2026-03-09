@@ -1,6 +1,6 @@
 import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "./runtime_registry";
-import {throwRuntimeError} from "../errors";
+import {ObjectRegistry} from "./runtime_registry.js";
+import {throwRuntimeError} from "./errors.js";
 
 export class AutoboxedTypes {
 	static NUMBER: string = 'Number';
@@ -14,7 +14,7 @@ export class AutoboxedTypes {
 	};
 
 	static getClassName(key: string): string {
-		const className = AutoboxedTypes.CLASSNAME_MAP[key];
+		const className: string | undefined = AutoboxedTypes.CLASSNAME_MAP[key];
 		if (!className) {
 			throwRuntimeError(`No class found for primitive type ${key}.`);
 		}

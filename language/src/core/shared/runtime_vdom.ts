@@ -1,4 +1,4 @@
-import type {Instance} from "./objects";
+import type {RuntimeInstance} from "./runtime_model.ts";
 
 export type VChild = VText | VElement | VComponent;
 export type Props = Record<string, unknown>;
@@ -18,7 +18,7 @@ export interface VElement extends VNode {
 export interface VComponent extends VNode {
 	type: 'component';
 	className: string;
-	instance?: Instance;
+	instance?: RuntimeInstance;
 	props?: Props & { children?: VChild[] };
 	subTree?: VChild;
 }

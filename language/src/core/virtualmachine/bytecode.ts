@@ -1,4 +1,4 @@
-import {throwVirtualMachineError} from "../errors.ts";
+import {throwVirtualMachineError} from "../shared/errors.ts";
 
 export type ByteCode = number | string;
 
