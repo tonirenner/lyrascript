@@ -1,5 +1,5 @@
 import {ASTParameterNode, ASTTypeNode} from "../core/shared/ast.ts";
-import {TYPE_ENUM} from "../core/shared/grammar.ts";
+import {TYPE_ENUM} from "../core/shared/ast_grammar.ts";
 import {throwNativeError} from "../core/shared/errors.ts";
 
 export class NativeFunction {

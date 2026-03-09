@@ -1,11 +1,11 @@
-import {NativeClass} from "./native_class";
-import {StringType} from "./classes/string";
-import {System} from "./classes/system";
-import {Assert} from "./classes/assert";
-import {NumberType} from "./classes/number";
-import {ArrayIteratorType, ArrayType} from "./classes/array";
-import {StateType} from "./classes/state";
-import {EventType} from "./classes/event";
+import {NativeClass} from "./native_class.ts";
+import {StringType} from "./classes/string.ts";
+import {System} from "./classes/system.ts";
+import {Assert} from "./classes/assert.ts";
+import {NumberType} from "./classes/number.ts";
+import {ArrayIteratorType, ArrayType} from "./classes/array.ts";
+import {StateType} from "./classes/state.ts";
+import {EventType} from "./classes/event.ts";
 import {BooleanType} from "./classes/boolean.ts";
 
 export class NativeClasses {

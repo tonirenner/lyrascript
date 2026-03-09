@@ -2,8 +2,8 @@ import {ASTClassNode, ASTNode, ASTNodeType} from "../core/shared/ast.ts";
 import {Parser} from "../core/parser.ts";
 import {throwRuntimeError} from "../core/shared/errors.ts";
 import type {Source} from "../core/parser/source.ts";
-import type {ClassDefinition} from "../core/runtime/runtime_model.ts";
-import {ASTModelFactory} from "../core/runtime/ast_model_factory.ts";
+import type {ClassDefinition} from "../core/shared/runtime_model.ts";
+import {ASTModelFactory} from "../core/shared/ast_model_factory.ts";
 
 export class NativeClass {
 	readonly name: string;

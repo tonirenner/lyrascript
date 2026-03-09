@@ -1,6 +1,5 @@
-import {toLyraValue} from "../runtime/runtime_conversion";
-import {LambdaFunctionCall} from "../interpreter/evaluation";
-
+import {toLyraValue} from "./ast_type_conversion.ts";
+import {LambdaFunctionCall} from "../interpreter/evaluation.ts";
 
 export class State<T = any> {
 	private value: T;

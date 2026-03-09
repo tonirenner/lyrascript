@@ -1,4 +1,4 @@
-import {TYPE_ENUM} from "./grammar.ts";
+import {TYPE_ENUM} from "./ast_grammar.ts";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -164,7 +164,7 @@ export class TypeVariable extends Type {
 		super(name);
 	}
 
-	override equals(other: Type) {
+	override equals(other: Type): boolean {
 		return other instanceof TypeVariable
 			&& this.name === other.name;
 	}

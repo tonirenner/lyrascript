@@ -1,6 +1,6 @@
 import {Tokenizer} from "../tokenizer.ts";
 import {throwDependencyError} from "../shared/errors.ts";
-import type {Token} from "../shared/grammar.ts";
+import type {Token} from "../shared/ast_grammar.ts";
 
 export class Source {
 	static NEWLINE = '\n';

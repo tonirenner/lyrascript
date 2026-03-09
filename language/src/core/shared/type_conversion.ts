@@ -1,4 +1,4 @@
-import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
 
 export function toNativeValue(value: any, expected: any = null): any {
 	const typeOf = typeof value;

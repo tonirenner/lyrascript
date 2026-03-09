@@ -1,6 +1,6 @@
 import {ASTClassNode, ASTFieldNode, ASTInterfaceNode, ASTMethodNode, ASTNode} from "./ast.ts";
 import {ClassDefinition, ClassFieldDefinition, ClassMethodDefinition, InterfaceDefinition} from "./runtime_model.ts";
-import {GRAMMAR} from "./grammar.ts";
+import {GRAMMAR} from "./ast_grammar.ts";
 import {throwRuntimeError} from "./errors.ts";
 
 export class ASTModelFactory {

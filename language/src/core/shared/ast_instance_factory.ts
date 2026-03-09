@@ -6,12 +6,12 @@ import {
 	RuntimeInstance
 } from "./runtime_model.ts";
 import type {ObjectRegistry} from "./runtime_registry.ts";
-import type {EventPipeline} from "../event/pipeline.ts";
+import type {EventPipeline} from "./event_pipeline.ts";
 import {ASTNewNode, type ASTNode, ASTParameterNode, ASTTypeNode} from "./ast.ts";
 import {evalMethodArguments, evalNode} from "../interpreter/evaluation.ts";
-import {GRAMMAR} from "./grammar.ts";
+import {GRAMMAR} from "./ast_grammar.ts";
 import {throwRuntimeError} from "./errors.ts";
-import {fromLyraValue} from "./ast_conversion.ts";
+import {fromLyraValue} from "./ast_type_conversion.ts";
 
 export class ASTRuntimeInstanceFactory {
 

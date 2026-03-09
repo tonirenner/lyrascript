@@ -7,7 +7,7 @@ import {Interpreter} from "./interpreter.ts";
 import {FetchFileLoader} from "./linker/loaders.ts";
 import {ASTNode} from "./shared/ast.ts";
 import {Parser} from "./parser.ts";
-import {EventPipeline} from "./event/pipeline.ts";
+import {EventPipeline} from "./shared/event_pipeline.ts";
 import {Compiler} from "./compiler.ts";
 import {VirtualMachine} from "./virtualmachine.ts";
 import type {ByteCodeInstructions} from "./virtualmachine/bytecode.ts";
@@ -118,10 +118,8 @@ export class LyraScriptProgram {
 		this.debugMeasureEndTime('parser')
 		this.debug(ast);
 
-		return this.linker.linkSources(ast)
-		           .then((): void => {
-			           this.typeChecker.collectAllSymbolsFromRegistry(this.objectRegistry);
-		           })
+		return this.linker
+		           .linkSources(ast)
 		           .then((): ASTNode => {
 			           this.debugMeasureStartTime();
 			           this.typeChecker.check(ast);

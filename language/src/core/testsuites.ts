@@ -1,7 +1,7 @@
 import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNode} from "./shared/ast.js";
 import {callInstanceMethod, evalAnnotationProperties} from "./interpreter/evaluation.js";
 import type {ObjectRegistry} from "./shared/runtime_registry.js";
-import type {EventPipeline} from "./event/pipeline.js";
+import type {EventPipeline} from "./shared/event_pipeline.ts";
 import {ClassDefinition, type Environment, RuntimeInstance} from "./shared/runtime_model.ts";
 import {ASTModelFactory} from "./shared/ast_model_factory.ts";
 import {ASTRuntimeInstanceFactory} from "./shared/ast_instance_factory.ts";

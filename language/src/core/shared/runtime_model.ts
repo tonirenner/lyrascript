@@ -1,7 +1,7 @@
 import {throwRuntimeError} from "./errors.ts";
-import type {EventPipeline} from "../event/pipeline.ts";
-import LyraEvents from "../event/events.ts";
-import {toNativeValue} from "./conversion.ts";
+import type {EventPipeline} from "./event_pipeline.ts";
+import LyraEvents from "./event.ts";
+import {toNativeValue} from "./type_conversion.ts";
 import {type ASTClassNode, ASTInterfaceNode} from "./ast.ts";
 
 

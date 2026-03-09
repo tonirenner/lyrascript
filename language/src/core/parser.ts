@@ -3,6 +3,7 @@ import {TokenStream} from "./tokenizer.ts";
 import {parseProgram} from "./parser/statements.ts";
 import {throwParserError} from "./shared/errors.ts";
 import {Source} from "./parser/source.ts";
+import type {ASTNode} from "./shared/ast.ts";
 
 
 export class Parser {
@@ -13,7 +14,7 @@ export class Parser {
 		this.source = source;
 	}
 
-	parse() {
+	parse(): ASTNode {
 		this.tokenStream = this.source
 		                       .getTokenizer()
 		                       .getTokenStream()

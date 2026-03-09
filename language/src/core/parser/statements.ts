@@ -1,5 +1,5 @@
 import {Parser} from "../parser.ts";
-import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../shared/grammar.ts";
+import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "../shared/ast_grammar.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -36,7 +36,7 @@ import {
 } from "../shared/ast.ts";
 import {throwParserError} from "../shared/errors.ts";
 import {spanFrom} from "./source";
-import {Modifiers, SuperClass} from "../runtime/runtime_model.ts";
+import {Modifiers, SuperClass} from "../shared/runtime_model.ts";
 
 export function createMixedType(): ASTTypeNode {
 	return new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, TYPE_ENUM.MIXED);

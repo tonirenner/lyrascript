@@ -2,10 +2,10 @@ import {LyraScriptProgram} from "../core/program.ts";
 import {fetchSource} from "../core/parser/source.ts";
 import {callInstanceMethod, LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
 import {EventType} from "../library/classes/event.ts";
-import {EventPipeline} from "../core/event/pipeline.ts";
-import {type ClassDefinition, Environment, RuntimeInstance} from "../core/runtime/runtime_model.ts";
-import type {ObjectRegistry} from "../core/runtime/runtime_registry.ts";
-import {ASTRuntimeInstanceFactory} from "../core/runtime/ast_instance_factory.ts";
+import {EventPipeline} from "../core/shared/event_pipeline.ts";
+import {type ClassDefinition, Environment, RuntimeInstance} from "../core/shared/runtime_model.ts";
+import type {ObjectRegistry} from "../core/shared/runtime_registry.ts";
+import {ASTRuntimeInstanceFactory} from "../core/shared/ast_instance_factory.ts";
 
 const lyraEventClassDef: ClassDefinition = new EventType().getClassDefinition();
 

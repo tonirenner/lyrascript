@@ -5,8 +5,8 @@ import {ASTNode} from "./core/shared/ast.ts";
 import {Tokenizer} from "./core/tokenizer.ts";
 import {Token} from "./core/shared/grammar.ts";
 import {LyraScriptProgram} from "./core/program";
-import {EventPipeline} from "./core/event/pipeline";
-import {State} from "./core/event/state";
+import {EventPipeline} from "./core/shared/event_pipeline.ts";
+import {State} from "./core/shared/state.ts";
 import {HTMLElementCreator} from "./host/dom";
 import type {ByteCodeInstructions} from "./core/virtualmachine/bytecode.ts";
 

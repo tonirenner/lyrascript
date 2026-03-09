@@ -1,10 +1,10 @@
 import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast.ts";
-import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
 import {ObjectRegistry} from "./runtime_registry.ts";
 import {throwNativeError} from "./errors.ts";
 import {ClassDefinition, LyraNativeObject, LyraObjectView, RuntimeInstance} from "./runtime_model.ts";
 import {ASTRuntimeInstanceFactory} from "./ast_instance_factory.ts";
-import {toNativeValue} from "./conversion.ts";
+import {toNativeValue} from "./type_conversion.ts";
 
 export function toLyraString(value: string): ASTNode {
 	const node = new ASTNode(ASTNodeType.STRING);

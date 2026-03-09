@@ -1,4 +1,4 @@
-import {ObjectRegistry} from "../runtime/runtime_registry.ts";
+import {ObjectRegistry} from "../shared/runtime_registry.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -26,15 +26,15 @@ import {
 	ASTVDomNode,
 	ASTVDomTextNode
 } from "../shared/ast.js";
-import {GRAMMAR, TYPE_ENUM} from "../shared/grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "../shared/ast_grammar.ts";
 import {NativeClasses} from "../../library/native_classes.ts";
 import {NativeFunctions, NativeFunctionTypeRegistry} from "../../library/native_functions.ts";
-import {fromLyraValue, returnValue, wrapNativeInstance} from "../runtime/ast_conversion.ts";
+import {fromLyraValue, returnValue, wrapNativeInstance} from "../shared/ast_type_conversion.ts";
 import {throwRuntimeError} from "../shared/errors.ts";
-import {AutoboxedTypes} from "../runtime/type_autoboxing.ts";
+import {AutoboxedTypes} from "../shared/type_autoboxing.ts";
 import {LyraArray} from "../../library/classes/array.ts";
-import type {VChild} from "../runtime/runtime_vdom.ts";
-import type {EventPipeline} from "../event/pipeline.ts";
+import type {VChild} from "../shared/runtime_vdom.ts";
+import type {EventPipeline} from "../shared/event_pipeline.ts";
 import {
 	ClassDefinition,
 	ClassMethodDefinition,
@@ -43,10 +43,10 @@ import {
 	LyraNativeObject,
 	ReturnValue,
 	RuntimeInstance
-} from "../runtime/runtime_model.ts";
-import {ASTModelFactory} from "../runtime/ast_model_factory.ts";
-import {ASTRuntimeInstanceFactory} from "../runtime/ast_instance_factory.ts";
-import {toNativeValue} from "../runtime/conversion.ts";
+} from "../shared/runtime_model.ts";
+import {ASTModelFactory} from "../shared/ast_model_factory.ts";
+import {ASTRuntimeInstanceFactory} from "../shared/ast_instance_factory.ts";
+import {toNativeValue} from "../shared/type_conversion.ts";
 
 const nativeClasses = new NativeClasses();
 const nativeFunctions = new NativeFunctions();

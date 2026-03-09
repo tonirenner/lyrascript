@@ -1,4 +1,4 @@
-import {GRAMMAR, TYPE_ENUM} from "./grammar.ts";
+import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
 import type {SourceSpan} from "../parser/source.ts";
 import {type Modifiers, SuperClass} from "./runtime_model.ts";
 

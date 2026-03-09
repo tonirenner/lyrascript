@@ -1,12 +1,12 @@
 import {type Engine, WebLyraScript} from "./engine.ts";
 import {type ElementPatcher, HTMLElementPatcher} from "./dom.ts";
-import type {VChild} from "../core/runtime/runtime_vdom.ts";
-import {EventPipeline} from "../core/event/pipeline.ts";
+import type {VChild} from "../core/shared/runtime_vdom.ts";
+import {EventPipeline} from "../core/shared/event_pipeline.ts";
 import Events from "./events";
 import {EventHandlerRegistry, VDOM} from "./registry.ts";
-import LyraEvents from "../core/event/events.ts";
+import LyraEvents from "../core/shared/event.ts";
 import type {LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
-import type {RuntimeInstance} from "../core/runtime/runtime_model.ts";
+import type {RuntimeInstance} from "../core/shared/runtime_model.ts";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;

@@ -1,8 +1,8 @@
-import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/runtime/runtime_conversion";
-import {Source} from "../../core/parser/source";
-import {State} from "../../core/event/state";
-import type {LambdaFunctionCall} from "../../core/interpreter/evaluation";
+import {NativeClass} from "../native_class.ts";
+import {LyraNativeObject} from "../../core/shared/runtime_model.ts";
+import {Source} from "../../core/parser/source.ts";
+import {State} from "../../core/shared/runtime_state.ts";
+import type {LambdaFunctionCall} from "../../core/interpreter/evaluation.ts";
 
 const CLASS_NAME = 'State';
 
