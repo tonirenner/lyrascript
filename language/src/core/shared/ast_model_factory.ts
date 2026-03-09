@@ -53,7 +53,8 @@ export class ASTModelFactory {
 			staticFields,
 			staticMethods,
 			constructorMethod,
-			node.modifiers.open
+			node.modifiers.open,
+			node
 		);
 	}
 
@@ -79,7 +80,7 @@ export class ASTModelFactory {
 			}
 		}
 
-		return new InterfaceDefinition(node.name, staticFields, instanceMethods);
+		return new InterfaceDefinition(node.name, staticFields, instanceMethods, node);
 	}
 
 	static createField(node: ASTFieldNode): ClassFieldDefinition {

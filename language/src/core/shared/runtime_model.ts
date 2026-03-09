@@ -2,6 +2,7 @@ import {throwRuntimeError} from "./errors.ts";
 import type {EventPipeline} from "../event/pipeline.ts";
 import LyraEvents from "../event/events.ts";
 import {toNativeValue} from "./conversion.ts";
+import {type ASTClassNode, ASTInterfaceNode} from "./ast.ts";
 
 
 /* =========================================================
@@ -334,7 +335,8 @@ export class ClassDefinition {
 		public readonly staticFields: ClassFieldDefinition[],
 		public readonly staticMethods: { [index: string]: ClassMethodDefinition },
 		public readonly constructorMethod: ClassMethodDefinition | null = null,
-		public readonly isOpen: boolean = false
+		public readonly isOpen: boolean = false,
+		public readonly classNode: ASTClassNode | null = null
 	) {
 
 		this.name = name;
@@ -417,7 +419,8 @@ export class InterfaceDefinition {
 		public readonly staticFields: ClassFieldDefinition[],
 		public readonly instanceMethods: {
 			[index: string]: ClassMethodDefinition
-		}) {
+		},
+		public readonly interfaceNode: ASTInterfaceNode | null = null) {
 
 		this.name = name;
 		this.staticFields = staticFields;

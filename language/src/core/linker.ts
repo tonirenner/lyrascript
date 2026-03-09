@@ -7,6 +7,7 @@ import {throwDependencyError} from "./shared/errors.ts";
 import {ClassDefinition, type Environment, InterfaceDefinition} from "./shared/runtime_model.ts";
 import type {ObjectRegistry} from "./shared/runtime_registry.ts";
 import type {SourceSpan} from "./parser/source.ts";
+import {ASTTypeObjectsFactory} from "./shared/ast_type_objects_factory.ts";
 
 const nativeClasses = new NativeClasses();
 
@@ -34,7 +35,8 @@ export class Linker {
 		                 });
 	}
 
-	private loadDependencies(dependencies: Map<string, Dependency>) {
+	private loadDependencies(dependencies: Map<string, Dependency>): void {
+
 		for (const dependency of dependencies.values()) {
 
 			if (dependency.url === '.') {
@@ -45,12 +47,22 @@ export class Linker {
 			const objectDefinitions = dependency.objectRegistry
 			                                    .fetchAllObjectDefinitions()
 			                                    .values();
+
 			for (let objectDef of objectDefinitions) {
 				if (objectDef instanceof InterfaceDefinition) {
+					if (objectDef.interfaceNode) {
+						ASTTypeObjectsFactory.addInterfaceSymbol(objectDef.interfaceNode, this.objectRegistry);
+					}
+
 					this.objectRegistry.interfaces.set(objectDef.name, objectDef);
 				} else {
+					if (objectDef.classNode) {
+						ASTTypeObjectsFactory.addClassSymbol(objectDef.classNode, this.objectRegistry);
+					}
+
 					this.objectRegistry.classes.set(objectDef.name, objectDef);
 				}
+
 				this.environment.define(objectDef.name, objectDef);
 			}
 		}

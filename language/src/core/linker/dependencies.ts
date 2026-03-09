@@ -1,10 +1,10 @@
-import {ObjectRegistry} from "../runtime/runtime_registry.ts";
 import {ASTImportNode, ASTNode, ASTNodeType} from "../shared/ast.ts";
 import {Source} from "../parser/source.ts";
 import {Parser} from "../parser.ts";
 import type {AbstractFileLoader} from "./loaders.ts";
 import {throwRuntimeError} from "../shared/errors.ts";
-import type {Environment} from "../runtime/runtime_model.ts";
+import type {Environment} from "../shared/runtime_model.ts";
+import {ObjectRegistry} from "../shared/runtime_registry.ts";
 
 export class Dependency {
 	objectRegistry: ObjectRegistry = new ObjectRegistry();

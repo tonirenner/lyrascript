@@ -209,9 +209,9 @@ export class ParameterSymbol {
 	readonly node: ASTParameterNode | null;
 	readonly name: string;
 	readonly parameterType: Type;
-	readonly defaultType: Type | null = null;
+	readonly defaultType: ASTNode | null = null;
 
-	constructor(name: string, type: Type, defaultValue: Type | null = null, node: ASTParameterNode | null = null) {
+	constructor(name: string, type: Type, defaultValue: ASTNode | null = null, node: ASTParameterNode | null = null) {
 		this.name = name;
 		this.parameterType = type;
 		this.defaultType = defaultValue;

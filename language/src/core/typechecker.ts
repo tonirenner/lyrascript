@@ -3,12 +3,9 @@ import {
 	ASTAssignmentNode,
 	ASTBinaryNode,
 	ASTCallNode,
-	ASTClassNode,
 	ASTExpressionNode,
-	ASTFieldNode,
 	ASTForeachNode,
 	ASTIndexNode,
-	ASTInterfaceNode,
 	ASTLambdaNode,
 	ASTMemberNode,
 	ASTMethodNode,
@@ -37,7 +34,6 @@ import {
 	PrimitiveClassTypes,
 	substituteType,
 	Type,
-	TypeParameterSymbol,
 	Types,
 	TypeScope,
 	TypeVariable,
@@ -48,7 +44,7 @@ import {NativeFunction, NativeFunctions} from "../library/native_functions.ts";
 import {GRAMMAR} from "./shared/grammar.ts";
 import {throwTypeError} from "./shared/errors.ts"
 import type {ObjectRegistry} from "./shared/runtime_registry.ts";
-import {type ClassDefinition, InterfaceDefinition} from "./shared/runtime_model.ts";
+import {ASTTypeObjectsFactory} from "./shared/ast_type_objects_factory.ts";
 
 
 const globalFunctionTypeRegistry = new NativeFunctions()
@@ -79,32 +75,7 @@ export class TypeChecker {
 		this.objectRegistry = objectRegistry;
 	}
 
-	collectAllSymbolsFromNode(ast: ASTNode): void {
-		for (const node of ast.children) {
-			if (node instanceof ASTInterfaceNode) {
-				this.registerInterfaceSymbol(node)
-			} else if (node instanceof ASTClassNode) {
-				this.registerClassSymbol(node);
-			}
-		}
-	}
-
-	collectAllSymbolsFromRegistry(objectRegistry: ObjectRegistry): void {
-		const objectDefinitions: MapIterator<ClassDefinition | InterfaceDefinition> = objectRegistry
-			.fetchAllObjectDefinitions()
-			.values();
-
-		for (let objectDef of objectDefinitions) {
-			if (objectDef instanceof InterfaceDefinition) {
-				this.registerInterfaceSymbol(objectDef.node);
-			} else {
-				this.registerClassSymbol(objectDef.node);
-			}
-		}
-	}
-
 	check(ast: ASTNode): void {
-		this.collectAllSymbolsFromNode(ast);
 		this.validateInheritance();
 		this.checkProgram(ast);
 		this.checkInterfaceBodies();
@@ -112,8 +83,8 @@ export class TypeChecker {
 		this.checkClassesImplements();
 	}
 
-	private validateInheritance() {
-		for (const classSymbol of this.objectRegistry.classes.all()) {
+	private validateInheritance(): void {
+		for (const classSymbol of this.objectRegistry.types.allClassSymbols()) {
 			if (classSymbol.superClass && !this.objectRegistry.types.hasSymbol(classSymbol.superClass)) {
 				this.typeError(`Unknown superclass ${classSymbol.superClass}`, classSymbol.node);
 			}
@@ -781,7 +752,12 @@ export class TypeChecker {
 	private checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
 		const lambdaScope = new TypeScope(scope);
 		const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
-			const parameterSymbol: ParameterSymbol = this.parameterNodeToSymbol(parameterNode);
+			const parameterSymbol: ParameterSymbol = ASTTypeObjectsFactory.createParameterSymbol(
+				parameterNode,
+				this.objectRegistry
+			);
+
+			this.checkParameterDefaultType(parameterSymbol);
 
 			lambdaScope.defineType(parameterNode.name, parameterSymbol.parameterType);
 
@@ -953,7 +929,16 @@ export class TypeChecker {
 		if (callableSymbol instanceof NativeFunction) {
 			return callableSymbol
 				.parameterNodes
-				.map(parameterNode => this.parameterNodeToSymbol(parameterNode));
+				.map(parameterNode => {
+					const parameterSymbol = ASTTypeObjectsFactory.createParameterSymbol(
+						parameterNode,
+						this.objectRegistry
+					);
+
+					this.checkParameterDefaultType(parameterSymbol);
+
+					return parameterSymbol;
+				});
 		}
 
 		return callableSymbol.parameterSymbols
@@ -983,7 +968,7 @@ export class TypeChecker {
 				if (callArgument) {
 					actualType = this.checkExpression(callArgument, callScope, expectedType);
 				} else if (parameterSymbol.defaultType) {
-					actualType = parameterSymbol.defaultType;
+					actualType = this.checkParameterDefaultType(parameterSymbol);
 				} else {
 					this.typeError(`Missing argument ${parameterSymbol.name}`, callArgument);
 				}
@@ -1114,182 +1099,29 @@ export class TypeChecker {
 		return new ClassRefType(this.objectRegistry.types.getClassSymbol(className), [elementType]);
 	}
 
+	private checkParameterDefaultType(parameterSymbol: ParameterSymbol): Type {
+		if (!parameterSymbol.defaultType) {
+			return Types.MIXED;
+		}
+
+		const defaultType: Type = this.checkExpression(parameterSymbol.defaultType, new TypeScope());
+
+		if (defaultType
+			&& !defaultType.equals(Types.MIXED)
+			&& !parameterSymbol.parameterType.equals(defaultType)) {
+			this.typeError(
+				`Default value for parameter '${parameterSymbol.name}' does not match type.`,
+				parameterSymbol.node
+			);
+		}
+
+		return defaultType;
+	}
+
 	private wrapType(type: ASTTypeNode, scope: TypeScope): Type {
 		return wrapType(type, this.objectRegistry, scope);
 	}
 
-	private parameterNodeToSymbol(parameterNode: ASTParameterNode, scope: TypeScope = new TypeScope()): ParameterSymbol {
-		const parameterType = parameterNode.typeAnnotation
-			? this.wrapType(parameterNode.typeAnnotation, scope)
-			: Types.MIXED;
-
-		let defaultType = null;
-		if (parameterNode.defaultValue) {
-			defaultType = this.checkExpression(parameterNode.defaultValue, new TypeScope());
-
-			if (defaultType
-				&& !parameterType.equals(Types.MIXED)
-				&& !parameterType.equals(defaultType)) {
-				this.typeError(
-					`Default value for parameter '${parameterNode.name}' does not match type.`,
-					parameterNode
-				);
-			}
-		}
-
-		return new ParameterSymbol(
-			parameterNode.name,
-			parameterType,
-			defaultType,
-			parameterNode
-		);
-	}
-
-	private registerClassSymbol(classNode: ASTClassNode): void {
-		if (this.objectRegistry.types.hasSymbol(classNode.name)) {
-			return;
-		}
-
-		const classScope = new TypeScope();
-		const classSymbol = new ClassSymbol(classNode);
-
-		try {
-			if (classSymbol.superClass) {
-				classSymbol.superClassSymbol = this.objectRegistry.types.getClassSymbol(classSymbol.superClass);
-			}
-		} catch (e) {
-		}
-
-		this.objectRegistry.types.addClassSymbol(classSymbol);
-
-		classNode.typeParameters.forEach(name => {
-			classSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
-			classScope.defineTypeBinding(name, new TypeVariable(name));
-		});
-
-		for (const typeNode of classNode.implementsInterfaces) {
-			const interfaceType: Type = this.wrapType(typeNode, classScope);
-			if (interfaceType instanceof InterfaceRefType) {
-				classSymbol.implementsInterfaces.push(interfaceType);
-				continue;
-			}
-			this.typeError(`Expected interface type, got ${interfaceType}`, typeNode);
-		}
-
-		for (const memberNode of classNode.children) {
-			if (memberNode.type === ASTNodeType.FIELD && memberNode instanceof ASTFieldNode) {
-				const target: Map<string, FieldSymbol> = memberNode.modifiers.static
-					? classSymbol.staticFieldSymbols
-					: classSymbol.instanceFieldSymbols;
-
-				const fieldSymbol = new FieldSymbol(
-					memberNode,
-					memberNode.fieldType
-						? this.wrapType(memberNode.fieldType, classScope)
-						: Types.MIXED
-				);
-
-				fieldSymbol.owner = classSymbol;
-
-				target.set(fieldSymbol.name, fieldSymbol);
-			}
-
-			if ((memberNode.type === ASTNodeType.METHOD || memberNode.type === ASTNodeType.CONSTRUCTOR)
-				&& memberNode instanceof ASTMethodNode) {
-
-				const methodScope = new TypeScope(classScope);
-				const methodSymbol = new MethodSymbol(memberNode);
-
-				methodSymbol.owner = classSymbol;
-
-				memberNode.typeParameters.forEach(name => {
-					methodSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
-					methodScope.defineTypeBinding(name, new TypeVariable(name));
-				});
-
-				methodSymbol.parameterSymbols = memberNode
-					.parameters
-					.map(parameterNode => this.parameterNodeToSymbol(parameterNode, methodScope));
-
-				methodSymbol.returnType = memberNode.returnType
-					? this.wrapType(memberNode.returnType, methodScope)
-					: Types.VOID;
-
-				if (memberNode.type === ASTNodeType.CONSTRUCTOR) {
-					classSymbol.constructorMethodSymbol = methodSymbol;
-				} else {
-					const target = methodSymbol.isStatic
-						? classSymbol.staticMethodSymbols
-						: classSymbol.instanceMethodSymbols;
-
-					target.set(memberNode.name, methodSymbol);
-				}
-			}
-		}
-	}
-
-	private registerInterfaceSymbol(interfaceNode: ASTInterfaceNode): void {
-		if (this.objectRegistry.types.hasSymbol(interfaceNode.name)) {
-			return;
-		}
-
-		const interfaceScope = new TypeScope();
-		const interfaceSymbol = new InterfaceSymbol(interfaceNode);
-
-		this.objectRegistry.types.addInterfaceSymbol(interfaceSymbol);
-
-		interfaceNode.typeParameters.forEach(name => {
-			interfaceSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
-			interfaceScope.defineTypeBinding(name, new TypeVariable(name));
-		});
-
-		for (const interfaceName of interfaceNode.extendsInterfaces) {
-			const interfaceSymbol: InterfaceSymbol = this.objectRegistry.types.getInteraceSymbol(interfaceName);
-
-			interfaceSymbol.extendsInterfaces.push(interfaceSymbol);
-		}
-
-		for (const memberNode of interfaceNode.children) {
-			if (memberNode.type === ASTNodeType.FIELD && memberNode instanceof ASTFieldNode) {
-				const fieldSymbol = new FieldSymbol(
-					memberNode,
-					memberNode.fieldType
-						? this.wrapType(memberNode.fieldType, interfaceScope)
-						: Types.MIXED
-				);
-
-				fieldSymbol.owner = interfaceSymbol;
-
-				interfaceSymbol.staticFieldSymbols.set(fieldSymbol.name, fieldSymbol);
-			}
-
-			if ((memberNode.type === ASTNodeType.METHOD) && memberNode instanceof ASTMethodNode) {
-
-				const methodScope = new TypeScope(interfaceScope);
-				const methodSymbol = new MethodSymbol(memberNode);
-
-				methodSymbol.owner = interfaceSymbol;
-
-				memberNode.typeParameters.forEach((name: string): void => {
-					methodSymbol.typeParameterSymbols.push(new TypeParameterSymbol(name));
-					methodScope.defineTypeBinding(name, new TypeVariable(name));
-				});
-
-				methodSymbol.parameterSymbols = memberNode
-					.parameters
-					.map((parameterNode: ASTParameterNode): ParameterSymbol => this.parameterNodeToSymbol(
-						parameterNode,
-						methodScope
-					));
-
-				methodSymbol.returnType = memberNode.returnType
-					? this.wrapType(memberNode.returnType, methodScope)
-					: Types.VOID;
-
-				interfaceSymbol.instanceMethodSymbols.set(memberNode.name, methodSymbol);
-			}
-		}
-	}
 
 	private typeError(message: string, node: ASTNode | null = null): never {
 		throwTypeError(message, node?.span);
