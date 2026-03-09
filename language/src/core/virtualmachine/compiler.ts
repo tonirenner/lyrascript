@@ -14,13 +14,14 @@ import {
 	ASTUnaryNode,
 	ASTVariableNode
 } from "../ast.ts";
-import {BinaryOpcodeMap, type Bytecode, Opcodes, UnaryOpcodeMap} from "./opcodes";
+import {BinaryOpcodeMap, Opcodes, UnaryOpcodeMap} from "./opcodes";
 import {throwCompileError} from "../errors.ts";
+import {type ByteCode, ByteCodeInstructions} from "./bytecode.ts";
 
 export class Compiler {
-	private readonly bytecode: Bytecode[] = [];
+	private readonly instructions: ByteCode[] = [];
 
-	compile(node: ASTNode): Bytecode[] {
+	compile(node: ASTNode): ByteCodeInstructions {
 		switch (node.type) {
 			case ASTNodeType.PROGRAM:
 				for (const child of node.children) {
@@ -99,7 +100,7 @@ export class Compiler {
 				throwCompileError(`Unsupported node type ${node.type}.`);
 		}
 
-		return this.bytecode;
+		return new ByteCodeInstructions(this.instructions);
 	}
 
 	private compileClass(node: ASTClassNode): void {
@@ -153,7 +154,7 @@ export class Compiler {
 			this.compile(arg);
 		}
 
-		this.emit(Opcodes.CALL, node.arguments.length);
+		this.emit(Opcodes.CALL_METHOD, node.arguments.length);
 	}
 
 	private compileMember(node: ASTMemberNode): void {
@@ -182,7 +183,7 @@ export class Compiler {
 	}
 
 	private emit(op: number, operand?: any): void {
-		this.bytecode.push(op);
-		if (operand !== undefined) this.bytecode.push(operand);
+		this.instructions.push(op);
+		if (operand !== undefined) this.instructions.push(operand);
 	}
 }

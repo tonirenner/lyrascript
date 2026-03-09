@@ -1,6 +1,6 @@
-import {Source} from "./parser/parser_source";
+import {Source} from "./parser/source";
 import {Environment} from "./runtime/objects";
-import {ObjectRegistry} from "./runtime/registry";
+import {ObjectRegistry} from "./runtime/runtime_registry";
 import {TypeChecker} from "./typechecker.ts";
 import {Linker} from "./linker/linker";
 import {TestSuites} from "./testsuites.ts";
@@ -10,19 +10,17 @@ import {ASTNode} from "./ast";
 import {Parser} from "./parser/parser";
 import {EventPipeline} from "./event/pipeline";
 import {Compiler} from "./virtualmachine/compiler.ts";
-import {type Bytecode} from "./virtualmachine/opcodes.ts";
 import {VirtualMachine} from "./virtualmachine/virtualmachine.ts";
+import type {ByteCodeInstructions} from "./virtualmachine/bytecode.ts";
 
 export class LyraScriptProgram {
+	private readonly environment: Environment = new Environment();
+	private readonly objectRegistry: ObjectRegistry = new ObjectRegistry();
 	private readonly eventPipeline: EventPipeline;
 	private readonly compiler: Compiler = new Compiler();
-	private readonly virtualMachine: VirtualMachine = new VirtualMachine();
-	private environment: Environment = new Environment();
-	private objectRegistry: ObjectRegistry = new ObjectRegistry();
-
-
-	private typeChecker: TypeChecker = new TypeChecker(this.objectRegistry);
-	private linker: Linker = new Linker(this.environment, this.objectRegistry, new FetchFileLoader());
+	private readonly virtualMachine: VirtualMachine = new VirtualMachine(this.objectRegistry, this.environment);
+	private readonly typeChecker: TypeChecker = new TypeChecker(this.objectRegistry);
+	private readonly linker: Linker = new Linker(this.environment, this.objectRegistry, new FetchFileLoader());
 
 	private interpreter: Interpreter;
 	private testSuite: TestSuites;
@@ -79,17 +77,17 @@ export class LyraScriptProgram {
 		           });
 	}
 
-	async compileSource(source: Source): Promise<Bytecode[]> {
+	async compileSource(source: Source): Promise<ByteCodeInstructions> {
 		return this.runPipeline(source)
-		           .then((ast: ASTNode): Bytecode[] => {
+		           .then((ast: ASTNode): ByteCodeInstructions => {
 			           this.debugMeasureStartTime();
-			           const bytecode: Bytecode[] = this.compiler.compile(ast);
+			           const bytecode: ByteCodeInstructions = this.compiler.compile(ast);
 			           this.debugMeasureEndTime('compiler');
 			           return bytecode;
 		           });
 	}
 
-	executeBytecode(bytecode: Bytecode[]): void {
+	executeBytecode(bytecode: ByteCodeInstructions): void {
 		console.log(this.virtualMachine.execute(bytecode));
 	}
 

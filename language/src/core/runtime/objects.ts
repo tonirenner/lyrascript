@@ -10,9 +10,9 @@ import {
 	ASTTypeNode
 } from "../ast";
 import {throwRuntimeError} from "../errors";
-import type {ObjectRegistry} from "./registry";
+import type {ObjectRegistry} from "./runtime_registry";
 import {evalExpression, evalMethodArguments, evalNode} from "../interpreter/evaluation";
-import {castValue, fromLyraValue, LyraNativeObject} from "./conversion";
+import {castValue, fromLyraValue, LyraNativeObject} from "./runtime_conversion";
 import type {EventPipeline} from "../event/pipeline";
 import LyraEvents from "../event/events";
 

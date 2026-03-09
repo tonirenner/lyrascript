@@ -1,5 +1,5 @@
 import {NativeClass} from "../native_class";
-import {LyraNativeObject} from "../../core/runtime/conversion";
+import {LyraNativeObject} from "../../core/runtime/runtime_conversion";
 import {Source} from "../../core/parser/source";
 import {State} from "../../core/event/state";
 import type {LambdaFunctionCall} from "../../core/interpreter/evaluation";

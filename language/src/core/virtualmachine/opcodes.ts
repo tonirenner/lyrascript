@@ -1,4 +1,10 @@
-export type Bytecode = number | string;
+import type {ByteCode} from "./bytecode.ts";
+
+export function getOpcodeName(code: number): string | undefined {
+	return Object.entries(Opcodes)
+	             .find(([_, value]): boolean => value === code)?.[0];
+}
+
 export const Opcodes = {
 	LOAD_CONST: 0x01,
 	LOAD_VAR: 0x02,
@@ -23,17 +29,20 @@ export const Opcodes = {
 	UNARY_NOT: 0x42,
 	GET_FIELD: 0x50,
 	SET_FIELD: 0x51,
-	CALL: 0x60,
+	CALL_METHOD: 0x60,
 	CLASS_DEF: 0x70,
 	FIELD_DEF: 0x71,
 	END_CLASS: 0x72,
 	METHOD_DEF: 0x73,
 	END_METHOD: 0x74,
 	NEW: 0x80,
-	RETURN: 0x90
+	RETURN: 0x90,
+	POP: 0x100,
+	JUMP: 0x110,
+	JUMP_IF_FALSE: 0x111,
 };
 
-export const BinaryOpcodeMap: Record<string, Bytecode> = {
+export const BinaryOpcodeMap: Record<string, ByteCode> = {
 	'+': Opcodes.ADD,
 	'-': Opcodes.SUB,
 	'*': Opcodes.MUL,
@@ -49,7 +58,7 @@ export const BinaryOpcodeMap: Record<string, Bytecode> = {
 	'||': Opcodes.OR
 };
 
-export const UnaryOpcodeMap: Record<string, Bytecode> = {
+export const UnaryOpcodeMap: Record<string, ByteCode> = {
 	'+': Opcodes.POS,
 	'-': Opcodes.NEG,
 	'!': Opcodes.UNARY_NOT

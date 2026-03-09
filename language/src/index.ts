@@ -8,7 +8,7 @@ import {LyraScriptProgram} from "./core/program";
 import {EventPipeline} from "./core/event/pipeline";
 import {State} from "./core/event/state";
 import {HTMLElementCreator} from "./host/dom";
-import type {Bytecode} from "./core/virtualmachine/opcodes.ts";
+import type {ByteCodeInstructions} from "./core/virtualmachine/bytecode.ts";
 
 
 export {WebLyraScript} from "./host/engine";
@@ -28,10 +28,12 @@ const Lyra = {
 	executeTest: (source: Source, isDebug: boolean = false): Promise<void> => executeTest(source, isDebug),
 	executeTestString: (code: string, isDebug: boolean = false): Promise<void> => executeTestString(code, isDebug),
 	executeTestUrl: (url: string, isDebug: boolean = false): Promise<void> => executeTestUrl(url, isDebug),
-	compileSource: (source: Source, isDebug: boolean = false): Promise<Bytecode[]> => compileSource(source,
-	                                                                                                isDebug),
-	compileFromUrl: (url: string, isDebug: boolean = false): Promise<Bytecode[]> => compileFromUrl(url, isDebug),
-	executeBytecode: (bytecode: Bytecode[], isDebug: boolean = false): void => executeBytecode(bytecode, isDebug),
+	compileSource: (source: Source, isDebug: boolean = false): Promise<ByteCodeInstructions> => compileSource(source,
+	                                                                                                          isDebug),
+	compileFromUrl: (url: string, isDebug: boolean = false): Promise<ByteCodeInstructions> => compileFromUrl(url,
+	                                                                                                         isDebug),
+	executeBytecode: (bytecode: ByteCodeInstructions, isDebug: boolean = false): void => executeBytecode(bytecode,
+	                                                                                                     isDebug),
 	tokenize: (source: Source): Token[] => tokenize(source),
 	tokenizeUrl: (url: string): Promise<Token[]> => tokenizeUrl(url),
 	parseTree: (source: Source): ASTNode => parseTree(source),
@@ -55,7 +57,7 @@ async function execute(source: Source, isDebug: boolean = false): Promise<void> 
 	}
 }
 
-async function compileSource(source: Source, isDebug: boolean = false): Promise<Bytecode[]> {
+async function compileSource(source: Source, isDebug: boolean = false): Promise<ByteCodeInstructions> {
 	try {
 		return await Program(isDebug)
 			.compileSource(source);
@@ -68,11 +70,11 @@ async function compileSource(source: Source, isDebug: boolean = false): Promise<
 	}
 }
 
-async function compileFromUrl(url: string, isDebug: boolean = false): Promise<Bytecode[]> {
+async function compileFromUrl(url: string, isDebug: boolean = false): Promise<ByteCodeInstructions> {
 	return await compileSource(await fetchSource(url), isDebug);
 }
 
-function executeBytecode(bytecode: Bytecode[], isDebug: boolean = false): void {
+function executeBytecode(bytecode: ByteCodeInstructions, isDebug: boolean = false): void {
 	Program(isDebug)
 		.executeBytecode(bytecode);
 }

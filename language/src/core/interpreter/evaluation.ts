@@ -6,7 +6,7 @@ import {
 	Instance,
 	ReturnValue
 } from "../runtime/objects";
-import {ObjectRegistry} from "../runtime/registry";
+import {ObjectRegistry} from "../runtime/runtime_registry";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -39,11 +39,17 @@ import {
 import {GRAMMAR, TYPE_ENUM} from "../grammar";
 import {NativeClasses} from "../../library/native_classes";
 import {NativeFunctions, NativeFunctionTypeRegistry} from "../../library/native_functions";
-import {castValue, fromLyraValue, LyraNativeObject, returnValue, wrapNativeInstance} from "../runtime/conversion";
+import {
+	castValue,
+	fromLyraValue,
+	LyraNativeObject,
+	returnValue,
+	wrapNativeInstance
+} from "../runtime/runtime_conversion.ts";
 import {throwRuntimeError} from "../errors";
-import {AutoboxedTypes} from "../runtime/autoboxing.ts";
+import {AutoboxedTypes} from "../runtime/type_autoboxing.ts";
 import {LyraArray} from "../../library/classes/array";
-import type {VChild} from "../runtime/vdom.ts";
+import type {VChild} from "../runtime/runtime_vdom.ts";
 import type {EventPipeline} from "../event/pipeline";
 
 const nativeClasses = new NativeClasses();

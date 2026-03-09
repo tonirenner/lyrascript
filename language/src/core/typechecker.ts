@@ -43,7 +43,7 @@ import {
 	TypeVariable,
 	wrapType
 } from "./runtime/type_objects";
-import {Autoboxing} from "./runtime/autoboxing";
+import {Type_autoboxing} from "./runtime/type_autoboxing.ts";
 import {NativeFunction, NativeFunctions} from "../library/native_functions";
 import {GRAMMAR} from "./grammar";
 import {throwTypeError} from "./errors"
@@ -360,7 +360,7 @@ export class TypeChecker {
 	private checkForeach(node: ASTForeachNode, scope: TypeScope): Type {
 		let iterableType: Type = this.checkExpression(node.iterable, scope);
 
-		iterableType = Autoboxing.autoboxIfNeeded(iterableType, this.objectRegistry);
+		iterableType = Type_autoboxing.autoboxIfNeeded(iterableType, this.objectRegistry);
 
 		if (iterableType instanceof ClassRefType && iterableType.classSymbol.name === 'Array') {
 			if (iterableType.typeArguments.length !== 1) {
@@ -877,7 +877,7 @@ export class TypeChecker {
 	private checkInstanceCall(callee: ASTMemberNode, callArguments: ASTNode[], scope: TypeScope): Type {
 		let objectType: Type = this.checkExpression(callee.object, scope);
 
-		objectType = Autoboxing.autoboxIfNeeded(objectType, this.objectRegistry);
+		objectType = Type_autoboxing.autoboxIfNeeded(objectType, this.objectRegistry);
 
 		this.checkCallOnNullObjectType(objectType, callee);
 

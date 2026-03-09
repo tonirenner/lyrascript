@@ -9,6 +9,7 @@ class ErrorTypes {
 	static NATIVE_ERROR: string = 'NativeError';
 	static DEPENDENCY_ERROR: string = 'DependencyError';
 	static COMPILE_ERROR: string = 'CompileError';
+	static VIRTUAL_MACHINE_ERROR: string = 'VirtualMachineError';
 }
 
 export class LyraError extends Error {
@@ -121,6 +122,17 @@ export class LyraCompileError extends LyraError {
 	}
 }
 
+export class VirtualMachineError extends LyraError {
+	constructor(message: string, span: SourceSpan | null = null, cause: string | null = null) {
+		super(
+			ErrorTypes.VIRTUAL_MACHINE_ERROR,
+			message,
+			span,
+			cause
+		);
+	}
+}
+
 export function throwTokenError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraTokenError(message, span, cause);
 }
@@ -147,6 +159,10 @@ export function throwDependencyError(message: string, span: SourceSpan | null = 
 
 export function throwCompileError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
 	throw new LyraCompileError(message, span, cause);
+}
+
+export function throwVirtualMachineError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+	throw new VirtualMachineError(message, span, cause);
 }
 
 /**

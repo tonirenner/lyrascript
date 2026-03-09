@@ -30,7 +30,7 @@
 - [x] Korrekte `this`-Weitergabe
 - [x] Mehrere Instanzen korrekt (keine Überschreibung mehr)
 - [x] Return-Handling (`ReturnValue`)
-- [x] Primitive Casts (Autoboxing light)
+- [x] Primitive Casts (Type_autoboxing light)
 - [x] Native Module System (`System.print`, `Net.fetch`, etc.)
 
 ---
@@ -112,7 +112,7 @@ Geplant
   ⚙️ Tooling & Zukunft
 - [ ] PHPStorm Plugin (Syntax Highlighting)
 - [ ] Optional:
-- [ ] Bytecode (nur bei Bedarf)
+- [ ] ByteCode (nur bei Bedarf)
 - [ ] Optimierungen
 - [ ] Dokumentation & Beispiele
 

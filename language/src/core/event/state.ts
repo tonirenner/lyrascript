@@ -1,5 +1,5 @@
-import {toLyraValue} from "../runtime/conversion";
-import {LambdaFunctionCall} from "../interpreter/interpreter_statements";
+import {toLyraValue} from "../runtime/runtime_conversion";
+import {LambdaFunctionCall} from "../interpreter/evaluation";
 
 
 export class State<T = any> {

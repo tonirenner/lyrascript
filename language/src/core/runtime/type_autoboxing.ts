@@ -1,5 +1,5 @@
 import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "./registry";
+import {ObjectRegistry} from "./runtime_registry";
 import {throwRuntimeError} from "../errors";
 
 export class AutoboxedTypes {
@@ -22,7 +22,7 @@ export class AutoboxedTypes {
 	}
 }
 
-export class Autoboxing {
+export class Type_autoboxing {
 	static CLASSNAME_MAP: Map<Type, string> = new Map(
 		[
 			[Types.NUMBER, AutoboxedTypes.NUMBER],
@@ -32,7 +32,7 @@ export class Autoboxing {
 	);
 
 	static autoboxIfNeeded(objectType: Type, objectRegistry: ObjectRegistry): ClassRefType | Type {
-		const className: string | undefined = Autoboxing.CLASSNAME_MAP.get(objectType);
+		const className: string | undefined = Type_autoboxing.CLASSNAME_MAP.get(objectType);
 		if (className) {
 			return new ClassRefType(objectRegistry.types.getClassSymbol(className));
 		}

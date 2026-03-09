@@ -1,4 +1,4 @@
-import {ObjectRegistry} from "../runtime/registry";
+import {ObjectRegistry} from "../runtime/runtime_registry.ts";
 import {ASTImportNode, ASTNode, ASTNodeType} from "../ast";
 import {Source} from "../parser/source";
 import {Parser} from "../parser/parser";
