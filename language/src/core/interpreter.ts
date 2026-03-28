@@ -604,7 +604,9 @@ export class Interpreter implements ASTInterpreter {
 
 		this.callIteratorMethod(iterator.asRuntimeInstance(), 'rewind');
 
-		while (this.callIteratorMethod(iterator.asRuntimeInstance(), 'hasNext')) {
+		while (this.callIteratorMethod(iterator.asRuntimeInstance(), 'hasNext')
+		           .toNativeRuntimeValue(TYPE_ENUM.BOOLEAN)
+		           .value) {
 			const value: RuntimeValue = this.callIteratorMethod(iterator.asRuntimeInstance(), 'current');
 
 			// neuer Kontext für jede Iteration
