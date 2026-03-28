@@ -1,12 +1,14 @@
 import {type Engine, WebLyraScript} from "./engine.ts";
 import {type ElementPatcher, HTMLElementPatcher} from "./dom.ts";
-import type {VChild} from "../core/shared/runtime_vdom.ts";
 import {EventPipeline} from "../core/shared/event_pipeline.ts";
-import Events from "./events";
+import Events from "./events.ts";
 import {EventHandlerRegistry, VDOM} from "./registry.ts";
-import LyraEvents from "../core/shared/event.ts";
-import type {LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
-import type {RuntimeInstance} from "../core/shared/runtime_model.ts";
+import {LYRA_EVENTS} from "../core/contracts/runtime_events.ts";
+import type {
+	RuntimeInstanceType,
+	RuntimeLambda,
+	VChild
+} from "../core/contracts/runtime_model.ts";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;
@@ -15,15 +17,15 @@ export interface ApplicationRuntime {
 
 	start(url: string, className: string): Promise<void>;
 
-	createInstance(className: string): RuntimeInstance;
+	createInstance(className: string): RuntimeInstanceType;
 
 	callRootInstanceMethod(methodName: string, args: any[]): any;
 
-	callMethod(instance: RuntimeInstance, methodName: string, args: any[]): any;
+	callMethod(instance: RuntimeInstanceType, methodName: string, args: any[]): any;
 
-	renderComponent(instance: RuntimeInstance): VChild;
+	renderComponent(instance: RuntimeInstanceType): VChild;
 
-	addEventHandler(element: HTMLElement, propertyKey: string, handler: LambdaFunctionCall): void;
+	addEventHandler(element: HTMLElement, propertyKey: string, handler: RuntimeLambda): void;
 
 	removeEventHandler(element: HTMLElement, propertyKey: string): void;
 }
@@ -44,7 +46,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._eventPipeline;
 	}
 
-	public renderComponent(instance: RuntimeInstance): VChild {
+	public renderComponent(instance: RuntimeInstanceType): VChild {
 		return this.callMethod(instance, 'render', []) as VChild
 	}
 
@@ -52,7 +54,7 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		throw new Error("Method not implemented.");
 	}
 
-	public createInstance(className: string): RuntimeInstance {
+	public createInstance(className: string): RuntimeInstanceType {
 		return this._engine.createInstance(className);
 	}
 
@@ -60,11 +62,11 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 		return this._engine.callRootInstanceMethod(methodName, args);
 	}
 
-	public callMethod(instance: RuntimeInstance, methodName: string, args: any[] = []): any {
+	public callMethod(instance: RuntimeInstanceType, methodName: string, args: any[] = []): any {
 		return this._engine.callInstanceMethod(instance, methodName, args);
 	}
 
-	public addEventHandler(element: HTMLElement, propertyKey: string, handler: LambdaFunctionCall): void {
+	public addEventHandler(element: HTMLElement, propertyKey: string, handler: RuntimeLambda): void {
 		const eventName: string = propertyKey.slice(2)
 		                                     .toLowerCase();
 
@@ -115,7 +117,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	}
 
 
-	public requestComponentRender(instance: RuntimeInstance, oldChild?: VChild): void {
+	public requestComponentRender(instance: RuntimeInstanceType, oldChild?: VChild): void {
 		if (this.isRendering) {
 			return;
 		}
@@ -123,7 +125,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		queueMicrotask((): void => this.performComponentRender(instance, oldChild));
 	}
 
-	private performComponentRender(instance: RuntimeInstance, oldChild: VChild | null = null): void {
+	private performComponentRender(instance: RuntimeInstanceType, oldChild: VChild | null = null): void {
 		this.isRendering = true;
 
 		const nextChild: VChild = this.renderComponent(instance);
@@ -132,7 +134,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.vdom.register(instance, nextChild);
 
-		instance.markClean(this.eventPipeline);
+		instance.clean(this.eventPipeline);
 
 		this.isRendering = false;
 	}
@@ -144,7 +146,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		    });
 
 		this.eventPipeline
-		    .on(LyraEvents.LYRA_INSTANCE_DIRTY_STATE, ({instance}: any): void => {
+		    .on(LYRA_EVENTS.INSTANCE_DIRTY_STATE, ({instance}: any): void => {
 			    this.requestComponentRender(instance, this.vdom.findNodeByComponent(instance) as VChild);
 		    });
 	}

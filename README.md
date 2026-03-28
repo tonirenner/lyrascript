@@ -9,7 +9,7 @@ It combines:
 - A static TypeChecker
 - Class and interface support with generics
 - A minimal Virtual DOM runtime
-- A clean separation between language engine and host environment
+- A clean separation between language engine and host runtimeScope
 
 Lyra is written in TypeScript and designed to be both expressive and predictable.
 
@@ -20,7 +20,7 @@ Lyra is written in TypeScript and designed to be both expressive and predictable
 Lyra aims to:
 
 - Provide a clean, statically typed scripting language
-- Keep runtime and host environment strictly separated
+- Keep runtime and host runtimeScope strictly separated
 - Avoid implicit magic in state and rendering
 - Stay small, understandable, and hackable
 

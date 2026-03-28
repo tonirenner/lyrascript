@@ -34,6 +34,7 @@ export class Type_autoboxing {
 	static autoboxIfNeeded(objectType: Type, objectRegistry: ObjectRegistry): ClassRefType | Type {
 		const className: string | undefined = Type_autoboxing.CLASSNAME_MAP.get(objectType);
 		if (className) {
+			console.log(objectRegistry.types);
 			return new ClassRefType(objectRegistry.types.getClassSymbol(className));
 		}
 

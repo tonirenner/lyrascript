@@ -49,7 +49,7 @@ export class NativeFunctions {
 		};
 	}
 
-	public getGlobalFunctionTypeRegistry(): NativeFunctionTypeRegistry {
+	public getGlobalFunctionTypes(): NativeFunctionTypeRegistry {
 		const functions = new NativeFunctionTypeRegistry();
 		functions.set(
 			NativeFunctions.PRINT,

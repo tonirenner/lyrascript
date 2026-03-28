@@ -3,7 +3,7 @@ import {Source} from "../parser/source.ts";
 import {Parser} from "../parser.ts";
 import type {AbstractFileLoader} from "./loaders.ts";
 import {throwRuntimeError} from "../shared/errors.ts";
-import type {Environment} from "../shared/runtime_model.ts";
+import type {ValueScope} from "../contracts/runtime_model.ts";
 import {ObjectRegistry} from "../shared/runtime_registry.ts";
 
 export class Dependency {
@@ -19,11 +19,11 @@ export class Dependency {
 }
 
 export class DependencyLoader {
-	environment: Environment;
+	environment: ValueScope;
 	objectRegistry: ObjectRegistry;
 	fileLoader: AbstractFileLoader;
 
-	constructor(environment: Environment, objectRegistry: ObjectRegistry, fileLoader: AbstractFileLoader) {
+	constructor(environment: ValueScope, objectRegistry: ObjectRegistry, fileLoader: AbstractFileLoader) {
 		this.environment = environment;
 		this.objectRegistry = objectRegistry;
 		this.fileLoader = fileLoader;

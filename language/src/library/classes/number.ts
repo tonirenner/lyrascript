@@ -1,5 +1,5 @@
 import {NativeClass} from "../native_class.ts";
-import {LyraNativeObject} from "../../core/shared/runtime_model.ts";
+import {LyraNativeObject} from "../../core/contracts/runtime_model.ts";
 import {Source} from "../../core/parser/source.ts";
 
 const CLASS_NAME = 'Number';

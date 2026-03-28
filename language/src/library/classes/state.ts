@@ -1,8 +1,7 @@
 import {NativeClass} from "../native_class.ts";
-import {LyraNativeObject} from "../../core/shared/runtime_model.ts";
+import {LyraNativeObject, type RuntimeLambda} from "../../core/contracts/runtime_model.ts";
 import {Source} from "../../core/parser/source.ts";
 import {State} from "../../core/shared/runtime_state.ts";
-import type {LambdaFunctionCall} from "../../core/interpreter/evaluation.ts";
 
 const CLASS_NAME = 'State';
 
@@ -22,7 +21,7 @@ export class LyraState<T> extends LyraNativeObject {
 		this.state.set(value);
 	}
 
-	subscribe(fn: LambdaFunctionCall): number {
+	subscribe(fn: RuntimeLambda): number {
 		return this.state.subscribe(fn);
 	}
 

@@ -36,7 +36,7 @@ import {
 } from "../shared/ast.ts";
 import {throwParserError} from "../shared/errors.ts";
 import {spanFrom} from "./source";
-import {Modifiers, SuperClass} from "../shared/runtime_model.ts";
+import {Modifiers, SuperClass} from "../contracts/runtime_model.ts";
 
 export function createMixedType(): ASTTypeNode {
 	return new ASTTypeNode(ASTTypeNode.KIND_SIMPLE, TYPE_ENUM.MIXED);

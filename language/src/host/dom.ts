@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
-import type {Props, VChild, VText} from "../core/shared/runtime_vdom.ts";
-import {LambdaFunctionCall} from "../core/interpreter/evaluation.ts";
+import type {Props, RuntimeInstanceType, RuntimeLambda, VChild, VText} from "../core/contracts/runtime_model.ts";
+import {Value} from "../core/contracts/runtime_model.ts";
 import Events from "./events.ts";
 import type {ApplicationRuntime} from "./runtime.ts";
 import {VDOM} from "./registry.ts";
@@ -37,9 +37,7 @@ export class HTMLElementCreator implements ElementCreator {
 				if (key === 'children') {
 					continue;
 				}
-				if (vNode.instance?.hasProperty(key)) {
-					vNode.instance.setProperty(key, value);
-				}
+				this.assignComponentProperty(vNode.instance, key, value);
 			}
 
 			if (!vNode.subTree) {
@@ -58,7 +56,7 @@ export class HTMLElementCreator implements ElementCreator {
 
 		for (const [key, value] of Object.entries(vNode.props ?? {})) {
 			if (Events.isEvent(key)) {
-				this.applicationRuntime.addEventHandler(element, key, value as LambdaFunctionCall);
+				this.applicationRuntime.addEventHandler(element, key, value as RuntimeLambda);
 			} else {
 				element.setAttribute(key, String(value));
 			}
@@ -69,6 +67,21 @@ export class HTMLElementCreator implements ElementCreator {
 		}
 
 		return element;
+	}
+
+	private assignComponentProperty(instance: RuntimeInstanceType, key: string, value: any): void {
+		const runtimeValue = value && typeof value === 'object' && 'runtimeClass' in value
+			? Value(value, value.runtimeClass.className, value.runtimeClass)
+			: Value(value);
+
+		if (instance.instanceFields.has(key)) {
+			instance.instanceFields.set(key, runtimeValue);
+			return;
+		}
+
+		if (instance.staticFields.has(key)) {
+			instance.staticFields.set(key, runtimeValue);
+		}
 	}
 }
 
@@ -153,7 +166,7 @@ export class HTMLElementPatcher implements ElementPatcher {
 				if (oldValue) {
 					this.applicationRuntime.removeEventHandler(element, propertyKey);
 				}
-				this.applicationRuntime.addEventHandler(element, propertyKey, newValue as LambdaFunctionCall);
+				this.applicationRuntime.addEventHandler(element, propertyKey, newValue as RuntimeLambda);
 			} else {
 				element.setAttribute(propertyKey, newValue as string);
 			}

@@ -1,6 +1,6 @@
 import {NativeClass} from "../native_class.ts";
-import {LyraNativeObject} from "../../core/shared/runtime_model.ts";
 import {Source} from "../../core/parser/source.ts";
+import {LyraNativeObject} from "../../core/contracts/runtime_model.ts";
 
 const ARRAY_CLASS_NAME = 'Array';
 const ARRAY_ITERATOR_CLASS_NAME = 'ArrayIterator';
@@ -33,7 +33,7 @@ export class LyraArray extends LyraNativeObject {
 
 	// noinspection JSUnusedGlobalSymbols
 	public removeAt(index: number): void {
-		this.values = this.values.splice(index, 1);
+		this.values.splice(index, 1);
 	}
 
 	override toString(): string {
@@ -108,7 +108,7 @@ export class LyraArrayIterator extends LyraNativeObject {
 
 	// noinspection JSUnusedGlobalSymbols
 	public previous(): void {
-		if (this.index + 1 < 0) {
+		if (this.index - 1 < 0) {
 			return;
 		}
 
@@ -131,7 +131,7 @@ export class ArrayIteratorType extends NativeClass {
 	constructor() {
 		super(
 			ARRAY_ITERATOR_CLASS_NAME,
-			LyraArray,
+			LyraArrayIterator,
 			new Source(
 				`
 class ${ARRAY_ITERATOR_CLASS_NAME}<T> implements Iterator<T> {

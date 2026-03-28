@@ -491,6 +491,23 @@ export class TypeScope {
 	}
 }
 
+export function createParameterSymbol(
+	parameterNode: ASTParameterNode,
+	objectRegistry: ObjectRegistry,
+	scope: TypeScope = new TypeScope()
+): ParameterSymbol {
+	const parameterType = parameterNode.typeAnnotation
+		? wrapType(parameterNode.typeAnnotation, objectRegistry, scope)
+		: Types.MIXED;
+
+	return new ParameterSymbol(
+		parameterNode.name,
+		parameterType,
+		parameterNode.defaultValue ?? null,
+		parameterNode
+	);
+}
+
 export function wrapType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, scope: TypeScope | null = null): Type {
 	let baseType = resolveBaseType(typeNode, objectRegistry, scope);
 	if (baseType) {
@@ -549,7 +566,7 @@ export function resolveRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegi
 	}
 
 	if (objectRegistry.types.interfaceSymbols.has(typeNode.name)) {
-		return new InterfaceRefType(objectRegistry.types.getInteraceSymbol(typeNode.name));
+		return new InterfaceRefType(objectRegistry.types.getInterfaceSymbol(typeNode.name));
 	}
 
 	throwTypeError(`Unknown class or interface ${typeNode.name}.`, typeNode.span);
@@ -565,7 +582,7 @@ export function resolveGenericRefType(typeNode: ASTTypeNode, objectRegistry: Obj
 
 	if (objectRegistry.types.interfaceSymbols.has(typeNode.name)) {
 		return new InterfaceRefType(
-			objectRegistry.types.getInteraceSymbol(typeNode.name),
+			objectRegistry.types.getInterfaceSymbol(typeNode.name),
 			typeNode.typeArguments.map(typeArgument => resolveBaseType(typeArgument, objectRegistry))
 		);
 	}

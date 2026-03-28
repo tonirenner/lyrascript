@@ -1,5 +1,4 @@
-import {toLyraValue} from "./ast_type_conversion.ts";
-import {LambdaFunctionCall} from "../interpreter/evaluation.ts";
+import {Value, type RuntimeLambda} from "../contracts/runtime_model.ts";
 
 export class State<T = any> {
 	private value: T;
@@ -23,7 +22,7 @@ export class State<T = any> {
 		this.notify();
 	}
 
-	subscribe(fn: LambdaFunctionCall): number {
+	subscribe(fn: RuntimeLambda): number {
 		const nextId: number = this.id++;
 		this.subscribers.set(nextId, this.wrapCallback(fn));
 		return nextId;
@@ -39,9 +38,9 @@ export class State<T = any> {
 		}
 	}
 
-	private wrapCallback(fn: LambdaFunctionCall) {
+	private wrapCallback(fn: RuntimeLambda): (value: T) => void {
 		return (value: T): void => {
-			fn.evalCall(toLyraValue(value));
+			fn.call([Value(value)]);
 		}
 	}
 }

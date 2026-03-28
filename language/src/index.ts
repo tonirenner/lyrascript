@@ -1,18 +1,16 @@
 import {Parser} from "./core/parser.ts";
 import {wrapJsError} from "./core/shared/errors.ts";
-import {fetchSource, Source} from "./core/parser/source";
+import {fetchSource, Source} from "./core/parser/source.ts";
 import {ASTNode} from "./core/shared/ast.ts";
 import {Tokenizer} from "./core/tokenizer.ts";
-import {Token} from "./core/shared/grammar.ts";
-import {LyraScriptProgram} from "./core/program";
+import {Token} from "./core/shared/ast_grammar.ts";
+import {LyraScriptProgram} from "./core/program.ts";
 import {EventPipeline} from "./core/shared/event_pipeline.ts";
-import {State} from "./core/shared/state.ts";
-import {HTMLElementCreator} from "./host/dom";
-import type {ByteCodeInstructions} from "./core/virtualmachine/bytecode.ts";
+import {State} from "./core/shared/runtime_state.ts";
+import {HTMLElementCreator} from "./host/dom.ts";
 
-
-export {WebLyraScript} from "./host/engine";
-export {WebApplicationRuntime} from "./host/runtime";
+export {WebLyraScript} from "./host/engine.ts";
+export {WebApplicationRuntime} from "./host/runtime.ts";
 
 const Lyra = {
 	Source,
@@ -21,111 +19,62 @@ const Lyra = {
 	EventPipeline,
 	HTMLElementCreator,
 	State,
-	Program: (isDebug: boolean): LyraScriptProgram => Program(isDebug),
-	execute: (source: Source, isDebug: boolean = false): Promise<void> => execute(source, isDebug),
-	executeFromString: (code: string, isDebug: boolean = false): Promise<void> => executeFromString(code, isDebug),
-	executeFromUrl: async (url: string, isDebug: boolean = false): Promise<void> => executeFromUrl(url, isDebug),
-	executeTest: (source: Source, isDebug: boolean = false): Promise<void> => executeTest(source, isDebug),
-	executeTestString: (code: string, isDebug: boolean = false): Promise<void> => executeTestString(code, isDebug),
-	executeTestUrl: (url: string, isDebug: boolean = false): Promise<void> => executeTestUrl(url, isDebug),
-	compileSource: (source: Source, isDebug: boolean = false): Promise<ByteCodeInstructions> => compileSource(source,
-	                                                                                                          isDebug),
-	compileFromUrl: (url: string, isDebug: boolean = false): Promise<ByteCodeInstructions> => compileFromUrl(url,
-	                                                                                                         isDebug),
-	executeBytecode: (bytecode: ByteCodeInstructions, isDebug: boolean = false): void => executeBytecode(bytecode,
-	                                                                                                     isDebug),
+	Program: createProgram,
+	execute,
+	executeFromString,
+	executeFromUrl,
+	executeTest,
+	executeTestString,
+	executeTestUrl,
 	tokenize: (source: Source): Token[] => tokenize(source),
 	tokenizeUrl: (url: string): Promise<Token[]> => tokenizeUrl(url),
 	parseTree: (source: Source): ASTNode => parseTree(source),
 	parseTreeUrl: (url: string): Promise<ASTNode> => parseTreeUrl(url),
 };
 
-function Program(isDebug: boolean = false): LyraScriptProgram {
+function createProgram(isDebug: boolean = false): LyraScriptProgram {
 	return new LyraScriptProgram(isDebug);
 }
 
 async function execute(source: Source, isDebug: boolean = false): Promise<void> {
-	try {
-		return await Program(isDebug)
-			.executeSource(source);
-	} catch (error) {
-		if (error instanceof Error) {
-			console.error(wrapJsError(error, source)
-				              .format());
-		}
-		throw error;
-	}
-}
-
-async function compileSource(source: Source, isDebug: boolean = false): Promise<ByteCodeInstructions> {
-	try {
-		return await Program(isDebug)
-			.compileSource(source);
-	} catch (error) {
-		if (error instanceof Error) {
-			console.error(wrapJsError(error, source)
-				              .format());
-		}
-		throw error;
-	}
-}
-
-async function compileFromUrl(url: string, isDebug: boolean = false): Promise<ByteCodeInstructions> {
-	return await compileSource(await fetchSource(url), isDebug);
-}
-
-function executeBytecode(bytecode: ByteCodeInstructions, isDebug: boolean = false): void {
-	Program(isDebug)
-		.executeBytecode(bytecode);
+	return runWithSourceContext(source,
+	                            () => createProgram(isDebug)
+		                            .executeSource(source));
 }
 
 async function executeFromUrl(url: string, isDebug: boolean = false): Promise<void> {
-	return await execute(await fetchSource(url), isDebug);
+	return execute(await fetchSource(url), isDebug);
 }
 
 async function executeFromString(code: string, isDebug: boolean = false): Promise<void> {
 	const source = new Source(code);
-
-	try {
-		return await Program(isDebug)
-			.executeSource(source);
-	} catch (error) {
-		if (error instanceof Error) {
-			console.error(wrapJsError(error, source)
-				              .format());
-		}
-		throw error;
-	}
+	return execute(source, isDebug);
 }
 
 async function executeTest(source: Source, isDebug = false): Promise<void> {
-	try {
-		return await Program(isDebug)
-			.executeTest(source);
-	} catch (error) {
-		if (error instanceof Error) {
-			console.error(wrapJsError(error, source)
-				              .format());
-		}
-		throw error;
-	}
+	return runWithSourceContext(source,
+	                            () => createProgram(isDebug)
+		                            .executeTest(source));
 }
 
 async function executeTestUrl(url: string, isDebug: boolean = false): Promise<void> {
-	return await executeTest(await fetchSource(url), isDebug);
+	return executeTest(await fetchSource(url), isDebug);
 }
 
 async function executeTestString(code: string, isDebug: boolean = false): Promise<void> {
 	const source = new Source(code);
+	return executeTest(source, isDebug);
+}
 
+async function runWithSourceContext<T>(source: Source, action: () => Promise<T>): Promise<T> {
 	try {
-		return await Program(isDebug)
-			.executeTest(source);
+		return await action();
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error(wrapJsError(error, source)
 				              .format());
 		}
+
 		throw error;
 	}
 }

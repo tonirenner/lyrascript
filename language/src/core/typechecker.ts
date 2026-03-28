@@ -23,6 +23,7 @@ import {
 	buildTypeSubstitutionMap,
 	ClassRefType,
 	ClassSymbol,
+	createParameterSymbol,
 	FieldSymbol,
 	InterfaceRefType,
 	InterfaceSymbol,
@@ -41,14 +42,13 @@ import {
 } from "./shared/type_objects.ts";
 import {Type_autoboxing} from "./shared/type_autoboxing.ts";
 import {NativeFunction, NativeFunctions} from "../library/native_functions.ts";
-import {GRAMMAR} from "./shared/grammar.ts";
 import {throwTypeError} from "./shared/errors.ts"
 import type {ObjectRegistry} from "./shared/runtime_registry.ts";
-import {ASTTypeObjectsFactory} from "./shared/ast_type_objects_factory.ts";
+import {GRAMMAR} from "./shared/ast_grammar.ts";
 
 
 const globalFunctionTypeRegistry = new NativeFunctions()
-	.getGlobalFunctionTypeRegistry();
+	.getGlobalFunctionTypes();
 
 export class StatementResult {
 	didReturn: boolean;
@@ -752,7 +752,7 @@ export class TypeChecker {
 	private checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
 		const lambdaScope = new TypeScope(scope);
 		const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
-			const parameterSymbol: ParameterSymbol = ASTTypeObjectsFactory.createParameterSymbol(
+			const parameterSymbol: ParameterSymbol = createParameterSymbol(
 				parameterNode,
 				this.objectRegistry
 			);
@@ -930,7 +930,7 @@ export class TypeChecker {
 			return callableSymbol
 				.parameterNodes
 				.map(parameterNode => {
-					const parameterSymbol = ASTTypeObjectsFactory.createParameterSymbol(
+					const parameterSymbol = createParameterSymbol(
 						parameterNode,
 						this.objectRegistry
 					);

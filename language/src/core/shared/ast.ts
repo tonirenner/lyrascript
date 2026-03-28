@@ -1,6 +1,6 @@
 import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
 import type {SourceSpan} from "../parser/source.ts";
-import {type Modifiers, SuperClass} from "./runtime_model.ts";
+import type {Modifiers, SuperClass} from "../contracts/runtime_model.ts";
 
 export class ASTNodeType {
 	static PROGRAM: string = 'program';

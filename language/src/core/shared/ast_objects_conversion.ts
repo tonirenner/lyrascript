@@ -2,9 +2,8 @@ import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast.ts";
 import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
 import {ObjectRegistry} from "./runtime_registry.ts";
 import {throwNativeError} from "./errors.ts";
-import {ClassDefinition, LyraNativeObject, LyraObjectView, RuntimeInstance} from "./runtime_model.ts";
-import {ASTRuntimeInstanceFactory} from "./ast_instance_factory.ts";
-import {toNativeValue} from "./type_conversion.ts";
+import {LyraNativeObject, LyraObjectView, type RuntimeValue, Value} from "../contracts/runtime_model.ts";
+import {createRuntimeInstance} from "./ast_objects.ts";
 
 export function toLyraString(value: string): ASTNode {
 	const node = new ASTNode(ASTNodeType.STRING);
@@ -64,42 +63,48 @@ export function toLyraValue(value: any): ASTNode {
 	throwNativeError('Cannot convert native object to Lyra value');
 }
 
-export function fromLyraValue(value: any): any {
+export function fromLyraValue(value: RuntimeValue | ASTNode): RuntimeValue {
 	if (value instanceof ASTNode) {
-		return toNativeValue(value.value);
+		return Value(value.value)
+			.toNativeRuntimeValue();
 	}
 
-	if (value instanceof RuntimeInstance) {
-		if (value.__nativeInstance) {
-			return value.__nativeInstance;
+	if (value.type.runtimeClass) {
+		const instance = value.asRuntimeInstance();
+
+		if (instance.nativeRuntimeObject) {
+			return Value(instance.nativeRuntimeObject, instance.nativeRuntimeObject.className);
 		}
 
-		return new LyraObjectView(value);
+		const objectView = new LyraObjectView(instance);
+
+		return Value(objectView, objectView.className);
 	}
 
 	if (Array.isArray(value)) {
-		return value.map(fromLyraValue);
+		return Value(value.map(fromLyraValue));
 	}
 
-	return toNativeValue(value);
+	return Value(value)
+		.toNativeRuntimeValue();
 }
 
-export function returnValue(value: any): ASTReturnNode {
+export function ReturnValue(value: any): ASTReturnNode {
 	const node = new ASTReturnNode();
 	node.argument = toLyraValue(value);
 	return node;
 }
 
-export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectRegistry: ObjectRegistry): RuntimeInstance {
+export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectRegistry: ObjectRegistry): RuntimeValue {
 	if (!objectRegistry.classes.has(lyraNativeObject.className)) {
 		throwNativeError(`Class ${lyraNativeObject.className} not found.`);
 	}
 
-	const classDef: ClassDefinition = objectRegistry.classes.get(lyraNativeObject.className);
-	const instance: RuntimeInstance = ASTRuntimeInstanceFactory.createRuntimeInstance(classDef);
+	const runtimeClass = objectRegistry.classes.get(lyraNativeObject.className);
+	const instance = createRuntimeInstance(runtimeClass);
 
-	instance.__nativeInstance = lyraNativeObject;
+	instance.nativeRuntimeObject = lyraNativeObject;
 
-	return instance;
+	return Value(instance, runtimeClass.className, runtimeClass);
 }
 

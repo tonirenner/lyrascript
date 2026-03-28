@@ -1,28 +1,32 @@
 import {Dependency, DependencyLoader} from "./linker/dependencies.ts";
-import {ASTImportNode, ASTNode} from "./shared/ast.ts";
+import {ASTClassNode, ASTImportNode, ASTNode} from "./shared/ast.ts";
 import {NativeClasses} from "../library/native_classes.ts";
+import {NativeFunctions} from "../library/native_functions.ts";
 import type {AbstractFileLoader} from "./linker/loaders.ts";
 import type {NativeClass} from "../library/native_class.ts";
 import {throwDependencyError} from "./shared/errors.ts";
-import {ClassDefinition, type Environment, InterfaceDefinition} from "./shared/runtime_model.ts";
 import type {ObjectRegistry} from "./shared/runtime_registry.ts";
 import type {SourceSpan} from "./parser/source.ts";
-import {ASTTypeObjectsFactory} from "./shared/ast_type_objects_factory.ts";
+import type {RuntimeClassType, RuntimeInterfaceType, ValueScope} from "./contracts/runtime_model.ts";
+import {Value} from "./contracts/runtime_model.ts";
 
 const nativeClasses = new NativeClasses();
+const nativeFunctions = new NativeFunctions();
 
 export class Linker {
-	private environment: Environment;
+	private environment: ValueScope;
 	private objectRegistry: ObjectRegistry;
 	private dependencyLoader: DependencyLoader;
 
-	constructor(environment: Environment, objectRegistry: ObjectRegistry, fileLoader: AbstractFileLoader) {
+	constructor(environment: ValueScope, objectRegistry: ObjectRegistry, fileLoader: AbstractFileLoader) {
 		this.environment = environment;
 		this.objectRegistry = objectRegistry;
 		this.dependencyLoader = new DependencyLoader(environment, objectRegistry, fileLoader);
 	}
 
 	public async linkSources(ast: ASTNode): Promise<void> {
+		this.objectRegistry.collectAll(ast);
+
 		return await this.dependencyLoader.collectDefaultDependencies()
 		                 .then((dependencies: Map<string, Dependency>): void => {
 			                 this.loadDependencies(dependencies);
@@ -32,6 +36,10 @@ export class Linker {
 			                                                                         .collectProgramDependencies(ast);
 			                 this.loadDependencies(dependencies);
 			                 this.loadNativeClassesFromAST(ast);
+		                 })
+		                 .then(async (): Promise<void> => {
+			                 this.registerNativeClasses();
+			                 this.registerNativeFunctions();
 		                 });
 	}
 
@@ -48,22 +56,26 @@ export class Linker {
 			                                    .fetchAllObjectDefinitions()
 			                                    .values();
 
-			for (let objectDef of objectDefinitions) {
-				if (objectDef instanceof InterfaceDefinition) {
-					if (objectDef.interfaceNode) {
-						ASTTypeObjectsFactory.addInterfaceSymbol(objectDef.interfaceNode, this.objectRegistry);
+			for (const objectDef of objectDefinitions) {
+				if (this.isRuntimeInterface(objectDef)) {
+					if (!this.objectRegistry.types.hasSymbol(objectDef.className)) {
+						this.objectRegistry.types.addInterfaceSymbol(
+							dependency.objectRegistry.types.getInterfaceSymbol(objectDef.className)
+						);
 					}
 
-					this.objectRegistry.interfaces.set(objectDef.name, objectDef);
+					this.objectRegistry.interfaces.set(objectDef.className, objectDef);
 				} else {
-					if (objectDef.classNode) {
-						ASTTypeObjectsFactory.addClassSymbol(objectDef.classNode, this.objectRegistry);
+					if (!this.objectRegistry.types.hasSymbol(objectDef.className)) {
+						this.objectRegistry.types.addClassSymbol(
+							dependency.objectRegistry.types.getClassSymbol(objectDef.className)
+						);
 					}
 
-					this.objectRegistry.classes.set(objectDef.name, objectDef);
+					this.objectRegistry.classes.set(objectDef.className, objectDef);
 				}
 
-				this.environment.define(objectDef.name, objectDef);
+				this.environment.define(objectDef.className, Value(objectDef, objectDef.className));
 			}
 		}
 	}
@@ -73,12 +85,14 @@ export class Linker {
 		if (!nativeClass) {
 			throwDependencyError(`Unknown native class ${className}`, span);
 		}
-		const classDef: ClassDefinition = nativeClass.getClassDefinition();
+		const classDef: RuntimeClassType = nativeClass.getRuntimeClass();
 		if (this.objectRegistry.classes.has(className)) {
 			return;
 		}
+
 		this.objectRegistry.classes.set(className, classDef);
-		this.environment.define(className, classDef);
+		this.registerNativeClassType(className);
+		this.environment.define(className, Value(classDef, className, classDef));
 	}
 
 	private loadNativeClassesFromAST(ast: ASTNode): void {
@@ -102,5 +116,56 @@ export class Linker {
 		}
 
 		this.loadNativeClass(className);
+	}
+
+	private isRuntimeInterface(
+		objectDef: RuntimeClassType | RuntimeInterfaceType
+	): objectDef is RuntimeInterfaceType {
+		return !("findMethod" in objectDef);
+	}
+
+	private registerNativeClassType(className: string): void {
+		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
+		if (!nativeClass || this.objectRegistry.types.hasSymbol(className)) {
+			return;
+		}
+
+		const ast = nativeClass.getAst();
+		for (const node of ast.children) {
+			if (node instanceof ASTClassNode && node.name === className) {
+				this.objectRegistry.types.declareClassSymbol(node);
+				this.objectRegistry.types.populateClassSymbol(node, this.objectRegistry);
+				return;
+			}
+		}
+	}
+
+	private registerNativeClasses(): void {
+		for (const nativeClass of nativeClasses.registry.values()) {
+			if (!nativeClass.isAutoloadAble) {
+				continue;
+			}
+
+			const runtimeClass = nativeClass.getRuntimeClass();
+
+			this.objectRegistry.classes.set(nativeClass.name, runtimeClass);
+			this.registerNativeClassType(nativeClass.name);
+			this.environment.define(nativeClass.name, Value(runtimeClass, runtimeClass.className, runtimeClass));
+		}
+	}
+
+	private registerNativeFunctions(): void {
+		const globalFunctions = nativeFunctions.getGlobalFunctions();
+		const globalFunctionTypes = nativeFunctions.getGlobalFunctionTypes();
+
+		for (const name in globalFunctions) {
+			this.environment.define(
+				name,
+				Value(
+					globalFunctions[name] as Function,
+					globalFunctionTypes.get(name).returnType.name
+				)
+			);
+		}
 	}
 }
