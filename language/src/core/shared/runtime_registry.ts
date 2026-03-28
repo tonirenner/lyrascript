@@ -303,11 +303,11 @@ export class ObjectRegistry {
 	collectAll(ast: ASTNode): void {
 		for (const node of ast.children) {
 			if (node instanceof ASTInterfaceNode) {
-				this.types.declareInterfaceSymbol(node);
 				this.interfaces.set(node.name, buildRuntimeInterface(node));
+				this.types.declareInterfaceSymbol(node);
 			} else if (node instanceof ASTClassNode) {
-				this.types.declareClassSymbol(node);
 				this.classes.set(node.name, buildRuntimeClass(node));
+				this.types.declareClassSymbol(node);
 			}
 		}
 

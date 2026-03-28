@@ -69,6 +69,10 @@ export function fromLyraValue(value: RuntimeValue | ASTNode): RuntimeValue {
 			.toNativeRuntimeValue();
 	}
 
+	if (!value.type.runtimeClass) {
+		return value;
+	}
+
 	if (value.type.runtimeClass) {
 		const instance = value.asRuntimeInstance();
 
@@ -107,4 +111,3 @@ export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectReg
 
 	return Value(instance, runtimeClass.className, runtimeClass);
 }
-

@@ -84,10 +84,6 @@ export class Interpreter implements ASTInterpreter {
 		return this.currentContext.scope;
 	}
 
-	public get rootContext(): ExecutionContext {
-		return this.contextStack[0] as ExecutionContext;
-	}
-
 	public pushContext(context: ExecutionContext): void {
 		this.contextStack.push(context);
 	}
@@ -394,7 +390,8 @@ export class Interpreter implements ASTInterpreter {
 			throwRuntimeError('Array class not found', expr.span);
 		}
 
-		const instance: RuntimeInstanceType = this.createNativeRuntimeInstance(runtimeClass, elements);
+		const nativeElements: any[] = elements.map((element: RuntimeValue): any => fromLyraValue(element).value);
+		const instance: RuntimeInstanceType = this.createNativeRuntimeInstance(runtimeClass, [Value(nativeElements)]);
 
 		return Value(instance, 'Array', runtimeClass);
 	}
@@ -426,6 +423,10 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		const value: any = native.values[indexValue.value];
+
+		if (value instanceof LyraNativeObject) {
+			return wrapNativeInstance(value, this.objectRegistry);
+		}
 
 		if (value && typeof value === 'object' && value.className) {
 			return Value(value, value.className);
@@ -752,7 +753,7 @@ export class Interpreter implements ASTInterpreter {
 		);
 
 		if (instance.nativeRuntimeObject && method.name in instance.nativeRuntimeObject) {
-			const nativeArgs: any[] = args.map(arg => arg.value);
+			const nativeArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
 			const result: any = instance.nativeRuntimeObject[method.name](...nativeArgs);
 
 			if (result instanceof LyraNativeObject) {
@@ -808,7 +809,7 @@ export class Interpreter implements ASTInterpreter {
 
 		if (runtimeClass.nativeRuntimeConstructor && runtimeClass.nativeRuntimeConstructor[method.name]) {
 			const args: RuntimeValue[] = this.getMethodArguments(callNode, method.parameters);
-			const rawArgs: any[] = args.map(arg => arg.value);
+			const rawArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
 			const result: any = runtimeClass.nativeRuntimeConstructor[method.name](...rawArgs);
 
 			if (result instanceof LyraNativeObject) {
@@ -862,21 +863,26 @@ export class Interpreter implements ASTInterpreter {
 
 		if (targetInstance.nativeRuntimeObject && method.name in targetInstance.nativeRuntimeObject) {
 			const args = this.getMethodArguments(callNode, method.parameters);
-			const rawArgs = args.map(arg => arg.value);
+			const rawArgs = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
 			const result = targetInstance.nativeRuntimeObject[method.name](...rawArgs);
 
 			if (result instanceof LyraNativeObject) {
 				return wrapNativeInstance(result, this.objectRegistry);
 			}
 
-			return this.evalReturn([ReturnValue(result)], new RuntimeScope(this.runtimeScope), method.returnType?.name);
+			return this.evalReturn(
+				[ReturnValue(result)],
+				new RuntimeScope(this.runtimeScope),
+				method.returnType?.name,
+				targetInstance
+			);
 		}
 
 		const methodScope = new RuntimeScope(this.runtimeScope);
 		methodScope.define(GRAMMAR.THIS, targetValue);
 		this.bindMethodArguments(callNode, method.parameters, methodScope);
 
-		return this.evalReturn(method.body, methodScope, method.returnType?.name);
+		return this.evalReturn(method.body, methodScope, method.returnType?.name, targetInstance);
 	}
 
 	private evalFunctionCall(callNode: ASTCallNode): RuntimeValue {
@@ -926,8 +932,7 @@ export class Interpreter implements ASTInterpreter {
 				throwRuntimeError(`Missing argument '${parameter?.name}'`, expr.span);
 			}
 
-			const typeName: string = parameter?.typeAnnotation?.name || TYPE_ENUM.MIXED;
-			args.push(value.toNativeRuntimeValue(typeName));
+			args.push(value);
 		}
 
 		return args;
@@ -1101,8 +1106,8 @@ export class Interpreter implements ASTInterpreter {
 		);
 
 		try {
-			instance.nativeRuntimeObject = runtimeClass.nativeRuntimeConstructor(
-				...constructorArgs.map(arg => arg.value)
+			instance.nativeRuntimeObject = new runtimeClass.nativeRuntimeConstructor(
+				...constructorArgs.map((arg: RuntimeValue): any => fromLyraValue(arg).value)
 			);
 		} finally {
 			this.popContext();
@@ -1120,7 +1125,9 @@ export class Interpreter implements ASTInterpreter {
 			throwRuntimeError('Class has no native constructor.');
 		}
 
-		instance.nativeRuntimeObject = runtimeClass.nativeRuntimeConstructor(...args.map(arg => arg.value));
+		instance.nativeRuntimeObject = new runtimeClass.nativeRuntimeConstructor(
+			...args.map((arg: RuntimeValue): any => fromLyraValue(arg).value)
+		);
 
 		this.objectRegistry.instances.set(instance);
 

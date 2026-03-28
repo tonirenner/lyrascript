@@ -35,8 +35,6 @@ export interface ASTInterpreter {
 
 	get currentScope(): ValueScope;
 
-	get rootContext(): ExecutionContext;
-
 	pushContext(context: ExecutionContext): void;
 
 	popContext(): ExecutionContext;

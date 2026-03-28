@@ -25,6 +25,9 @@ export class Linker {
 	}
 
 	public async linkSources(ast: ASTNode): Promise<void> {
+		this.registerNativeClasses();
+		this.registerNativeFunctions();
+		this.declareNativeClassTypes();
 		this.objectRegistry.collectAll(ast);
 
 		return await this.dependencyLoader.collectDefaultDependencies()
@@ -36,10 +39,7 @@ export class Linker {
 			                                                                         .collectProgramDependencies(ast);
 			                 this.loadDependencies(dependencies);
 			                 this.loadNativeClassesFromAST(ast);
-		                 })
-		                 .then(async (): Promise<void> => {
-			                 this.registerNativeClasses();
-			                 this.registerNativeFunctions();
+			                 this.populateNativeClassTypes();
 		                 });
 	}
 
@@ -91,7 +91,8 @@ export class Linker {
 		}
 
 		this.objectRegistry.classes.set(className, classDef);
-		this.registerNativeClassType(className);
+		this.declareNativeClassType(className);
+		this.populateNativeClassType(className);
 		this.environment.define(className, Value(classDef, className, classDef));
 	}
 
@@ -124,7 +125,7 @@ export class Linker {
 		return !("findMethod" in objectDef);
 	}
 
-	private registerNativeClassType(className: string): void {
+	private declareNativeClassType(className: string): void {
 		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
 		if (!nativeClass || this.objectRegistry.types.hasSymbol(className)) {
 			return;
@@ -134,6 +135,20 @@ export class Linker {
 		for (const node of ast.children) {
 			if (node instanceof ASTClassNode && node.name === className) {
 				this.objectRegistry.types.declareClassSymbol(node);
+				return;
+			}
+		}
+	}
+
+	private populateNativeClassType(className: string): void {
+		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
+		if (!nativeClass) {
+			return;
+		}
+
+		const ast = nativeClass.getAst();
+		for (const node of ast.children) {
+			if (node instanceof ASTClassNode && node.name === className) {
 				this.objectRegistry.types.populateClassSymbol(node, this.objectRegistry);
 				return;
 			}
@@ -149,8 +164,27 @@ export class Linker {
 			const runtimeClass = nativeClass.getRuntimeClass();
 
 			this.objectRegistry.classes.set(nativeClass.name, runtimeClass);
-			this.registerNativeClassType(nativeClass.name);
 			this.environment.define(nativeClass.name, Value(runtimeClass, runtimeClass.className, runtimeClass));
+		}
+	}
+
+	private declareNativeClassTypes(): void {
+		for (const nativeClass of nativeClasses.registry.values()) {
+			if (!nativeClass.isAutoloadAble) {
+				continue;
+			}
+
+			this.declareNativeClassType(nativeClass.name);
+		}
+	}
+
+	private populateNativeClassTypes(): void {
+		for (const nativeClass of nativeClasses.registry.values()) {
+			if (!nativeClass.isAutoloadAble) {
+				continue;
+			}
+
+			this.populateNativeClassType(nativeClass.name);
 		}
 	}
 

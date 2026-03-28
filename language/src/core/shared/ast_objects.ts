@@ -298,6 +298,10 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 		});
 
 		try {
+			if (this.node.children.length === 1 && this.node.children[0]?.isExpression) {
+				return this.interpreter.evalExpression(this.node.children[0]);
+			}
+
 			return this.interpreter.evalBlock(this.node.children);
 		} catch (returnValue) {
 			if (returnValue instanceof Return) {
@@ -323,10 +327,10 @@ export class RuntimeNativeFunction {
 		let result: any = this.resolveFunction()(...args.map((arg: RuntimeValue): any => arg.value));
 
 		if (result instanceof LyraNativeObject) {
-			result = wrapNativeInstance(result, this.interpreter.objectRegistry);
-		} else {
-			result = ReturnValue(result);
+			return wrapNativeInstance(result, this.interpreter.objectRegistry);
 		}
+
+		result = ReturnValue(result);
 
 		return this.interpreter.evalReturn(
 			[result],
