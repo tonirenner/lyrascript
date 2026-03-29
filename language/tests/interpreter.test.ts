@@ -51,6 +51,18 @@ interface Iterable<T> {
 			return new Response(contractsSource, {status: 200});
 		}
 
+		if (url === "https://lyra.test/success") {
+			return new Response("hello from net", {status: 200});
+		}
+
+		if (url === "https://lyra.test/not-found") {
+			return new Response("missing", {status: 404});
+		}
+
+		if (url === "https://lyra.test/network-error") {
+			throw new TypeError("Failed to fetch");
+		}
+
 		return await originalFetch(input);
 	}) as typeof fetch;
 
@@ -308,5 +320,41 @@ let result = Net.get("data:text/plain,lyra").toUpperCase().toString();
 
 		expect(scope.get("result").value)
 			.toBe("LYRA");
+	});
+
+	it("models successful host IO through Net.tryGet", async () => {
+		const scope = await executeProgramSource(`
+import Net;
+
+let response = Net.tryGet("https://lyra.test/success");
+let ok = response.isOk();
+let status = response.getStatus();
+let text = response.getText();
+`);
+
+		expect(scope.get("ok").value)
+			.toBe(true);
+		expect(scope.get("status").value)
+			.toBe(200);
+		expect(scope.get("text").value)
+			.toBe("hello from net");
+	});
+
+	it("models failed host IO through Net.tryGet without throwing", async () => {
+		const scope = await executeProgramSource(`
+import Net;
+
+let response = Net.tryGet("https://lyra.test/network-error");
+let ok = response.isOk();
+let hasError = response.hasError();
+let error = response.getError();
+`);
+
+		expect(scope.get("ok").value)
+			.toBe(false);
+		expect(scope.get("hasError").value)
+			.toBe(true);
+		expect(scope.get("error").value)
+			.toBe("Failed to fetch");
 	});
 });

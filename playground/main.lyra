@@ -211,3 +211,12 @@ count.set(3);
 
 let text: string = Net.get("data:text/plain,lyra");
 System.log(text);
+
+let response = Net.tryGet("data:text/plain,lyra");
+let ok = response.isOk();
+let status = response.getStatus();
+let text = response.getText();
+
+System.log(ok);
+System.log(status);
+System.log(text);

@@ -83,6 +83,7 @@
 
 - [ ] browser interfaces wrapped and exposed as native classes instead of using raw browser APIs directly
 - [ ] design and implement a real async/promise model that does not break interpreter and VM runtime semantics
+- [ ] define Lyra error handling boundaries between runtime/native exceptions, modeled host/IO failures, and internal control flow
 - [ ] scratchpad syntax highlighting
 - [ ] scratchpad token-to-tree highlighting
 - [ ] scratchpad step debugger
@@ -101,6 +102,7 @@
 
 - [ ] `while`
 - [ ] `do-while`
+- [ ] `try / catch / finally` support in Lyra
 - [ ] stronger interface conformance checks in the type checker
 - [ ] interpreter-level visibility enforcement
 - [ ] broader negative tests for invalid programs
@@ -124,3 +126,5 @@
 - Vertically aligned assignment blocks are not part of the enforced project style.
 - The current focus is correctness, structure, language maturity, and runtime model clarity before IDE/plugin work.
 - Async support should be treated as a runtime model decision, not just as another native API wrapper.
+- Runtime and native failures can stay exception-based, but expected host/IO failures should eventually be modeled more explicitly.
+- Internal interpreter and VM control flow such as `return` and suspension/resume should stay separate from user-facing error semantics.

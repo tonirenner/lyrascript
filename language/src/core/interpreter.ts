@@ -822,12 +822,7 @@ export class Interpreter implements ASTInterpreter {
 				throw new InterpreterSuspensionSignal(
 					SuspendedExecution(
 						result.then((resolved: any): RuntimeValue => {
-							return method.returnType
-							       ?
-							       Value(resolved)
-								       .toNativeRuntimeValue(method.returnType.name)
-							       :
-							       Value(resolved);
+							return this.toNativeCallResultValue(resolved, method.returnType?.name);
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
@@ -906,12 +901,7 @@ export class Interpreter implements ASTInterpreter {
 				throw new InterpreterSuspensionSignal(
 					SuspendedExecution(
 						result.then((resolved: any): RuntimeValue => {
-							return method.returnType
-							       ?
-							       Value(resolved)
-								       .toNativeRuntimeValue(method.returnType.name)
-							       :
-							       Value(resolved);
+							return this.toNativeCallResultValue(resolved, method.returnType?.name);
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
@@ -1463,6 +1453,26 @@ export class Interpreter implements ASTInterpreter {
 			}
 		);
 	}
+
+	private toNativeCallResultValue(result: any, expectedType?: string): RuntimeValue {
+		if (result instanceof LyraNativeObject) {
+			if (!this.objectRegistry.classes.has(result.className)) {
+				const nativeClass = this.nativeClasses.registry.get(result.className);
+
+				if (!nativeClass) {
+					throwRuntimeError(`Native class ${result.className} not found.`);
+				}
+
+				this.objectRegistry.classes.set(result.className, nativeClass.getRuntimeClass());
+			}
+
+			return wrapNativeInstance(result, this.objectRegistry);
+		}
+
+		return expectedType
+		       ? Value(result).toNativeRuntimeValue(expectedType)
+		       : Value(result);
+	}
 }
 
 class InterpreterSuspensionSignal extends Error {
@@ -1470,7 +1480,5 @@ class InterpreterSuspensionSignal extends Error {
 		super("InterpreterSuspension");
 	}
 }
-
-
 
 
