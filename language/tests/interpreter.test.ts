@@ -51,7 +51,7 @@ interface Iterable<T> {
 			return new Response(contractsSource, {status: 200});
 		}
 
-		throw new Error(`Unexpected test fetch: ${url}`);
+		return await originalFetch(input);
 	}) as typeof fetch;
 
 	try {
@@ -272,9 +272,19 @@ let result = user.getName();
 		const scope = await executeProgramSource(`
 import Net;
 
-let result = Net.fetch().toUpperCase().toString();
+let result = Net.get("data:text/plain,hello from net").toUpperCase().toString();
 `);
 
 		expect(scope.get("result").value).toBe("HELLO FROM NET");
+	});
+
+	it("supports Net.get for text responses", async () => {
+		const scope = await executeProgramSource(`
+import Net;
+
+let result = Net.get("data:text/plain,lyra").toUpperCase().toString();
+`);
+
+		expect(scope.get("result").value).toBe("LYRA");
 	});
 });
