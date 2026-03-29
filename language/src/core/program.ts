@@ -1,23 +1,29 @@
 import {Source} from "./syntax/source.ts";
 import {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
 import {TypeChecker} from "./typechecker.ts";
-import {Linker} from "./linker.ts";
 import {TestSuites} from "./testsuites.ts";
 import {Interpreter} from "./interpreter.ts";
-import {FetchFileLoader} from "./linker/loaders.ts";
+import {FetchFileLoader} from "./file_loader.ts";
 import {ASTNode} from "./syntax/ast.ts";
 import {Parser} from "./parser.ts";
 import {EventPipeline} from "./infrastructure/event_pipeline.ts";
 import {RuntimeScope} from "./shared/ast_objects.ts";
 import type {ValueScope} from "./model/runtime_model.ts";
 import {ReflectionClass} from "./reflection.ts";
+import {DependencyResolver} from "./dependency_resolver.ts";
+import {RuntimeBootstrap} from "./runtime_bootstrap.ts";
 
 export class LyraScriptProgram {
 	private readonly environment: ValueScope = new RuntimeScope();
 	private readonly objectRegistry: ObjectRegistry = new ObjectRegistry();
 	private readonly eventPipeline: EventPipeline;
 	private readonly typeChecker: TypeChecker = new TypeChecker(this.objectRegistry);
-	private readonly linker: Linker = new Linker(this.environment, this.objectRegistry, new FetchFileLoader());
+	private readonly runtimeBootstrap: RuntimeBootstrap = new RuntimeBootstrap(this.environment, this.objectRegistry);
+	private readonly dependencyResolver: DependencyResolver = new DependencyResolver(
+		this.environment,
+		this.objectRegistry,
+		new FetchFileLoader()
+	);
 	private readonly reflection: ReflectionClass;
 
 	private interpreter: Interpreter;
@@ -106,7 +112,11 @@ export class LyraScriptProgram {
 		this.debugMeasureEndTime('parser');
 		this.debug(ast);
 
-		await this.linker.linkSources(ast);
+		this.runtimeBootstrap.initialize();
+		this.objectRegistry.collectAll(ast);
+		await this.dependencyResolver.resolve(ast);
+		this.runtimeBootstrap.loadNativeImports(ast);
+		this.runtimeBootstrap.finalize();
 
 		this.debugMeasureStartTime();
 		this.typeChecker.check(ast);

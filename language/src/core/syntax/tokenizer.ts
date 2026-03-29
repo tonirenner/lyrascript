@@ -1,0 +1,428 @@
+import {GRAMMAR, Rules, Token, TokenType} from "./ast_grammar.ts";
+import {throwTokenError} from "../infrastructure/errors.ts";
+import type {Source} from "./source.ts";
+
+export class Tokenizer {
+	private readonly rules: Rules = new Rules();
+	private readonly source: Source;
+
+	constructor(source: Source) {
+		this.source = source;
+	}
+
+	getTokenStream(): TokenStream {
+		return new TokenStream(this.tokenize());
+	}
+
+	tokenize(): Token[] {
+		const tokens: Token[] = [];
+
+		let i: number = 0;
+		let line: number = 1;
+		let column: number = 0;
+
+		const ifIsConsumingLineComment: () => boolean = (): boolean => {
+			const lineComment: Token | null = this.matchLineCommentAt(i);
+			if (lineComment) {
+				tokens.push(lineComment.withLineAndColumn(line, column));
+				i = lineComment.end + 1;
+
+				line++;
+				column = 0;
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingString: () => boolean = (): boolean => {
+			const string: Token | null = this.matchStringAt(i);
+			if (string) {
+				tokens.push(string.withLineAndColumn(line, column));
+				i = string.end + 1;
+
+				column += this.columOffset(string);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingPunctuation: () => boolean = (): boolean => {
+			const punctuation: Token | null = this.matchPunctuationAt(i);
+			if (punctuation) {
+				tokens.push(punctuation.withLineAndColumn(line, column));
+				i = punctuation.end + 1;
+
+				column += this.columOffset(punctuation);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingIdentifier: () => boolean = (): boolean => {
+			const identifier: Token | null = this.matchIdentifierAt(i);
+			if (identifier) {
+				tokens.push(identifier.withLineAndColumn(line, column));
+				i = identifier.end;
+
+				column += this.columOffset(identifier);
+
+				if (identifier.value === GRAMMAR.VDOM) {
+					const tokenizedVDom = this.tokenizeVDom(i, line, column);
+					tokens.push(...tokenizedVDom.tokens);
+					i = tokenizedVDom.newIndex;
+					line = tokenizedVDom.line;
+					column = tokenizedVDom.column;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingNumber: () => boolean = (): boolean => {
+			const number: Token | null = this.matchNumberAt(i);
+			if (number) {
+				tokens.push(number.withLineAndColumn(line, column));
+				i = number.end;
+
+				column += this.columOffset(number);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingOperator: () => boolean = (): boolean => {
+			const operator: Token | null = this.matchOperatorAt(i);
+			if (operator) {
+				tokens.push(operator.withLineAndColumn(line, column));
+				i = operator.end + 1;
+
+				column += this.columOffset(operator);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingAnnotation: () => boolean = (): boolean => {
+			const annotation: Token | null = this.matchAnnotationAt(i);
+			if (annotation) {
+				tokens.push(annotation.withLineAndColumn(line, column));
+				i = annotation.end + 1;
+
+				column += this.columOffset(annotation);
+				return true;
+			}
+
+			return false;
+		}
+
+		while (i < this.source.length) {
+			if (this.source.charAt(i) === '\n') {
+				line++;
+				column = 0;
+			} else {
+				column++;
+			}
+
+			if (this.matchWhitespaceAt(i)) {
+				i++;
+				continue;
+			}
+
+			if (ifIsConsumingLineComment()
+			    || ifIsConsumingPunctuation()
+			    || ifIsConsumingString()
+			    || ifIsConsumingNumber()
+			    || ifIsConsumingIdentifier()
+			    || ifIsConsumingOperator()
+			    || ifIsConsumingAnnotation()) {
+				continue;
+			}
+
+			throwTokenError('Unexpected character: ' + this.source.charAt(i));
+		}
+
+		tokens.push(
+			this.eof(i)
+			    .withLineAndColumn(line, column)
+		);
+
+		return tokens;
+	}
+
+	eof(end: number): Token {
+		return new Token(TokenType.EOF, '', end, end, this.source)
+	}
+
+	columOffset(token: Token): number {
+		return token.value.length - 1;
+	}
+
+	matchWhitespaceAt(i: number): boolean {
+		return this.rules.isWhitespace(this.source.charAt(i));
+	}
+
+	matchNumberAt(i: number): Token | null {
+		if (!this.rules.isNumeric(this.source.charAt(i))) {
+			return null
+		}
+		let start = i;
+		while (this.rules.isNumeric(this.source.charAt(i))) i++;
+		return new Token(TokenType.NUMBER, this.source.slice(start, i), start, i, this.source);
+	}
+
+	matchStringAt(i: number): Token | null {
+		if (this.source.charAt(i) !== '"') {
+			return null;
+		}
+		let start = ++i;
+		while (this.source.charAt(i) !== '"') i++;
+		return new Token(TokenType.STRING, this.source.slice(start, i), start, i, this.source);
+	}
+
+	matchIdentifierAt(i: number): Token | null {
+		if (!this.rules.isAlpha(this.source.charAt(i))) {
+			return null;
+		}
+		let start = i;
+		let j = i;
+		while (this.rules.isAlphaNumeric(this.source.charAt(j))) j++;
+		const value = this.source.slice(start, j);
+
+		let type = TokenType.IDENTIFIER;
+		if ([GRAMMAR.TRUE, GRAMMAR.FALSE].includes(value)) {
+			type = TokenType.BOOLEAN;
+		} else if (Rules.KEYWORDS.has(value)) {
+			type = TokenType.KEYWORD;
+		}
+
+		return new Token(type, value, start, j, this.source);
+	}
+
+	matchOperatorAt(i: number, operators: Set<string> = Rules.OPERATORS): Token | null {
+		const chars = this.source.charAt(i) + this.source.charAt(i + 1);
+		if (operators.has(chars)) {
+			return new Token(TokenType.OPERATOR, chars, i, i + 1, this.source);
+		}
+
+		if (operators.has(this.source.charAt(i))) {
+			return new Token(TokenType.OPERATOR, this.source.charAt(i), i, i, this.source);
+		}
+
+		return null;
+	}
+
+	matchPunctuationAt(i: number, punctuations = Rules.PUNCTUATIONS): Token | null {
+		const chars = this.source.charAt(i) + this.source.charAt(i + 1);
+		if (punctuations.has(chars)) {
+			return new Token(TokenType.PUNCTUATION, chars, i, i + 1, this.source);
+		}
+
+		if (!punctuations.has(this.source.charAt(i))) {
+			return null;
+		}
+		return new Token(TokenType.PUNCTUATION, this.source.charAt(i), i, i, this.source);
+	}
+
+	matchLineCommentAt(i: number): Token | null {
+		if (!this.source.startsWith(Rules.COMMENT_LINE, i)) {
+			return null;
+		}
+		let j = i + Rules.COMMENT_LINE.length;
+		while (j < this.source.length && this.source.charAt(j) !== '\n') j++;
+		return new Token(TokenType.COMMENT, this.source.slice(i, j), i, j, this.source);
+	}
+
+	matchAnnotationAt(i: number): Token | null {
+		if (this.source.charAt(i) !== '@') {
+			return null;
+		}
+
+		let start = i + 1;
+		let j = i + 1;
+		while (this.rules.isAlpha(this.source.charAt(j))) j++;
+		const value = this.source.slice(start, j);
+
+		return new Token(TokenType.ANNOTATION, value, start, j, this.source);
+	}
+
+	private tokenizeVDom(startIndex: number, line: number, column: number): {
+		tokens: Token[],
+		newIndex: number,
+		line: number,
+		column: number
+	} {
+		const tokens: Token[] = [];
+		let i: number = startIndex;
+		let textBuffer: string = '';
+
+		const ifIsConsumingString: () => boolean = (): boolean => {
+			const string: Token | null = this.matchStringAt(i);
+			if (string) {
+				flushTextBuffer();
+				tokens.push(string.withLineAndColumn(line, column));
+				i = string.end + 1;
+
+				column += this.columOffset(string);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingPunctuation: () => boolean = (): boolean => {
+			const punctuation: Token | null = this.matchPunctuationAt(i, Rules.DOM_PUNCTUATIONS);
+			if (punctuation) {
+				flushTextBuffer();
+				tokens.push(punctuation.withLineAndColumn(line, column));
+				i = punctuation.end + 1;
+
+				column += this.columOffset(punctuation);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingIdentifier: () => boolean = (): boolean => {
+			const identifier: Token | null = this.matchIdentifierAt(i);
+			if (identifier) {
+				if ([GRAMMAR.CLASS].includes(identifier.value)) {
+					identifier.type = TokenType.IDENTIFIER;
+				}
+
+				flushTextBuffer();
+
+				tokens.push(identifier.withLineAndColumn(line, column));
+				i = identifier.end;
+
+				column += this.columOffset(identifier);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingNumber: () => boolean = (): boolean => {
+			const number: Token | null = this.matchNumberAt(i);
+			if (number) {
+				flushTextBuffer();
+
+				tokens.push(number.withLineAndColumn(line, column));
+				i = number.end;
+
+				column += this.columOffset(number);
+				return true;
+			}
+			return false;
+		}
+
+		const ifIsConsumingOperator: () => boolean = (): boolean => {
+			const operator: Token | null = this.matchOperatorAt(i, Rules.DOM_OPERATORS);
+			if (operator) {
+				flushTextBuffer();
+
+				tokens.push(operator.withLineAndColumn(line, column));
+				i = operator.end + 1;
+
+				column += this.columOffset(operator);
+				return true;
+			}
+			return false;
+		}
+
+		const flushTextBuffer: () => void = (): void => {
+			if (textBuffer.length > 0) {
+				tokens.push(
+					new Token(
+						TokenType.TEXT,
+						textBuffer,
+						i - textBuffer.length,
+						i,
+						this.source
+					).withLineAndColumn(line, column - textBuffer.length)
+				);
+				textBuffer = '';
+			}
+		};
+
+
+		let ignoreWhitespace: boolean = false;
+		while (i < this.source.length) {
+			const char: string = this.source.charAt(i);
+
+			if (char === GRAMMAR.SEMICOLON) {
+				flushTextBuffer();
+
+				tokens.push(new Token(TokenType.PUNCTUATION, char, i, i, this.source)
+					            .withLineAndColumn(line, column));
+
+				i++;
+				column++;
+				break;
+			} else if (char === GRAMMAR.BRACE_OPEN) {
+				ignoreWhitespace = true;
+			} else if (char === GRAMMAR.BRACE_CLOSE) {
+				ignoreWhitespace = false;
+			}
+
+			if (ignoreWhitespace) {
+				if (this.matchWhitespaceAt(i)) {
+					i++;
+					continue;
+				}
+			}
+
+			if (ifIsConsumingPunctuation()
+			    || ifIsConsumingString()
+			    || ifIsConsumingNumber()
+			    || ifIsConsumingIdentifier()
+			    || ifIsConsumingOperator()
+			) {
+				continue;
+			}
+
+			textBuffer += char;
+
+			if (char === '\n') {
+				line++;
+				column = 0;
+			} else {
+				column++;
+			}
+
+			i++;
+		}
+
+		flushTextBuffer();
+
+		return {tokens: tokens, newIndex: i, line: line, column: column};
+	}
+}
+
+export class TokenStream {
+	tokens: Token[];
+	index: number = 0;
+
+	constructor(tokens: Token[]) {
+		this.tokens = tokens;
+	}
+
+	rewind(): void {
+		if (this.index > 0) {
+			this.index--;
+		}
+	}
+
+	peek(): Token | null {
+		return this.tokens[this.index] || null;
+	}
+
+	next(): Token | null {
+		return this.tokens[this.index++] || null;
+	}
+
+	hasNext(): boolean {
+		return this.index < this.tokens.length;
+	}
+}
+
+
+
+

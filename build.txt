@@ -1,0 +1,25 @@
+$ bun build --watch language/src/index.ts --outfile ./dist/language.js --sourcemap=inline
+1 | import {ASTImportNode, ASTNode, ASTNodeType} from "../syntax/ast.ts";
+                                                      ^
+error: Could not resolve: "../syntax/ast.ts"
+    at /mnt/d/_repositories/lyrascript/language/src/core/dependency_loader.ts:1:51
+
+2 | import {Source} from "../syntax/source.ts";
+                         ^
+error: Could not resolve: "../syntax/source.ts"
+    at /mnt/d/_repositories/lyrascript/language/src/core/dependency_loader.ts:2:22
+
+3 | import {Parser} from "../parser.ts";
+                         ^
+error: Could not resolve: "../parser.ts"
+    at /mnt/d/_repositories/lyrascript/language/src/core/dependency_loader.ts:3:22
+
+5 | import {throwRuntimeError} from "../infrastructure/errors.ts";
+                                    ^
+error: Could not resolve: "../infrastructure/errors.ts"
+    at /mnt/d/_repositories/lyrascript/language/src/core/dependency_loader.ts:5:33
+
+7 | import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
+                                 ^
+error: Could not resolve: "../infrastructure/runtime_registry.ts"
+    at /mnt/d/_repositories/lyrascript/language/src/core/dependency_loader.ts:7:30
