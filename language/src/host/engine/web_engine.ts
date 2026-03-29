@@ -1,4 +1,5 @@
 import {LyraScriptProgram} from "../../core/program.ts";
+import {FetchFileLoader} from "../../core/loading/file_loader.ts";
 import {fetchSource} from "../../core/syntax/source.ts";
 import {EventType} from "../../library/classes/event.ts";
 import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
@@ -43,7 +44,7 @@ export class WebLyraScript implements Engine {
 
 
 	constructor(private globalEventPipeline: EventPipeline = new EventPipeline(), isDebug: boolean = false) {
-		this.program = new LyraScriptProgram(isDebug, this.globalEventPipeline);
+		this.program = new LyraScriptProgram(isDebug, this.globalEventPipeline, new FetchFileLoader());
 		this.reflection = this.program.getReflection();
 		this._globalObjectRegistry = this.program.getGlobalObjectRegistry();
 		this._globalEnvironment = this.program.getGlobalEnvironment();

@@ -36,7 +36,7 @@ export class DependencyLoader {
 	}
 
 	async collectDependencies(dependency: Dependency, dependencies: Map<string, Dependency>): Promise<void> {
-		return await this.collectProgramDependencies(dependency.ast)
+		return await this.collectProgramDependencies(dependency.ast, dependency.url)
 		                 .then(classDependencies => {
 			                 classDependencies.forEach(classDependency => {
 				                 if (dependencies.has(classDependency.url)) {
@@ -47,12 +47,12 @@ export class DependencyLoader {
 		                 });
 	}
 
-	async collectProgramDependencies(ast: ASTNode | null): Promise<Map<string, Dependency>> {
+	async collectProgramDependencies(ast: ASTNode | null, baseUrl: string = '.'): Promise<Map<string, Dependency>> {
 		if (ast === null) {
 			return new Map();
 		}
 
-		const dependencies: Map<string, Dependency> = this.collectClassDependencies(ast);
+		const dependencies: Map<string, Dependency> = this.collectClassDependencies(ast, baseUrl);
 		for (const dependency of dependencies.values()) {
 			if (dependency.url === '.') {
 				continue;
@@ -88,7 +88,7 @@ export class DependencyLoader {
 		return defaultDependencies;
 	}
 
-	collectClassDependencies(ast: ASTNode): Map<string, Dependency> {
+	collectClassDependencies(ast: ASTNode, baseUrl: string = '.'): Map<string, Dependency> {
 		const classDependencies = new Map();
 
 		for (const node of ast.children) {
@@ -98,10 +98,11 @@ export class DependencyLoader {
 						classDependencies.set(node.names[0], new Dependency(node.names));
 						continue;
 					}
-					if (classDependencies.has(node.from)) {
+					const resolvedUrl = this.resolveDependencyUrl(node.from, baseUrl);
+					if (classDependencies.has(resolvedUrl)) {
 						continue;
 					}
-					classDependencies.set(node.from, new Dependency(node.names, node.from));
+					classDependencies.set(resolvedUrl, new Dependency(node.names, resolvedUrl));
 				} else {
 					throwRuntimeError(`Invalid import node ${node.type}.`, node?.span);
 				}
@@ -119,6 +120,26 @@ export class DependencyLoader {
 
 	parserSource(source: Source): ASTNode {
 		return new Parser(source).parse();
+	}
+
+	private resolveDependencyUrl(url: string, baseUrl: string): string {
+		if (url.startsWith('/') || url.startsWith('file://')) {
+			return url;
+		}
+
+		if (/^[a-zA-Z]+:\/\//.test(url)) {
+			return url;
+		}
+
+		if (baseUrl === '.' || baseUrl === '<inline>') {
+			return url;
+		}
+
+		if (/^[a-zA-Z]+:\/\//.test(baseUrl)) {
+			return new URL(url, baseUrl).toString();
+		}
+
+		return url;
 	}
 }
 

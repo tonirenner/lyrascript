@@ -16,9 +16,13 @@ export class DependencyResolver {
 		this.dependencyLoader = new DependencyLoader(environment, objectRegistry, fileLoader);
 	}
 
-	public async resolve(ast: ASTNode): Promise<void> {
+	public async resolveDefaults(): Promise<void> {
 		this.loadDependencies(await this.dependencyLoader.collectDefaultDependencies());
-		this.loadDependencies(await this.dependencyLoader.collectProgramDependencies(ast));
+	}
+
+	public async resolve(ast: ASTNode, baseUrl: string = '.'): Promise<void> {
+		await this.resolveDefaults();
+		this.loadDependencies(await this.dependencyLoader.collectProgramDependencies(ast, baseUrl));
 	}
 
 	private loadDependencies(dependencies: Map<string, Dependency>): void {

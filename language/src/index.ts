@@ -7,6 +7,8 @@ import {Token} from "./core/syntax/ast_grammar.ts";
 import {LyraScriptProgram} from "./core/program.ts";
 import {EventPipeline} from "./core/infrastructure/event_pipeline.ts";
 import {State} from "./core/infrastructure/runtime_state.ts";
+import {AbstractFileLoader, FetchFileLoader, FileSystemLoader} from "./core/loading/file_loader.ts";
+import type {BytecodeModule} from "./core/bytecode/bytecode_module.ts";
 import {HTMLElementCreator} from "./host/dom/dom_patcher.ts";
 
 export {WebLyraScript} from "./host/engine/web_engine.ts";
@@ -18,12 +20,16 @@ const Lyra = {
 	Tokenizer,
 	EventPipeline,
 	HTMLElementCreator,
+	FetchFileLoader,
+	FileSystemLoader,
 	State,
 	Program: createProgram,
 	execute,
+	executeBytecode,
 	executeFromString,
 	executeFromUrl,
 	executeTest,
+	compileBytecode,
 	executeTestString,
 	executeTestUrl,
 	tokenize: (source: Source): Token[] => tokenize(source),
@@ -32,8 +38,11 @@ const Lyra = {
 	parseTreeUrl: (url: string): Promise<ASTNode> => parseTreeUrl(url),
 };
 
-function createProgram(isDebug: boolean = false): LyraScriptProgram {
-	return new LyraScriptProgram(isDebug);
+function createProgram(
+	isDebug: boolean = false,
+	fileLoader: AbstractFileLoader = new FetchFileLoader()
+): LyraScriptProgram {
+	return new LyraScriptProgram(isDebug, new EventPipeline(), fileLoader);
 }
 
 async function execute(source: Source, isDebug: boolean = false): Promise<void> {
@@ -41,6 +50,30 @@ async function execute(source: Source, isDebug: boolean = false): Promise<void> 
 		source,
 		() => createProgram(isDebug)
 			.executeSource(source)
+	);
+}
+
+async function compileBytecode(
+	source: Source,
+	isDebug: boolean = false,
+	fileLoader: AbstractFileLoader = new FetchFileLoader()
+): Promise<BytecodeModule> {
+	return runWithSourceContext(
+		source,
+		() => createProgram(isDebug, fileLoader)
+			.compileBytecode(source)
+	);
+}
+
+async function executeBytecode(
+	source: Source,
+	isDebug: boolean = false,
+	fileLoader: AbstractFileLoader = new FetchFileLoader()
+): Promise<any> {
+	return runWithSourceContext(
+		source,
+		() => createProgram(isDebug, fileLoader)
+			.executeBytecode(source)
 	);
 }
 

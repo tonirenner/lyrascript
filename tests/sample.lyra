@@ -1,0 +1,9 @@
+let base: number = 2;
+let factor: number = 3;
+let result: number = base + factor * 4;
+
+if (result > 10) {
+	result = result - 1;
+} else {
+	result = result + 1;
+}

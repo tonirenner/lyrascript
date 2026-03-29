@@ -1,0 +1,26 @@
+$ bun run language/bin/compile.ts tests/sample.lyra
+136 | export function throwTokenError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+137 | 	throw new LyraTokenError(message, span, cause);
+138 | }
+139 | 
+140 | export function throwTypeError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+141 | 	throw new LyraTypeError(message, span, cause);
+             ^
+error: Symbol Iterable is not a class reference.
+  kind: "TypeError",
+  span: null,
+ cause: null,
+
+      at throwTypeError (/mnt/d/_repositories/lyrascript/language/src/core/infrastructure/errors.ts:141:8)
+      at resolveBaseType (/mnt/d/_repositories/lyrascript/language/src/core/shared/type_objects.ts:547:5)
+      at wrapType (/mnt/d/_repositories/lyrascript/language/src/core/shared/type_objects.ts:512:17)
+      at populateClassSymbol (/mnt/d/_repositories/lyrascript/language/src/core/infrastructure/runtime_registry.ts:131:32)
+      at populateNativeClassType (/mnt/d/_repositories/lyrascript/language/src/core/runtime_bootstrap.ts:87:31)
+      at populateNativeClassTypes (/mnt/d/_repositories/lyrascript/language/src/core/runtime_bootstrap.ts:122:9)
+      at finalize (/mnt/d/_repositories/lyrascript/language/src/core/runtime_bootstrap.ts:43:8)
+      at initializeRuntime (/mnt/d/_repositories/lyrascript/language/src/core/program.ts:169:25)
+      at runPipeline (/mnt/d/_repositories/lyrascript/language/src/core/program.ts:151:8)
+      at compileBytecode (/mnt/d/_repositories/lyrascript/language/src/core/program.ts:99:35)
+
+Bun v1.3.9 (Linux x64)
+error: script "lyra:compile" exited with code 1
