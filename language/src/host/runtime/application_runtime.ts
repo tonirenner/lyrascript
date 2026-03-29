@@ -4,6 +4,7 @@ import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
 import Events from "../events/dom_events.ts";
 import {EventHandlerRegistry, VDOM} from "../vdom/vdom_registry.ts";
 import {LYRA_EVENTS} from "../../core/model/runtime_events.ts";
+import {Source} from "../../core/syntax/source.ts";
 import type {RuntimeInstanceType, RuntimeLambda, VChild} from "../../core/model/runtime_model.ts";
 
 export interface ApplicationRuntime {
@@ -12,6 +13,7 @@ export interface ApplicationRuntime {
 	get eventPipeline(): EventPipeline;
 
 	start(url: string, className: string): Promise<void>;
+	startSource(source: Source, className: string): Promise<void>;
 
 	createInstance(className: string): RuntimeInstanceType;
 
@@ -47,6 +49,10 @@ export abstract class AbstractApplicationRuntime implements ApplicationRuntime {
 	}
 
 	public start(url: string, className: string): Promise<void> {
+		throw new Error("Method not implemented.");
+	}
+
+	public startSource(source: Source, className: string): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 
@@ -90,6 +96,7 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	private readonly patcher: ElementPatcher;
 
 	private isRendering: boolean = false;
+	private listenersRegistered: boolean = false;
 
 	constructor(
 		mountPoint: HTMLElement,
@@ -106,6 +113,14 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 	public override async start(url: string, className: string = 'Program'): Promise<void> {
 		await this.engine.executeEntryFile(url, className);
+
+		this.registerEventListeners();
+
+		this.requestComponentRender(this.engine.getRootInstance());
+	}
+
+	public override async startSource(source: Source, className: string = "Program"): Promise<void> {
+		await this.engine.executeEntrySource(source, className);
 
 		this.registerEventListeners();
 
@@ -136,6 +151,10 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 	}
 
 	private registerEventListeners(): void {
+		if (this.listenersRegistered) {
+			return;
+		}
+
 		this.eventPipeline
 		    .on(Events.DOM_EVENT, ({invoke}: any): void => {
 			    invoke();
@@ -145,6 +164,8 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		    .on(LYRA_EVENTS.INSTANCE_DIRTY_STATE, ({instance}: any): void => {
 			    this.requestComponentRender(instance, this.vdom.findNodeByComponent(instance) as VChild);
 		    });
+
+		this.listenersRegistered = true;
 	}
 
 	private exposeRuntime(): void {

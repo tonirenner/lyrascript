@@ -54,16 +54,19 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
+            min-height: 0;
         }
 
         .editor {
             border-right: 1px solid #2a2f3a;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         .editor textarea {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 220px;
             background: #0f1115;
             color: #e6e6e6;
             border: none;
@@ -74,9 +77,59 @@
             font-size: 14px;
         }
 
+        .preview {
+            min-height: 220px;
+            border-top: 1px solid #2a2f3a;
+            background: #f4efe5;
+            color: #111;
+            overflow: auto;
+            padding: 14px;
+        }
+
+        .preview-header {
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            color: #5f5a52;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        #preview {
+            min-height: 160px;
+        }
+
+        .preview-empty {
+            color: #7a6d5b;
+            font-style: italic;
+        }
+
+        #preview .box {
+            padding: 14px 16px;
+            border: 1px solid #d7cab3;
+            border-radius: 10px;
+            background: #fffaf0;
+            cursor: pointer;
+        }
+
+        #preview button {
+            background: #1f5bd8;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
+
+        #preview h1,
+        #preview h2,
+        #preview h3,
+        #preview p,
+        #preview b,
+        #preview div {
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
         .output {
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         .panel {
@@ -84,6 +137,7 @@
             padding: 10px;
             overflow: auto;
             border-bottom: 1px solid #2a2f3a;
+            min-height: 0;
         }
 
         .panel:last-child {
@@ -105,6 +159,61 @@
             white-space: pre-wrap;
             color: #ff6b6b;
         }
+
+        #ast {
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .ast-node {
+            position: relative;
+        }
+
+        .ast-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 22px;
+            padding: 1px 6px 1px 4px;
+            border-radius: 4px;
+            user-select: none;
+        }
+
+        .ast-row:hover {
+            background: #171c26;
+        }
+
+        .ast-toggle {
+            width: 12px;
+            color: #7f8ea3;
+            cursor: pointer;
+            flex: 0 0 12px;
+            text-align: center;
+        }
+
+        .ast-toggle.is-leaf {
+            visibility: hidden;
+            cursor: default;
+        }
+
+        .ast-label {
+            color: #9cdcfe;
+        }
+
+        .ast-children {
+            margin-left: 12px;
+            padding-left: 12px;
+            border-left: 1px solid #2a2f3a;
+            display: none;
+        }
+
+        .ast-children.is-open {
+            display: block;
+        }
+
+        .ast-meta {
+            color: #7f8ea3;
+        }
     </style>
 </head>
 <body>
@@ -119,23 +228,64 @@
 
 <main>
     <div class="editor">
-		<textarea aria-label="editor" id="editor" spellcheck="false">
-import System;
+        <textarea aria-label="editor" id="editor" spellcheck="false">
+class Toggle {
+
+    private visible: boolean = true;
+
+    public render(): VNode {
+        if (this.visible) {
+            return vdom
+                <div class="box" onClick={e -> this.visible = false}>
+                    Click to hide me
+                </div>;
+        }
+
+        return vdom
+            <div class="box" onClick={e -> this.visible = true}>
+                Hidden. Click to show me again.
+            </div>;
+    }
+}
+
+class Counter {
+
+    private count: number = 0;
+
+    public render(): VNode {
+        return vdom
+            <div>
+                <p>Count: {this.count}</p>
+                <button onClick={e -> this.count = this.count + 1}>
+                    +1
+                </button>
+            </div>;
+    }
+}
 
 class App {
 
-    public execute(): void {
-        System.print("Hello from App.execute()");
-        System.print({ a: number, b: number -> number : a + b }(39, 3).toString());
+    public render(): VNode {
+        return vdom
+            <div>
+                <h1>Lyra Scratchpad</h1>
+                <p>Interactive preview directly below the editor.</p>
+                <Toggle/>
+                <Counter/>
+            </div>;
     }
-
 }
 
-let app: App = new App();
-
-app.execute();
-
+class Program {
+    public render(): VNode {
+        return vdom <App/>;
+    }
+}
 		</textarea>
+        <div class="preview">
+            <div class="preview-header">Live Preview</div>
+            <div id="preview"></div>
+        </div>
     </div>
 
     <div class="output">
@@ -159,186 +309,9 @@ app.execute();
 </main>
 
 <script type="module">
-	import Lyra from "../dist/language.js";
-	import {ScratchpadOutput, wrapConsole} from "../dist/scratchpad.js";
+	import {bootstrapScratchpad} from "../dist/scratchpad.js";
 
-	wrapConsole(
-		args => output.log(args),
-		args => output.error(args)
-	);
-
-	/** @type {HTMLTextAreaElement} */
-	const editor = document.getElementById('editor');
-	const stdoutEl = document.getElementById('stdout');
-	const tokensEl = document.getElementById('tokens');
-	const astEl = document.getElementById('ast');
-	const stderrEl = document.getElementById('stderr');
-	const runButton = document.getElementById('run-button');
-
-	const output = new ScratchpadOutput();
-
-	window.addEventListener('error', e => {
-		output.error(e.error?.stack || e.message);
-	});
-
-	window.addEventListener('unhandledrejection', e => {
-		output.error(e.reason?.stack || e.reason);
-	});
-
-	function render() {
-		stdoutEl.innerText = output.stdout.join("\n");
-		stderrEl.innerText = output.stderr.join("\n");
-	}
-
-
-	function execute() {
-		output.clear();
-		render();
-
-		output.log("> Running...\n");
-
-		try {
-			const source = new Lyra.Source(editor.value);
-
-			renderTokens(Lyra.tokenize(source));
-
-			astEl.innerHTML = '';
-			renderASTTree(Lyra.parseTree(source), astEl);
-
-			Lyra.execute(source)
-			    .catch(error => {
-				    output.error(error.stack || error.message);
-				    render();
-			    })
-			    .then(() => output.log('\n> Done.'))
-			    .then(() => render());
-		}
-		catch (error) {
-			output.error(error.stack || error.message);
-		}
-		finally {
-			render();
-		}
-	}
-
-	runButton.onclick = run;
-
-	document.addEventListener('keydown', e => {
-		if (e.ctrlKey && e.key === 'Enter') {
-			run();
-		}
-	});
-
-	/**
-	 * @param {Token[]} tokens
-	 */
-	function renderTokens(tokens) {
-		tokensEl.textContent = tokens
-			.map(token => `${token.type.padEnd(12)} ${JSON.stringify(token.value)}`)
-			.join("\n");
-	}
-
-	/**
-	 * @param {ASTNode|ASTCallNode|ASTIndexNode|ASTBinaryNode|ASTIfNode|ASTMatchCaseNode|ASTExpressionNode|ASTMethodNode} node
-	 * @param {HTMLElement} container
-	 */
-	function renderASTTree(node, container) {
-		const wrapper = document.createElement("div");
-		wrapper.style.marginLeft = "12px";
-
-		const header = document.createElement("div");
-		header.textContent = describeNode(node);
-		header.style.cursor = "pointer";
-		header.style.color = "#9cdcfe";
-
-		wrapper.appendChild(header);
-
-		const body = document.createElement("div");
-		body.style.display = "none";
-		body.style.marginLeft = "12px";
-		wrapper.appendChild(body);
-
-		header.onclick = () => {
-			body.style.display = body.style.display === "none" ? "block" : "none";
-		};
-
-		// 👇 explizite Properties (nicht children!)
-		renderProperty("callee", node.callee, body);
-		renderProperty("object", node.object, body);
-		renderProperty("index", node.index, body);
-		renderProperty("left", node.left, body);
-		renderProperty("right", node.right, body);
-		renderProperty("test", node.test, body);
-		renderProperty("expression", node.expr, body);
-
-		if (node.parameters?.length) {
-			const element = document.createElement("div");
-			element.textContent = "parameters:";
-			body.appendChild(element);
-
-			for (const param of node.parameters) {
-				const element = document.createElement("div");
-				element.textContent = `${param.name}: ${param.type ?? 'mixed'}`;
-				element.style.marginLeft = "12px";
-				body.appendChild(element);
-			}
-		}
-
-		if (node.children?.length) {
-			const element = document.createElement("div");
-			element.textContent = "children:";
-			body.appendChild(element);
-
-			for (const child of node.children) {
-				renderASTTree(child, body);
-			}
-		}
-
-		container.appendChild(wrapper);
-	}
-
-	/**
-	 * @param {ASTNode|ASTUnaryNode|ASTLambdaNode} node
-	 * @return {string}
-	 */
-	function describeNode(node) {
-		const details = [];
-
-		if (node.name) {
-			details.push(`name="${node.name}"`);
-		}
-		if (node.value) {
-			details.push(`value="${node.value}"`);
-		}
-		if (node.operator) {
-			details.push(`op="${node.operator}"`);
-		}
-		if (node.isExpression) {
-			details.push(`expr`);
-		}
-		if (node.returnType) {
-			details.push(`return="${node.returnType.name ?? node.returnType}"`);
-		}
-
-		return node.type + (details.length > 0 ? ` ( ${details.join(', ')} )` : '');
-	}
-
-	/**
-	 * @param {string} label
-	 * @param {any}  value
-	 * @param {HTMLElement} container
-	 */
-	function renderProperty(label, value, container) {
-		if (!value) {
-			return;
-		}
-
-		const element = document.createElement("div");
-		element.textContent = `${label}:`;
-		container.appendChild(element);
-
-		renderASTTree(value, container);
-	}
+	bootstrapScratchpad();
 </script>
 
 </body>

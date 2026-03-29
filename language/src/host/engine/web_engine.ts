@@ -1,6 +1,6 @@
 import {LyraScriptProgram} from "../../core/program.ts";
 import {FetchFileLoader} from "../../core/loading/file_loader.ts";
-import {fetchSource} from "../../core/syntax/source.ts";
+import {fetchSource, Source} from "../../core/syntax/source.ts";
 import {EventType} from "../../library/classes/event.ts";
 import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
 import type {ObjectRegistry} from "../../core/infrastructure/runtime_registry.ts";
@@ -17,6 +17,7 @@ const lyraEventClassDef: RuntimeClassType = new EventType().getRuntimeClass();
 
 export interface Engine {
 	executeEntryFile(url: string, className: string): Promise<void>;
+	executeEntrySource(source: Source, className: string): Promise<void>;
 
 	createInstance(className: string): RuntimeInstanceType;
 
@@ -79,6 +80,11 @@ export class WebLyraScript implements Engine {
 
 	public async executeEntryFile(url: string, className: string): Promise<void> {
 		await this.program.executeSource(await fetchSource(url));
+		this.rootInstance = this.createInstance(className);
+	}
+
+	public async executeEntrySource(source: Source, className: string): Promise<void> {
+		await this.program.executeSource(source);
 		this.rootInstance = this.createInstance(className);
 	}
 
