@@ -7,10 +7,10 @@ import {Token} from "./core/syntax/ast_grammar.ts";
 import {LyraScriptProgram} from "./core/program.ts";
 import {EventPipeline} from "./core/infrastructure/event_pipeline.ts";
 import {State} from "./core/infrastructure/runtime_state.ts";
-import {HTMLElementCreator} from "./host/dom.ts";
+import {HTMLElementCreator} from "./host/dom/dom_patcher.ts";
 
-export {WebLyraScript} from "./host/engine.ts";
-export {WebApplicationRuntime} from "./host/runtime.ts";
+export {WebLyraScript} from "./host/engine/web_engine.ts";
+export {WebApplicationRuntime} from "./host/runtime/application_runtime.ts";
 
 const Lyra = {
 	Source,

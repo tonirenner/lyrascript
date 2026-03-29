@@ -1,16 +1,16 @@
-import {LyraScriptProgram} from "../core/program.ts";
-import {fetchSource} from "../core/syntax/source.ts";
-import {EventType} from "../library/classes/event.ts";
-import {EventPipeline} from "../core/infrastructure/event_pipeline.ts";
-import type {ObjectRegistry} from "../core/infrastructure/runtime_registry.ts";
+import {LyraScriptProgram} from "../../core/program.ts";
+import {fetchSource} from "../../core/syntax/source.ts";
+import {EventType} from "../../library/classes/event.ts";
+import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
+import type {ObjectRegistry} from "../../core/infrastructure/runtime_registry.ts";
 import type {
 	RuntimeClassType,
 	RuntimeInstanceType,
 	RuntimeLambda,
 	ValueScope
-} from "../core/model/runtime_model.ts";
-import {Value} from "../core/model/runtime_model.ts";
-import {ReflectionClass} from "../core/reflection.ts";
+} from "../../core/model/runtime_model.ts";
+import {Value} from "../../core/model/runtime_model.ts";
+import {ReflectionClass} from "../../core/reflection.ts";
 
 const lyraEventClassDef: RuntimeClassType = new EventType().getRuntimeClass();
 

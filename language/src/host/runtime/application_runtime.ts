@@ -1,10 +1,10 @@
-import {type Engine, WebLyraScript} from "./engine.ts";
-import {type ElementPatcher, HTMLElementPatcher} from "./dom.ts";
-import {EventPipeline} from "../core/infrastructure/event_pipeline.ts";
-import Events from "./events.ts";
-import {EventHandlerRegistry, VDOM} from "./registry.ts";
-import {LYRA_EVENTS} from "../core/model/runtime_events.ts";
-import type {RuntimeInstanceType, RuntimeLambda, VChild} from "../core/model/runtime_model.ts";
+import {type Engine, WebLyraScript} from "../engine/web_engine.ts";
+import {type ElementPatcher, HTMLElementPatcher} from "../dom/dom_patcher.ts";
+import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
+import Events from "../events/dom_events.ts";
+import {EventHandlerRegistry, VDOM} from "../vdom/vdom_registry.ts";
+import {LYRA_EVENTS} from "../../core/model/runtime_events.ts";
+import type {RuntimeInstanceType, RuntimeLambda, VChild} from "../../core/model/runtime_model.ts";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;

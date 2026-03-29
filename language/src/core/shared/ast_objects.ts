@@ -270,7 +270,8 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 	constructor(
 		private readonly interpreter: ASTInterpreter,
 		private readonly node: ASTLambdaNode,
-		private readonly scope: ValueScope
+		private readonly scope: ValueScope,
+		private readonly instance?: RuntimeInstanceType
 	) {
 
 	}
@@ -295,7 +296,7 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 
 		this.interpreter.pushContext({
 			                             scope: lambdaScope,
-			                             instance: this.interpreter.currentContext.instance
+			                             instance: this.instance
 		                             });
 
 		try {

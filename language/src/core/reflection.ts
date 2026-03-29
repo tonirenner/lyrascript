@@ -1,5 +1,6 @@
 import {Interpreter} from "./interpreter.ts";
 import {createRuntimeInstance, RuntimeScope} from "./shared/ast_objects.ts";
+import {fromLyraValue} from "./shared/ast_objects_conversion.ts";
 import {throwRuntimeError} from "./infrastructure/errors.ts";
 import type {ExecutionContext} from "./model/runtime_model.ts";
 import {
@@ -39,8 +40,9 @@ export class ReflectionClass {
 
 		const instance: RuntimeInstanceType = createRuntimeInstance(runtimeClass);
 		this.initializeInstanceFields(instance);
-		instance.nativeRuntimeObject =
-			runtimeClass.nativeRuntimeConstructor(...args.map((arg: RuntimeValue): any => arg.value));
+		instance.nativeRuntimeObject = new runtimeClass.nativeRuntimeConstructor(
+			...args.map((arg: RuntimeValue): any => fromLyraValue(arg).value)
+		);
 
 		this.interpreter.objectRegistry.instances.set(instance);
 

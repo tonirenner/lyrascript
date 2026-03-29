@@ -1,10 +1,10 @@
 /// <reference lib="dom" />
 
-import type {Props, RuntimeInstanceType, RuntimeLambda, VChild, VText} from "../core/model/runtime_model.ts";
-import {Value} from "../core/model/runtime_model.ts";
-import Events from "./events.ts";
-import type {ApplicationRuntime} from "./runtime.ts";
-import {VDOM} from "./registry.ts";
+import type {Props, RuntimeInstanceType, RuntimeLambda, VChild, VText} from "../../core/model/runtime_model.ts";
+import {Value} from "../../core/model/runtime_model.ts";
+import Events from "../events/dom_events.ts";
+import type {ApplicationRuntime} from "../runtime/application_runtime.ts";
+import {VDOM} from "../vdom/vdom_registry.ts";
 
 export interface ElementCreator {
 	create(vNode: VChild): Node;

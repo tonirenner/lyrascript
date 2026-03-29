@@ -436,7 +436,7 @@ export class Interpreter implements ASTInterpreter {
 	}
 
 	public evalLambda(node: ASTLambdaNode): RuntimeValue {
-		return Value(new RuntimeLambdaFunction(this, node, this.currentScope), 'Lambda');
+		return Value(new RuntimeLambdaFunction(this, node, this.currentScope, this.currentContext.instance), 'Lambda');
 	}
 
 	public evalAnnotation(node: ASTAnnotationNode): Record<string, any> {
