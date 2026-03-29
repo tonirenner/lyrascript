@@ -69,7 +69,8 @@ describe("Interpreter", () => {
 	it("evaluates arithmetic expressions into the runtime scope", () => {
 		const scope = executeSource("let result: number = 1 + 2 * 3;");
 
-		expect(scope.get("result").value).toBe(7);
+		expect(scope.get("result").value)
+			.toBe(7);
 	});
 
 	it("creates instances and executes instance methods", () => {
@@ -87,7 +88,8 @@ let counter = new Counter();
 let result = counter.increment();
 `);
 
-		expect(scope.get("result").value).toBe(2);
+		expect(scope.get("result").value)
+			.toBe(2);
 	});
 
 	it("evaluates comparison and logical expressions", () => {
@@ -97,9 +99,12 @@ let equal = 5 == 5;
 let logical = true && !false;
 `);
 
-		expect(scope.get("less").value).toBe(true);
-		expect(scope.get("equal").value).toBe(true);
-		expect(scope.get("logical").value).toBe(true);
+		expect(scope.get("less").value)
+			.toBe(true);
+		expect(scope.get("equal").value)
+			.toBe(true);
+		expect(scope.get("logical").value)
+			.toBe(true);
 	});
 
 	it("updates control flow through if and else branches", () => {
@@ -113,7 +118,9 @@ if (false) {
 }
 `);
 
-		expect(scope.get("result").toNativeRuntimeValue(TYPE_ENUM.NUMBER).value).toBe(2);
+		expect(scope.get("result")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(2);
 	});
 
 	it("supports field mutation on instance methods", () => {
@@ -132,7 +139,8 @@ counter.bump();
 let result = counter.value;
 `);
 
-		expect(scope.get("result").value).toBe(2);
+		expect(scope.get("result").value)
+			.toBe(2);
 	});
 });
 
@@ -149,7 +157,8 @@ let calculator = new Calculator();
 let result = calculator.add(3);
 `);
 
-		expect(scope.get("result").value).toBe(5);
+		expect(scope.get("result").value)
+			.toBe(5);
 	});
 
 	it("supports lambda expressions and lambda arguments", async () => {
@@ -164,7 +173,8 @@ let calculator = new Calculator();
 let result = calculator.apply(2, 3, { a: number, b: number -> a + b });
 `);
 
-		expect(scope.get("result").value).toBe(5);
+		expect(scope.get("result").value)
+			.toBe(5);
 	});
 
 	it("supports native string method chaining", async () => {
@@ -172,7 +182,8 @@ let result = calculator.apply(2, 3, { a: number, b: number -> a + b });
 let result = "HeLLo".toUpperCase().toLowerCase().toString();
 `);
 
-		expect(scope.get("result").value).toBe("hello");
+		expect(scope.get("result").value)
+			.toBe("hello");
 	});
 
 	it("supports native number and boolean string conversion", async () => {
@@ -181,8 +192,10 @@ let numberText = (42).toString();
 let booleanText = true.toString();
 `);
 
-		expect(scope.get("numberText").value).toBe("42");
-		expect(scope.get("booleanText").value).toBe("true");
+		expect(scope.get("numberText").value)
+			.toBe("42");
+		expect(scope.get("booleanText").value)
+			.toBe("true");
 	});
 
 	it("supports arrays, index access and mutation", async () => {
@@ -194,8 +207,10 @@ let length = items.length();
 let indexed = items[1];
 `);
 
-		expect(scope.get("length").value).toBe(3);
-		expect(scope.get("indexed").value).toBe(3);
+		expect(scope.get("length").value)
+			.toBe(3);
+		expect(scope.get("indexed").value)
+			.toBe(3);
 	});
 
 	it("supports foreach loops over arrays", async () => {
@@ -208,7 +223,8 @@ foreach (item in items) {
 }
 `);
 
-		expect(scope.get("sum").value).toBe(10);
+		expect(scope.get("sum").value)
+			.toBe(10);
 	});
 
 	it("supports match statements with explicit and default cases", async () => {
@@ -228,7 +244,8 @@ match (2) {
 }
 `);
 
-		expect(scope.get("label").value).toBe("two");
+		expect(scope.get("label").value)
+			.toBe("two");
 	});
 
 	it("supports nullable assignments", async () => {
@@ -238,7 +255,9 @@ current = 5;
 let result = current;
 `);
 
-		expect(scope.get("result").toNativeRuntimeValue(TYPE_ENUM.NUMBER).value).toBe(5);
+		expect(scope.get("result")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(5);
 	});
 
 	it("supports inheritance and inherited methods", async () => {
@@ -265,7 +284,8 @@ let user = new User("Toni");
 let result = user.getName();
 `);
 
-		expect(scope.get("result").value).toBe("Toni");
+		expect(scope.get("result").value)
+			.toBe("Toni");
 	});
 
 	it("treats suspended native calls as synchronous for chained instance calls", async () => {
@@ -275,7 +295,8 @@ import Net;
 let result = Net.get("data:text/plain,hello from net").toUpperCase().toString();
 `);
 
-		expect(scope.get("result").value).toBe("HELLO FROM NET");
+		expect(scope.get("result").value)
+			.toBe("HELLO FROM NET");
 	});
 
 	it("supports Net.get for text responses", async () => {
@@ -285,6 +306,7 @@ import Net;
 let result = Net.get("data:text/plain,lyra").toUpperCase().toString();
 `);
 
-		expect(scope.get("result").value).toBe("LYRA");
+		expect(scope.get("result").value)
+			.toBe("LYRA");
 	});
 });

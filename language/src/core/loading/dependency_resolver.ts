@@ -32,8 +32,8 @@ export class DependencyResolver {
 			}
 
 			const objectDefinitions = dependency.objectRegistry
-				.fetchAllObjectDefinitions()
-				.values();
+			                                    .fetchAllObjectDefinitions()
+			                                    .values();
 
 			for (const objectDef of objectDefinitions) {
 				if (this.isRuntimeInterface(objectDef)) {

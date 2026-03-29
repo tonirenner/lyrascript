@@ -274,8 +274,8 @@ export function Value(
 
 					case TYPE_ENUM.BOOLEAN:
 						return typeof this.value === TYPE_ENUM.BOOLEAN
-							? Value(this.value)
-							: Value(this.value === GRAMMAR.TRUE);
+						       ? Value(this.value)
+						       : Value(this.value === GRAMMAR.TRUE);
 
 					case TYPE_ENUM.NUMBER:
 						return Value(Number(this.value));

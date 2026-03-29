@@ -63,12 +63,14 @@ export class VirtualMachine {
 					this.binary((left, right) => left % right);
 					break;
 				case OpCode.NEGATE: {
-					const value = this.pop().toNativeRuntimeValue();
+					const value = this.pop()
+					                  .toNativeRuntimeValue();
 					this.push(Value(-value.value));
 					break;
 				}
 				case OpCode.NOT: {
-					const value = this.pop().toNativeRuntimeValue();
+					const value = this.pop()
+					                  .toNativeRuntimeValue();
 					this.push(Value(!value.value));
 					break;
 				}
@@ -94,7 +96,8 @@ export class VirtualMachine {
 					frame.ip = instruction.operand as number;
 					break;
 				case OpCode.JUMP_IF_FALSE: {
-					const value = this.peek().toNativeRuntimeValue();
+					const value = this.peek()
+					                  .toNativeRuntimeValue();
 					if (!value.value) {
 						frame.ip = instruction.operand as number;
 					}
@@ -114,8 +117,10 @@ export class VirtualMachine {
 	}
 
 	private binary(operation: (left: any, right: any) => any): void {
-		const right = this.pop().toNativeRuntimeValue();
-		const left = this.pop().toNativeRuntimeValue();
+		const right = this.pop()
+		                  .toNativeRuntimeValue();
+		const left = this.pop()
+		                 .toNativeRuntimeValue();
 
 		this.push(Value(operation(left.value, right.value)));
 	}

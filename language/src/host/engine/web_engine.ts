@@ -4,12 +4,7 @@ import {fetchSource, Source} from "../../core/syntax/source.ts";
 import {EventType} from "../../library/classes/event.ts";
 import {EventPipeline} from "../../core/infrastructure/event_pipeline.ts";
 import type {ObjectRegistry} from "../../core/infrastructure/runtime_registry.ts";
-import type {
-	RuntimeClassType,
-	RuntimeInstanceType,
-	RuntimeLambda,
-	ValueScope
-} from "../../core/model/runtime_model.ts";
+import type {RuntimeClassType, RuntimeInstanceType, RuntimeLambda, ValueScope} from "../../core/model/runtime_model.ts";
 import {Value} from "../../core/model/runtime_model.ts";
 import {ReflectionClass} from "../../core/reflection.ts";
 
@@ -17,6 +12,7 @@ const lyraEventClassDef: RuntimeClassType = new EventType().getRuntimeClass();
 
 export interface Engine {
 	executeEntryFile(url: string, className: string): Promise<void>;
+
 	executeEntrySource(source: Source, className: string): Promise<void>;
 
 	createInstance(className: string): RuntimeInstanceType;

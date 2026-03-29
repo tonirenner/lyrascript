@@ -18,8 +18,10 @@ if (!inputArgument) {
 
 const inputPath: string = resolve(inputArgument);
 const source = new Source(
-	await Bun.file(inputPath).text(),
-	pathToFileURL(inputPath).toString()
+	await Bun.file(inputPath)
+	         .text(),
+	pathToFileURL(inputPath)
+		.toString()
 );
 
 const program = new LyraScriptProgram(false, new EventPipeline(), new FileSystemLoader());

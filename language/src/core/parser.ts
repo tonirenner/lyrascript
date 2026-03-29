@@ -378,7 +378,7 @@ export class Parser implements ASTParser {
 	}
 
 	parseModifiers(allowed: string[]): Modifiers {
-		const modifiers: {[index: string]: boolean} = {};
+		const modifiers: { [index: string]: boolean } = {};
 
 		allowed.forEach((modifier: string): boolean => modifiers[modifier] = false);
 
@@ -691,13 +691,13 @@ export class Parser implements ASTParser {
 		}
 
 		const token = this.expectOneOf([
-			TokenType.IDENTIFIER,
-			TokenType.OPERATOR,
-			TokenType.KEYWORD,
-			TokenType.PUNCTUATION,
-			TokenType.NUMBER,
-			TokenType.TEXT
-		]);
+			                               TokenType.IDENTIFIER,
+			                               TokenType.OPERATOR,
+			                               TokenType.KEYWORD,
+			                               TokenType.PUNCTUATION,
+			                               TokenType.NUMBER,
+			                               TokenType.TEXT
+		                               ]);
 		const node = new ASTVDomTextNode(token.value);
 		node.span = spanFrom(token, token);
 		return node;
@@ -965,136 +965,6 @@ export class Parser implements ASTParser {
 		}
 	}
 
-	private parseClassMember(): ASTNode | null {
-		const startToken = this.peek();
-
-		const annotations = this.parseAnnotations();
-		const modifiers = this.parseModifiers([
-			GRAMMAR.PUBLIC,
-			GRAMMAR.PRIVATE,
-			GRAMMAR.STATIC,
-			GRAMMAR.READONLY
-		]);
-
-		if (this.peekIs(GRAMMAR.OPERATOR)) {
-			return this.parseOperatorMember(startToken, annotations, modifiers);
-		}
-
-		const nameToken = this.expectOneOf([TokenType.IDENTIFIER, TokenType.KEYWORD]);
-
-		let fieldType: ASTTypeNode | null = null;
-		if (this.peek().value === GRAMMAR.COLON && this.consumeIfPunctuation(GRAMMAR.COLON)) {
-			fieldType = this.parseType();
-		}
-
-		let init: ASTNode | null = null;
-		if (this.consumeIfOperator(GRAMMAR.ASSIGN)) {
-			init = this.parseExpression();
-		}
-
-		if (this.peek().value === GRAMMAR.SEMICOLON) {
-			if (!modifiers.public && !modifiers.private) {
-				modifiers.private = true;
-			}
-
-			const semicolonToken = this.expectPunctuation(GRAMMAR.SEMICOLON);
-
-			const node = new ASTFieldNode(nameToken.value, modifiers, fieldType, init);
-			node.span = spanFrom(startToken, semicolonToken);
-			return node;
-		}
-
-		let typeParameters: string[] = [];
-		if (this.peek().value === GRAMMAR.LESS_THAN) {
-			typeParameters = this.parseTypeParameters();
-		}
-
-		if (this.peek().value === GRAMMAR.PARENTHESES_OPEN) {
-			if (!modifiers.public && !modifiers.private) {
-				modifiers.public = true;
-			}
-
-			this.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
-			const parameters = this.parseParameters();
-			const parenthesesCloseToken = this.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
-
-			let returnType: ASTTypeNode | null = null;
-			if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
-				returnType = this.parseType();
-			}
-
-			const children = this.parseBlock();
-
-			const node = new ASTMethodNode(
-				nameToken.value,
-				nameToken.value === GRAMMAR.CONSTRUCTOR ? ASTNodeType.CONSTRUCTOR : ASTNodeType.METHOD,
-				annotations,
-				modifiers,
-				typeParameters,
-				parameters,
-				returnType,
-				children
-			);
-
-			node.span = spanFrom(startToken, parenthesesCloseToken);
-
-			return node;
-		}
-
-		throwParserError(`Invalid class member: ${nameToken.value}`);
-	}
-
-	private parseOperatorMember(
-		startToken: Token,
-		annotations: ASTAnnotationNode[],
-		modifiers: Modifiers
-	): ASTOperatorNode {
-		this.expectKeyword(GRAMMAR.OPERATOR);
-
-		let operatorToken: Token;
-		try {
-			operatorToken = this.expectOperator();
-		} catch {
-			this.rewind();
-			this.expectIdentifier("u");
-			operatorToken = this.expectOperator();
-			operatorToken.value = "u" + operatorToken.value;
-		}
-
-		if (!modifiers.public && !modifiers.private) {
-			modifiers.public = true;
-		}
-
-		this.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
-		const parameters = this.parseParameters();
-		this.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
-
-		let returnType: ASTTypeNode | null = null;
-		if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
-			returnType = this.parseType();
-		}
-
-		const children = this.parseBlock();
-
-		const node = new ASTOperatorNode(
-			operatorToken.value,
-			annotations,
-			modifiers,
-			[],
-			parameters,
-			returnType,
-			children
-		);
-
-		node.span = spanFrom(startToken, operatorToken);
-
-		if (!ASTOperatorNode.OVERLOADABLE_OPERATORS.includes(node.operator)) {
-			throwParserError(`Operator ${node.operator} is not overloadable.`, node.span);
-		}
-
-		return node;
-	}
-
 	stream(): TokenStream {
 		if (!this.tokenStream) {
 			throwParserError('Parser has not been parsed yet.');
@@ -1245,6 +1115,136 @@ export class Parser implements ASTParser {
 
 	seekAt(position: number): void {
 		this.stream().index = position;
+	}
+
+	private parseClassMember(): ASTNode | null {
+		const startToken = this.peek();
+
+		const annotations = this.parseAnnotations();
+		const modifiers = this.parseModifiers([
+			                                      GRAMMAR.PUBLIC,
+			                                      GRAMMAR.PRIVATE,
+			                                      GRAMMAR.STATIC,
+			                                      GRAMMAR.READONLY
+		                                      ]);
+
+		if (this.peekIs(GRAMMAR.OPERATOR)) {
+			return this.parseOperatorMember(startToken, annotations, modifiers);
+		}
+
+		const nameToken = this.expectOneOf([TokenType.IDENTIFIER, TokenType.KEYWORD]);
+
+		let fieldType: ASTTypeNode | null = null;
+		if (this.peek().value === GRAMMAR.COLON && this.consumeIfPunctuation(GRAMMAR.COLON)) {
+			fieldType = this.parseType();
+		}
+
+		let init: ASTNode | null = null;
+		if (this.consumeIfOperator(GRAMMAR.ASSIGN)) {
+			init = this.parseExpression();
+		}
+
+		if (this.peek().value === GRAMMAR.SEMICOLON) {
+			if (!modifiers.public && !modifiers.private) {
+				modifiers.private = true;
+			}
+
+			const semicolonToken = this.expectPunctuation(GRAMMAR.SEMICOLON);
+
+			const node = new ASTFieldNode(nameToken.value, modifiers, fieldType, init);
+			node.span = spanFrom(startToken, semicolonToken);
+			return node;
+		}
+
+		let typeParameters: string[] = [];
+		if (this.peek().value === GRAMMAR.LESS_THAN) {
+			typeParameters = this.parseTypeParameters();
+		}
+
+		if (this.peek().value === GRAMMAR.PARENTHESES_OPEN) {
+			if (!modifiers.public && !modifiers.private) {
+				modifiers.public = true;
+			}
+
+			this.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
+			const parameters = this.parseParameters();
+			const parenthesesCloseToken = this.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
+
+			let returnType: ASTTypeNode | null = null;
+			if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
+				returnType = this.parseType();
+			}
+
+			const children = this.parseBlock();
+
+			const node = new ASTMethodNode(
+				nameToken.value,
+				nameToken.value === GRAMMAR.CONSTRUCTOR ? ASTNodeType.CONSTRUCTOR : ASTNodeType.METHOD,
+				annotations,
+				modifiers,
+				typeParameters,
+				parameters,
+				returnType,
+				children
+			);
+
+			node.span = spanFrom(startToken, parenthesesCloseToken);
+
+			return node;
+		}
+
+		throwParserError(`Invalid class member: ${nameToken.value}`);
+	}
+
+	private parseOperatorMember(
+		startToken: Token,
+		annotations: ASTAnnotationNode[],
+		modifiers: Modifiers
+	): ASTOperatorNode {
+		this.expectKeyword(GRAMMAR.OPERATOR);
+
+		let operatorToken: Token;
+		try {
+			operatorToken = this.expectOperator();
+		} catch {
+			this.rewind();
+			this.expectIdentifier("u");
+			operatorToken = this.expectOperator();
+			operatorToken.value = "u" + operatorToken.value;
+		}
+
+		if (!modifiers.public && !modifiers.private) {
+			modifiers.public = true;
+		}
+
+		this.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
+		const parameters = this.parseParameters();
+		this.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
+
+		let returnType: ASTTypeNode | null = null;
+		if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
+			returnType = this.parseType();
+		}
+
+		const children = this.parseBlock();
+
+		const node = new ASTOperatorNode(
+			operatorToken.value,
+			annotations,
+			modifiers,
+			[],
+			parameters,
+			returnType,
+			children
+		);
+
+		node.span = spanFrom(startToken, operatorToken);
+
+		if (!ASTOperatorNode.OVERLOADABLE_OPERATORS.includes(node.operator)) {
+			throwParserError(`Operator ${node.operator} is not overloadable.`, node.span);
+		}
+
+		return node;
 	}
 }
 

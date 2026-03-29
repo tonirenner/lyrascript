@@ -6,7 +6,8 @@ describe("State", () => {
 	it("returns the initial value", () => {
 		const state = new State<number>(1);
 
-		expect(state.get()).toBe(1);
+		expect(state.get())
+			.toBe(1);
 	});
 
 	it("notifies subscribers when the value changes", () => {
@@ -22,8 +23,10 @@ describe("State", () => {
 		state.subscribe(subscriber);
 		state.set(2);
 
-		expect(callback).toHaveBeenCalledTimes(1);
-		expect(callback.mock.calls[0]?.[0]?.[0]?.value).toBe(2);
+		expect(callback)
+			.toHaveBeenCalledTimes(1);
+		expect(callback.mock.calls[0]?.[0]?.[0]?.value)
+			.toBe(2);
 	});
 
 	it("does not notify subscribers when the value stays the same", () => {
@@ -39,7 +42,8 @@ describe("State", () => {
 		state.subscribe(subscriber);
 		state.set(1);
 
-		expect(callback).toHaveBeenCalledTimes(0);
+		expect(callback)
+			.toHaveBeenCalledTimes(0);
 	});
 
 	it("supports unsubscribing subscribers", () => {
@@ -53,10 +57,12 @@ describe("State", () => {
 		};
 
 		const id = state.subscribe(subscriber);
-		expect(state.unsubscribe(id)).toBe(true);
+		expect(state.unsubscribe(id))
+			.toBe(true);
 
 		state.set(2);
 
-		expect(callback).toHaveBeenCalledTimes(0);
+		expect(callback)
+			.toHaveBeenCalledTimes(0);
 	});
 });

@@ -16,7 +16,8 @@ if (!inputArgument) {
 }
 
 const inputPath: string = resolve(inputArgument);
-const serializedModule = await Bun.file(inputPath).text();
+const serializedModule = await Bun.file(inputPath)
+                                  .text();
 const module = deserializeBytecodeModule(serializedModule);
 const program = new LyraScriptProgram(false, new EventPipeline(), new FileSystemLoader());
 

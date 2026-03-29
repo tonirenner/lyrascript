@@ -13,6 +13,7 @@ export interface ApplicationRuntime {
 	get eventPipeline(): EventPipeline;
 
 	start(url: string, className: string): Promise<void>;
+
 	startSource(source: Source, className: string): Promise<void>;
 
 	createInstance(className: string): RuntimeInstanceType;

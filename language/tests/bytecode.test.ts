@@ -22,7 +22,8 @@ describe("Bytecode", () => {
 let result: number = 1 + 2 * 3;
 `);
 
-		expect(scope.get("result").value).toBe(7);
+		expect(scope.get("result").value)
+			.toBe(7);
 	});
 
 	it("executes assignments and unary expressions", () => {
@@ -31,7 +32,9 @@ let result: number = 1;
 result = -(result + 4);
 `);
 
-		expect(scope.get("result").toNativeRuntimeValue(TYPE_ENUM.NUMBER).value).toBe(-5);
+		expect(scope.get("result")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(-5);
 	});
 
 	it("executes if / else branches", () => {
@@ -45,6 +48,8 @@ if (false) {
 }
 `);
 
-		expect(scope.get("result").toNativeRuntimeValue(TYPE_ENUM.NUMBER).value).toBe(2);
+		expect(scope.get("result")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(2);
 	});
 });

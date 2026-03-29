@@ -8,30 +8,35 @@ describe("Tokenizer", () => {
 		const source = new Source('@test(title = "demo") let value: number = 42;');
 		const tokens = new Tokenizer(source).tokenize();
 
-		expect(tokens.map(token => token.type)).toEqual([
-			TokenType.ANNOTATION,
-			TokenType.IDENTIFIER,
-			TokenType.OPERATOR,
-			TokenType.STRING,
-			TokenType.PUNCTUATION,
-			TokenType.KEYWORD,
-			TokenType.IDENTIFIER,
-			TokenType.PUNCTUATION,
-			TokenType.IDENTIFIER,
-			TokenType.OPERATOR,
-			TokenType.NUMBER,
-			TokenType.PUNCTUATION,
-			TokenType.EOF
-		]);
+		expect(tokens.map(token => token.type))
+			.toEqual([
+				         TokenType.ANNOTATION,
+				         TokenType.IDENTIFIER,
+				         TokenType.OPERATOR,
+				         TokenType.STRING,
+				         TokenType.PUNCTUATION,
+				         TokenType.KEYWORD,
+				         TokenType.IDENTIFIER,
+				         TokenType.PUNCTUATION,
+				         TokenType.IDENTIFIER,
+				         TokenType.OPERATOR,
+				         TokenType.NUMBER,
+				         TokenType.PUNCTUATION,
+				         TokenType.EOF
+			         ]);
 	});
 
 	it("classifies booleans as boolean tokens", () => {
 		const source = new Source("true false;");
 		const tokens = new Tokenizer(source).tokenize();
 
-		expect(tokens[0]?.type).toBe(TokenType.BOOLEAN);
-		expect(tokens[0]?.value).toBe("true");
-		expect(tokens[1]?.type).toBe(TokenType.BOOLEAN);
-		expect(tokens[1]?.value).toBe("false");
+		expect(tokens[0]?.type)
+			.toBe(TokenType.BOOLEAN);
+		expect(tokens[0]?.value)
+			.toBe("true");
+		expect(tokens[1]?.type)
+			.toBe(TokenType.BOOLEAN);
+		expect(tokens[1]?.value)
+			.toBe("false");
 	});
 });

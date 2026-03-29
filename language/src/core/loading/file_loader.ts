@@ -20,7 +20,7 @@ export class FileSystemLoader extends AbstractFileLoader {
 		               ? Bun.file(resolve(workspaceRoot, "." + url.slice("/lyrascript".length)))
 		               : url.startsWith("/library/")
 		                 ? Bun.file(resolve(workspaceRoot, "." + url))
-		               : Bun.file(url);
+		                 : Bun.file(url);
 
 		return await file.text();
 	}

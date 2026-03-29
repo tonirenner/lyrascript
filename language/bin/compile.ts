@@ -19,16 +19,20 @@ if (!inputArgument) {
 
 const inputPath: string = resolve(inputArgument);
 const outputPath: string = outputArgument
-                          ? resolve(outputArgument)
-                          : inputPath.replace(/\.lyra$/i, ".lyrab");
+                           ? resolve(outputArgument)
+                           : inputPath.replace(/\.lyra$/i, ".lyrab");
 
 if (outputPath === inputPath) {
 	console.error("Output path must not be identical to input path.");
 	process.exit(1);
 }
 
-const code = await Bun.file(inputPath).text();
-const source = new Source(code, pathToFileURL(inputPath).toString());
+const code = await Bun.file(inputPath)
+                      .text();
+const source = new Source(code,
+                          pathToFileURL(inputPath)
+	                          .toString()
+);
 const program = new LyraScriptProgram(false, new EventPipeline(), new FileSystemLoader());
 const module = await program.compileBytecode(source);
 

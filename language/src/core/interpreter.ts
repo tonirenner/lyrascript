@@ -28,9 +28,9 @@ import type {ASTInterpreter} from "./interfaces/ast_interpreter.ts";
 import {
 	chainExecutionResult,
 	CompletedExecution,
-	isExecutionSuspended,
 	type ExecutionResult,
 	type ExecutionSuspension,
+	isExecutionSuspended,
 	SuspendedExecution
 } from "./model/execution_model.ts";
 import {
@@ -823,8 +823,11 @@ export class Interpreter implements ASTInterpreter {
 					SuspendedExecution(
 						result.then((resolved: any): RuntimeValue => {
 							return method.returnType
-							       ? Value(resolved).toNativeRuntimeValue(method.returnType.name)
-							       : Value(resolved);
+							       ?
+							       Value(resolved)
+								       .toNativeRuntimeValue(method.returnType.name)
+							       :
+							       Value(resolved);
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
@@ -904,8 +907,11 @@ export class Interpreter implements ASTInterpreter {
 					SuspendedExecution(
 						result.then((resolved: any): RuntimeValue => {
 							return method.returnType
-							       ? Value(resolved).toNativeRuntimeValue(method.returnType.name)
-							       : Value(resolved);
+							       ?
+							       Value(resolved)
+								       .toNativeRuntimeValue(method.returnType.name)
+							       :
+							       Value(resolved);
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
