@@ -7,6 +7,7 @@ import {ArrayIteratorType, ArrayType} from "./classes/array.ts";
 import {StateType} from "./classes/state.ts";
 import {EventType} from "./classes/event.ts";
 import {BooleanType} from "./classes/boolean.ts";
+import {NetType} from "./classes/net.ts";
 
 export class NativeClasses {
 	readonly registry: Map<string, NativeClass> = new Map();
@@ -21,6 +22,7 @@ export class NativeClasses {
 		this.registry.set(Assert.CLASS_NAME, new Assert());
 		this.registry.set(StateType.CLASS_NAME, new StateType());
 		this.registry.set(EventType.CLASS_NAME, new EventType())
+		this.registry.set(NetType.CLASS_NAME, new NetType());
 	}
 }
 

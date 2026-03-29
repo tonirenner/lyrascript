@@ -1,5 +1,6 @@
 import Assert;
 import System;
+import Net;
 
 interface RepresentsUser {
     public getName(): string;
@@ -207,3 +208,6 @@ count.subscribe({value:number -> System.log(value)});
 count.set(1);
 count.set(2);
 count.set(3);
+
+let text: string = Net.fetch();
+System.log(text);

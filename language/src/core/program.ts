@@ -84,7 +84,7 @@ export class LyraScriptProgram {
 		const ast: ASTNode = await this.runPipeline(source);
 
 		this.debugMeasureStartTime();
-		this.interpreter.run(ast);
+		await this.interpreter.runAsync(ast);
 		this.debugMeasureEndTime('interpreter');
 	}
 

@@ -39,6 +39,7 @@
 - [x] Recursive dependency loading
 - [x] Deterministic pipeline in `LyraScriptProgram`
 - [x] Separation of runtime bootstrap and dependency resolution
+- [x] Loader abstraction for browser fetch and filesystem access
 
 #### Tests and tooling
 
@@ -56,8 +57,45 @@
 - [x] `core/interfaces` for AST-related interfaces
 - [x] `core/loading` for dependency and file loading
 - [x] `core/testing` for Lyra test execution
+- [x] `host/engine`, `host/runtime`, `host/dom`, `host/events`, and `host/vdom`
+
+#### Bytecode and CLI
+
+- [x] Initial bytecode model and opcode set
+- [x] Initial AST to bytecode compiler for global statement and expression flow
+- [x] Initial stack-based VM
+- [x] Bytecode compile and execute entrypoints in `LyraScriptProgram`
+- [x] CLI scripts for:
+  - [x] `.lyra` source execution
+  - [x] `.lyra` to `.lyrab` compilation
+  - [x] `.lyrab` VM execution
+
+#### Scratchpad
+
+- [x] Scratchpad source layout cleaned up into `app`, `output`, and `tree`
+- [x] AST tree builder extracted
+- [x] IDE-style AST tree expand/collapse behavior
+- [x] Live VDOM preview below the editor
 
 ## Next
+
+### Immediate priorities
+
+- [ ] browser interfaces wrapped and exposed as native classes instead of using raw browser APIs directly
+- [ ] design and implement a real async/promise model that does not break interpreter and VM runtime semantics
+- [ ] scratchpad syntax highlighting
+- [ ] scratchpad token-to-tree highlighting
+- [ ] scratchpad step debugger
+- [ ] clean input/output system for CLI, browser, tests, and embedding
+- [ ] extend `match` with boolean logic / predicate-style matching
+- [ ] extend `match` with regex support for string-oriented matching
+
+### Bytecode and VM
+
+- [ ] compile classes, methods, and calls into bytecode
+- [ ] extend the VM beyond the current global statement and expression subset
+- [ ] define a stable `.lyrab` module format beyond the current bootstrap JSON serialization
+- [ ] decide how debug metadata and source mapping should be attached to bytecode
 
 ### Runtime and language features
 
@@ -78,9 +116,11 @@
 - [ ] restore a consistent local `check` workflow where `tsc --noEmit` is available in every shell
 - [ ] keep Bun tests in sync with `tests/tests.lyra`
 - [ ] improve developer docs around build, test, and runtime architecture
+- [ ] keep scratchpad and CLI workflows aligned with the current runtime architecture
 
 ## Notes
 
 - The formatter configuration is intentionally pragmatic. Line length `120` is a target, not a strict guarantee of the JetBrains formatter.
 - Vertically aligned assignment blocks are not part of the enforced project style.
-- The current focus is correctness, structure, and language maturity before IDE/plugin work.
+- The current focus is correctness, structure, language maturity, and runtime model clarity before IDE/plugin work.
+- Async support should be treated as a runtime model decision, not just as another native API wrapper.

@@ -26,6 +26,14 @@ import {
 } from "./model/runtime_model.ts";
 import type {ASTInterpreter} from "./interfaces/ast_interpreter.ts";
 import {
+	chainExecutionResult,
+	CompletedExecution,
+	isExecutionSuspended,
+	type ExecutionResult,
+	type ExecutionSuspension,
+	SuspendedExecution
+} from "./model/execution_model.ts";
+import {
 	ASTAnnotationNode,
 	ASTArrayNode,
 	ASTAssignmentNode,
@@ -98,6 +106,18 @@ export class Interpreter implements ASTInterpreter {
 		return this.evalNode(node);
 	}
 
+	public async runAsync(node: ASTNode): Promise<RuntimeValue> {
+		if (node.type === ASTNodeType.PROGRAM) {
+			for (const child of node.children) {
+				await this.resolveExecution(() => this.evalNode(child));
+			}
+
+			return Value(null);
+		}
+
+		return await this.resolveExecution(() => this.evalNode(node));
+	}
+
 	public evalNode(node: ASTNode)
 		: RuntimeValue {
 
@@ -122,9 +142,24 @@ export class Interpreter implements ASTInterpreter {
 			}
 			case ASTNodeType.VARIABLE: {
 				const variableNode: ASTVariableNode = node as ASTVariableNode;
-				const value: any = variableNode.init
-				                   ? this.evalExpression(variableNode.init)
-				                   : Value(null);
+				let value: RuntimeValue;
+
+				try {
+					value = variableNode.init
+					        ? this.evalExpression(variableNode.init)
+					        : Value(null);
+				} catch (signal) {
+					if (signal instanceof InterpreterSuspensionSignal) {
+						throw new InterpreterSuspensionSignal(
+							this.chainSuspension(signal.suspension, (resolvedValue: RuntimeValue): ExecutionResult => {
+								this.currentScope.define(node.name, resolvedValue);
+								return CompletedExecution(resolvedValue);
+							})
+						);
+					}
+
+					throw signal;
+				}
 
 				this.currentScope.define(node.name, value);
 
@@ -451,7 +486,42 @@ export class Interpreter implements ASTInterpreter {
 
 	public evalAssign(expr: ASTAssignmentNode): RuntimeValue {
 
-		const value: RuntimeValue = this.evalExpression(expr.right);
+		let value: RuntimeValue;
+
+		try {
+			value = this.evalExpression(expr.right);
+		} catch (signal) {
+			if (signal instanceof InterpreterSuspensionSignal) {
+				throw new InterpreterSuspensionSignal(
+					this.chainSuspension(signal.suspension, (resolvedValue: RuntimeValue): ExecutionResult => {
+						if (expr.left.type === ASTNodeType.MEMBER) {
+							const member = expr.left as ASTMemberNode;
+							const objectValue: RuntimeValue = this.evalExpression(member.object);
+							const instance = objectValue.asRuntimeInstance();
+
+							if (member.object.type === ASTNodeType.IDENTIFIER) {
+								instance.staticFields.set(member.property, resolvedValue);
+							} else {
+								instance.instanceFields.set(member.property, resolvedValue);
+							}
+
+							instance.invalidate(this.eventDispatcher);
+
+							return CompletedExecution(resolvedValue);
+						}
+
+						if (expr.left.type === ASTNodeType.IDENTIFIER) {
+							this.currentScope.assign(expr.left.name, resolvedValue);
+							return CompletedExecution(resolvedValue);
+						}
+
+						throwRuntimeError(`Invalid assignment target`, expr.span);
+					})
+				);
+			}
+
+			throw signal;
+		}
 
 		if (expr.left.type === ASTNodeType.MEMBER) {
 
@@ -813,6 +883,21 @@ export class Interpreter implements ASTInterpreter {
 			const args: RuntimeValue[] = this.getMethodArguments(callNode, method.parameters);
 			const rawArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
 			const result: any = runtimeClass.nativeRuntimeConstructor[method.name](...rawArgs);
+
+			if (result instanceof Promise) {
+				throw new InterpreterSuspensionSignal(
+					SuspendedExecution(
+						result.then((resolved: any): RuntimeValue => {
+							return method.returnType
+							       ? Value(resolved).toNativeRuntimeValue(method.returnType.name)
+							       : Value(resolved);
+						}),
+						{
+							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
+						}
+					)
+				);
+			}
 
 			if (result instanceof LyraNativeObject) {
 				return wrapNativeInstance(result, this.objectRegistry);
@@ -1296,6 +1381,52 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		return undefined;
+	}
+
+	private async resolveExecution(action: () => RuntimeValue): Promise<RuntimeValue> {
+		try {
+			return action();
+		} catch (signal) {
+			if (signal instanceof InterpreterSuspensionSignal) {
+				return await this.resumeSuspension(signal.suspension);
+			}
+
+			throw signal;
+		}
+	}
+
+	private async resumeSuspension(suspension: ExecutionSuspension): Promise<RuntimeValue> {
+		const value: RuntimeValue = await suspension.awaitable;
+		const result: ExecutionResult = suspension.continuation.resume(value);
+
+		if (isExecutionSuspended(result)) {
+			return await this.resumeSuspension(result);
+		}
+
+		return result.value;
+	}
+
+	private chainSuspension(
+		suspension: ExecutionSuspension,
+		mapper: (value: RuntimeValue) => ExecutionResult
+	): ExecutionSuspension {
+		const chainedResult = chainExecutionResult(suspension, mapper);
+		if (isExecutionSuspended(chainedResult)) {
+			return chainedResult;
+		}
+
+		return SuspendedExecution(
+			Promise.resolve(chainedResult.value),
+			{
+				resume: (): ExecutionResult => chainedResult
+			}
+		);
+	}
+}
+
+class InterpreterSuspensionSignal extends Error {
+	constructor(public readonly suspension: ExecutionSuspension) {
+		super("InterpreterSuspension");
 	}
 }
 
