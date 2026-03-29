@@ -70,7 +70,7 @@ export function fromLyraValue(value: RuntimeValue | ASTNode): RuntimeValue {
 	}
 
 	if (!value.type.runtimeClass) {
-		return value;
+		return value.toNativeRuntimeValue();
 	}
 
 	if (value.type.runtimeClass) {

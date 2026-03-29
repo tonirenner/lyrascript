@@ -1,4 +1,4 @@
-import {Value, type RuntimeLambda} from "../contracts/runtime_model.ts";
+import {type RuntimeLambda, Value} from "../contracts/runtime_model.ts";
 
 export class State<T = any> {
 	private value: T;

@@ -37,9 +37,11 @@ function createProgram(isDebug: boolean = false): LyraScriptProgram {
 }
 
 async function execute(source: Source, isDebug: boolean = false): Promise<void> {
-	return runWithSourceContext(source,
-	                            () => createProgram(isDebug)
-		                            .executeSource(source));
+	return runWithSourceContext(
+		source,
+		() => createProgram(isDebug)
+			.executeSource(source)
+	);
 }
 
 async function executeFromUrl(url: string, isDebug: boolean = false): Promise<void> {
@@ -52,9 +54,11 @@ async function executeFromString(code: string, isDebug: boolean = false): Promis
 }
 
 async function executeTest(source: Source, isDebug = false): Promise<void> {
-	return runWithSourceContext(source,
-	                            () => createProgram(isDebug)
-		                            .executeTest(source));
+	return runWithSourceContext(
+		source,
+		() => createProgram(isDebug)
+			.executeTest(source)
+	);
 }
 
 async function executeTestUrl(url: string, isDebug: boolean = false): Promise<void> {

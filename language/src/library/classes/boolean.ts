@@ -31,7 +31,8 @@ class ${CLASS_NAME} {
 
 	public toString(): string;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = true;
 	}

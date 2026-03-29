@@ -153,7 +153,11 @@ export function throwNativeError(message: string, span: SourceSpan | null = null
 	throw new LyraNativeError(message, span, cause);
 }
 
-export function throwDependencyError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+export function throwDependencyError(
+	message: string,
+	span: SourceSpan | null = null,
+	cause: string | null = null
+): never {
 	throw new LyraDependencyError(message, span, cause);
 }
 
@@ -161,7 +165,11 @@ export function throwCompileError(message: string, span: SourceSpan | null = nul
 	throw new LyraCompileError(message, span, cause);
 }
 
-export function throwVirtualMachineError(message: string, span: SourceSpan | null = null, cause: string | null = null): never {
+export function throwVirtualMachineError(
+	message: string,
+	span: SourceSpan | null = null,
+	cause: string | null = null
+): never {
 	throw new VirtualMachineError(message, span, cause);
 }
 

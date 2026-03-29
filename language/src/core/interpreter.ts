@@ -123,8 +123,8 @@ export class Interpreter implements ASTInterpreter {
 			case ASTNodeType.VARIABLE: {
 				const variableNode: ASTVariableNode = node as ASTVariableNode;
 				const value: any = variableNode.init
-					? this.evalExpression(variableNode.init)
-					: Value(null);
+				                   ? this.evalExpression(variableNode.init)
+				                   : Value(null);
 
 				this.currentScope.define(node.name, value);
 
@@ -148,8 +148,8 @@ export class Interpreter implements ASTInterpreter {
 			case ASTNodeType.RETURN: {
 				const returnNode: ASTReturnNode = node as ASTReturnNode;
 				const value: RuntimeValue = returnNode.argument
-					? this.evalExpression(returnNode.argument)
-					: Value(null);
+				                            ? this.evalExpression(returnNode.argument)
+				                            : Value(null);
 
 				throw new Return(value);
 			}
@@ -182,8 +182,8 @@ export class Interpreter implements ASTInterpreter {
 		} catch (signal) {
 			if (signal instanceof Return) {
 				return returnType
-					? signal.value.toNativeRuntimeValue(returnType)
-					: signal.value;
+				       ? signal.value.toNativeRuntimeValue(returnType)
+				       : signal.value;
 			}
 			throw signal;
 		} finally {
@@ -435,16 +435,6 @@ export class Interpreter implements ASTInterpreter {
 		return Value(value);
 	}
 
-	private evalThis(node: ASTNode): RuntimeValue {
-		const instance = this.currentContext.instance;
-
-		if (!instance) {
-			throwRuntimeError('this used outside of method.', node.span);
-		}
-
-		return Value(instance, instance.runtimeClass.className, instance.runtimeClass);
-	}
-
 	public evalLambda(node: ASTLambdaNode): RuntimeValue {
 		return Value(new RuntimeLambdaFunction(this, node, this.currentScope), 'Lambda');
 	}
@@ -499,8 +489,6 @@ export class Interpreter implements ASTInterpreter {
 		throwRuntimeError(`Invalid assignment target`, expr.span);
 	}
 
-	// control flow
-
 	public evalIf(node: ASTIfNode): RuntimeValue {
 
 		const condition = this.evalExpression(node.condition)
@@ -534,6 +522,8 @@ export class Interpreter implements ASTInterpreter {
 
 		return Value(null);
 	}
+
+	// control flow
 
 	public evalMatch(node: ASTMatchNode): RuntimeValue {
 
@@ -606,7 +596,7 @@ export class Interpreter implements ASTInterpreter {
 
 		while (this.callIteratorMethod(iterator.asRuntimeInstance(), 'hasNext')
 		           .toNativeRuntimeValue(TYPE_ENUM.BOOLEAN)
-		           .value) {
+			.value) {
 			const value: RuntimeValue = this.callIteratorMethod(iterator.asRuntimeInstance(), 'current');
 
 			// neuer Kontext für jede Iteration
@@ -632,8 +622,6 @@ export class Interpreter implements ASTInterpreter {
 		return Value(null);
 	}
 
-	// objects
-
 	public evalClass(node: ASTClassNode): RuntimeValue {
 		const runtimeInstance: RuntimeInstanceType = this.createRuntimeInstanceFromClassNode(node);
 
@@ -657,6 +645,8 @@ export class Interpreter implements ASTInterpreter {
 
 		return value;
 	}
+
+	// objects
 
 	public evalNew(expr: ASTNewNode): RuntimeValue {
 
@@ -699,8 +689,6 @@ export class Interpreter implements ASTInterpreter {
 		throwRuntimeError(`Property '${expr.property}' not found`, expr.span);
 	}
 
-	// calls
-
 	public evalCall(expr: ASTCallNode): RuntimeValue {
 
 		// super call inside constructor
@@ -734,7 +722,7 @@ export class Interpreter implements ASTInterpreter {
 			const memberNode = expr.callee as ASTMemberNode;
 
 			if (memberNode.object.type === ASTNodeType.IDENTIFIER
-				&& this.objectRegistry.classes.has(memberNode.object.name)) {
+			    && this.objectRegistry.classes.has(memberNode.object.name)) {
 				return this.evalStaticCall(expr, memberNode.object.name);
 			}
 
@@ -743,6 +731,8 @@ export class Interpreter implements ASTInterpreter {
 
 		return this.evalFunctionCall(expr);
 	}
+
+	// calls
 
 	public callInstanceMethod(instance: RuntimeInstanceType, method: RuntimeMethodType, args: RuntimeValue[])
 		: RuntimeValue {
@@ -786,13 +776,23 @@ export class Interpreter implements ASTInterpreter {
 			}
 
 			const castedValue: RuntimeValue = parameter.typeAnnotation
-				? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
-				: value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
+			                                  ? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
+			                                  : value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
 
 			methodScope.define(parameter.name, castedValue);
 		}
 
 		return this.evalReturn(method.body, methodScope, method.returnType?.name, instance);
+	}
+
+	private evalThis(node: ASTNode): RuntimeValue {
+		const instance = this.currentContext.instance;
+
+		if (!instance) {
+			throwRuntimeError('this used outside of method.', node.span);
+		}
+
+		return Value(instance, instance.runtimeClass.className, instance.runtimeClass);
 	}
 
 	private evalStaticCall(callNode: ASTCallNode, className: string)
@@ -847,7 +847,7 @@ export class Interpreter implements ASTInterpreter {
 
 		// super.method()
 		if (callNode.callee.object.type === ASTNodeType.IDENTIFIER &&
-			callNode.callee.object.name === GRAMMAR.SUPER) {
+		    callNode.callee.object.name === GRAMMAR.SUPER) {
 
 			if (!runtimeClass.superClassName) {
 				throwRuntimeError('super used but no superclass', callNode.callee.span);
@@ -859,8 +859,10 @@ export class Interpreter implements ASTInterpreter {
 		const method = this.resolveMethodInHierarchy(runtimeClass, callNode.callee.property);
 
 		if (!method) {
-			throwRuntimeError(`Method ${callNode.callee.property} not found on ${runtimeClass.className}`,
-			                  callNode.callee.span);
+			throwRuntimeError(
+				`Method ${callNode.callee.property} not found on ${runtimeClass.className}`,
+				callNode.callee.span
+			);
 		}
 
 		if (targetInstance.nativeRuntimeObject && method.name in targetInstance.nativeRuntimeObject) {
@@ -908,8 +910,10 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		if (callNode.callee instanceof ASTMemberNode) {
-			throwRuntimeError(`Unknown function ${callNode.callee.object.name}.${callNode.callee.property}`,
-			                  callNode.span);
+			throwRuntimeError(
+				`Unknown function ${callNode.callee.object.name}.${callNode.callee.property}`,
+				callNode.span
+			);
 		}
 
 		throwRuntimeError(`Unsupported call expression`, callNode.span);
@@ -966,8 +970,8 @@ export class Interpreter implements ASTInterpreter {
 
 
 			const castedValue: RuntimeValue = parameter.typeAnnotation
-				? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
-				: value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
+			                                  ? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
+			                                  : value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
 
 			methodScope.define(parameter.name, castedValue);
 		}
@@ -1092,8 +1096,8 @@ export class Interpreter implements ASTInterpreter {
 		const constructor: RuntimeMethodType | undefined = runtimeClass.constructorMethod;
 
 		const constructorArgs: RuntimeValue[] = constructor
-			? this.getMethodArguments(expr, constructor.parameters)
-			: [];
+		                                        ? this.getMethodArguments(expr, constructor.parameters)
+		                                        : [];
 
 		if (!runtimeClass.nativeRuntimeConstructor) {
 			throwRuntimeError('Class has no native constructor.');
@@ -1176,8 +1180,8 @@ export class Interpreter implements ASTInterpreter {
 					}
 
 					const castedValue: RuntimeValue = parameter.typeAnnotation
-						? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
-						: value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
+					                                  ? value.toNativeRuntimeValue(parameter.typeAnnotation.name)
+					                                  : value.toNativeRuntimeValue(TYPE_ENUM.MIXED);
 
 					this.currentScope.define(parameter.name, castedValue);
 				}
@@ -1194,8 +1198,8 @@ export class Interpreter implements ASTInterpreter {
 	private createRuntimeInstanceFromNewNode(expr: ASTNewNode, runtimeClass: RuntimeClassType)
 		: RuntimeInstanceType {
 		const args: RuntimeValue[] = runtimeClass.constructorMethod
-			? this.getMethodArguments(expr, runtimeClass.constructorMethod.parameters)
-			: [];
+		                             ? this.getMethodArguments(expr, runtimeClass.constructorMethod.parameters)
+		                             : [];
 
 		return this.createRuntimeInstance(runtimeClass, args);
 	}
@@ -1272,7 +1276,10 @@ export class Interpreter implements ASTInterpreter {
 		return this.createNativeRuntimeInstance(runtimeClass, [fromLyraValue(primitiveValue)]);
 	}
 
-	private resolveMethodInHierarchy(runtimeClass: RuntimeClassType, methodName: string): RuntimeMethodType | undefined {
+	private resolveMethodInHierarchy(
+		runtimeClass: RuntimeClassType,
+		methodName: string
+	): RuntimeMethodType | undefined {
 		let currentClass: RuntimeClassType | undefined = runtimeClass;
 
 		while (currentClass) {

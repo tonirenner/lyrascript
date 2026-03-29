@@ -43,14 +43,15 @@ class ${CLASS_NAME}<T> {
 	public constructor(initial: T);
 
 	public get(): T;
-	
+
 	public set(value: T): void;
-	
+
 	public subscribe(fn: (T) -> mixed): number;
-	
+
 	public unsubscribe(id: number): boolean;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = true;
 	}

@@ -57,18 +57,19 @@ export class System extends NativeClass {
 				`
 class ${CLASS_NAME} {
 	public static alert(message: string): void;
-	
+
 	public static print(message: string): void;
-	
+
 	public static info(value: mixed): void;
-	
+
 	public static warning(value: mixed): void;
-	
+
 	public static error(value: mixed): void;
-	
+
 	public static log(value: mixed): void;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = false;
 	}

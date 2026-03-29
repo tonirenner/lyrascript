@@ -129,12 +129,12 @@ export class Tokenizer {
 			}
 
 			if (ifIsConsumingLineComment()
-				|| ifIsConsumingPunctuation()
-				|| ifIsConsumingString()
-				|| ifIsConsumingNumber()
-				|| ifIsConsumingIdentifier()
-				|| ifIsConsumingOperator()
-				|| ifIsConsumingAnnotation()) {
+			    || ifIsConsumingPunctuation()
+			    || ifIsConsumingString()
+			    || ifIsConsumingNumber()
+			    || ifIsConsumingIdentifier()
+			    || ifIsConsumingOperator()
+			    || ifIsConsumingAnnotation()) {
 				continue;
 			}
 
@@ -370,10 +370,10 @@ export class Tokenizer {
 			}
 
 			if (ifIsConsumingPunctuation()
-				|| ifIsConsumingString()
-				|| ifIsConsumingNumber()
-				|| ifIsConsumingIdentifier()
-				|| ifIsConsumingOperator()
+			    || ifIsConsumingString()
+			    || ifIsConsumingNumber()
+			    || ifIsConsumingIdentifier()
+			    || ifIsConsumingOperator()
 			) {
 				continue;
 			}

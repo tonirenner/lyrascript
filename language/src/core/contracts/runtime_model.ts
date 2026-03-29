@@ -32,9 +32,9 @@ export interface AccessAttributes {
 }
 
 export interface RuntimeNativeObject {
-	[index: string]: any;
-
 	readonly className: string;
+
+	[index: string]: any;
 }
 
 export interface Serializable {
@@ -257,7 +257,8 @@ export class Modifiers {
 export function Value(
 	value: any,
 	name: string = typeof value,
-	runtimeClass?: RuntimeClass<any, any, any, any, any, any>): RuntimeValue {
+	runtimeClass?: RuntimeClass<any, any, any, any, any, any>
+): RuntimeValue {
 	return {
 		type: {
 			name: name,
@@ -267,17 +268,23 @@ export function Value(
 		toNativeRuntimeValue(expectedType?: string): RuntimeValue {
 
 			if (!expectedType) {
-				if (this.value === GRAMMAR.NULL) {
-					return Value(null);
-				}
-				if (this.value === GRAMMAR.TRUE) {
-					return Value(true);
-				}
-				if (this.value === GRAMMAR.FALSE) {
-					return Value(false);
-				}
-				if (typeof this.value === 'string' && this.value.trim() !== '') {
-					return Value(Number(this.value));
+				switch (this.type.name) {
+					case TYPE_ENUM.NULL:
+						return Value(null);
+
+					case TYPE_ENUM.BOOLEAN:
+						return typeof this.value === TYPE_ENUM.BOOLEAN
+							? Value(this.value)
+							: Value(this.value === GRAMMAR.TRUE);
+
+					case TYPE_ENUM.NUMBER:
+						return Value(Number(this.value));
+
+					case TYPE_ENUM.STRING:
+						return Value(String(this.value));
+
+					default:
+						return Value(this.value, this.type.name, this.type.runtimeClass);
 				}
 			}
 
@@ -290,8 +297,8 @@ export function Value(
 
 				case TYPE_ENUM.BOOLEAN:
 					return typeof this.value === TYPE_ENUM.BOOLEAN
-						? Value(this.value)
-						: Value(this.value === 'true');
+					       ? Value(this.value)
+					       : Value(this.value === 'true');
 
 				case TYPE_ENUM.NULL:
 					return Value(null);

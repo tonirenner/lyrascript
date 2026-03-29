@@ -61,20 +61,21 @@ export class ArrayType extends NativeClass {
 				`
 class ${ARRAY_CLASS_NAME}<T> implements Iterable<T> {
 	public constructor(values: Array<T> = []);
-	
+
 	public iterator(): Iterator<T>;
-	
+
 	public length(): number;
-	
+
 	public push(value: T): void;
-	
+
 	public get(index: number): T?;
-	
+
 	public removeAt(index: number): void;
-	
+
 	public toString(): string;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = true;
 	}
@@ -136,20 +137,21 @@ export class ArrayIteratorType extends NativeClass {
 				`
 class ${ARRAY_ITERATOR_CLASS_NAME}<T> implements Iterator<T> {
 	public constructor(array: Array<T>);
-	
+
 	public hasNext(): boolean;
-	
+
 	public next(): void;
-	
+
 	public previous(): void;
-	
+
 	public key(): number;
-	
+
 	public current(): T;
-	
+
 	public rewind(): void;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = true;
 	}

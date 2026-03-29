@@ -111,11 +111,11 @@ export class TypeRegistry {
 		const classScope = new TypeScope();
 
 		if (classSymbol.instanceFieldSymbols.size > 0
-			|| classSymbol.staticFieldSymbols.size > 0
-			|| classSymbol.instanceMethodSymbols.size > 0
-			|| classSymbol.staticMethodSymbols.size > 0
-			|| classSymbol.constructorMethodSymbol !== null
-			|| classSymbol.implementsInterfaces.length > 0) {
+		    || classSymbol.staticFieldSymbols.size > 0
+		    || classSymbol.instanceMethodSymbols.size > 0
+		    || classSymbol.staticMethodSymbols.size > 0
+		    || classSymbol.constructorMethodSymbol !== null
+		    || classSymbol.implementsInterfaces.length > 0) {
 			return;
 		}
 
@@ -141,22 +141,22 @@ export class TypeRegistry {
 				const fieldSymbol = new FieldSymbol(
 					memberNode,
 					memberNode.fieldType
-						? wrapType(memberNode.fieldType, objectRegistry, classScope)
-						: Types.MIXED
+					? wrapType(memberNode.fieldType, objectRegistry, classScope)
+					: Types.MIXED
 				);
 
 				fieldSymbol.owner = classSymbol;
 
 				const target = memberNode.modifiers.static
-					? classSymbol.staticFieldSymbols
-					: classSymbol.instanceFieldSymbols;
+				               ? classSymbol.staticFieldSymbols
+				               : classSymbol.instanceFieldSymbols;
 
 				target.set(fieldSymbol.name, fieldSymbol);
 				continue;
 			}
 
 			if ((memberNode.type === ASTNodeType.METHOD || memberNode.type === ASTNodeType.CONSTRUCTOR)
-				&& memberNode instanceof ASTMethodNode) {
+			    && memberNode instanceof ASTMethodNode) {
 				const methodScope = new TypeScope(classScope);
 				const methodSymbol = new MethodSymbol(memberNode);
 
@@ -168,14 +168,16 @@ export class TypeRegistry {
 				}
 
 				methodSymbol.parameterSymbols = memberNode.parameters.map(parameterNode =>
-					                                                          createParameterSymbol(parameterNode,
-					                                                                                objectRegistry,
-					                                                                                methodScope)
+					                                                          createParameterSymbol(
+						                                                          parameterNode,
+						                                                          objectRegistry,
+						                                                          methodScope
+					                                                          )
 				);
 
 				methodSymbol.returnType = memberNode.returnType
-					? wrapType(memberNode.returnType, objectRegistry, methodScope)
-					: Types.VOID;
+				                          ? wrapType(memberNode.returnType, objectRegistry, methodScope)
+				                          : Types.VOID;
 
 				if (memberNode.type === ASTNodeType.CONSTRUCTOR) {
 					classSymbol.constructorMethodSymbol = methodSymbol;
@@ -206,8 +208,8 @@ export class TypeRegistry {
 		const interfaceScope = new TypeScope();
 
 		if (interfaceSymbol.staticFieldSymbols.size > 0
-			|| interfaceSymbol.instanceMethodSymbols.size > 0
-			|| interfaceSymbol.extendsInterfaces.length > 0) {
+		    || interfaceSymbol.instanceMethodSymbols.size > 0
+		    || interfaceSymbol.extendsInterfaces.length > 0) {
 			return;
 		}
 
@@ -224,8 +226,8 @@ export class TypeRegistry {
 				const fieldSymbol = new FieldSymbol(
 					memberNode,
 					memberNode.fieldType
-						? wrapType(memberNode.fieldType, objectRegistry, interfaceScope)
-						: Types.MIXED
+					? wrapType(memberNode.fieldType, objectRegistry, interfaceScope)
+					: Types.MIXED
 				);
 
 				fieldSymbol.owner = interfaceSymbol;
@@ -245,14 +247,16 @@ export class TypeRegistry {
 				}
 
 				methodSymbol.parameterSymbols = memberNode.parameters.map(parameterNode =>
-					                                                          createParameterSymbol(parameterNode,
-					                                                                                objectRegistry,
-					                                                                                methodScope)
+					                                                          createParameterSymbol(
+						                                                          parameterNode,
+						                                                          objectRegistry,
+						                                                          methodScope
+					                                                          )
 				);
 
 				methodSymbol.returnType = memberNode.returnType
-					? wrapType(memberNode.returnType, objectRegistry, methodScope)
-					: Types.VOID;
+				                          ? wrapType(memberNode.returnType, objectRegistry, methodScope)
+				                          : Types.VOID;
 
 				interfaceSymbol.instanceMethodSymbols.set(methodSymbol.name, methodSymbol);
 			}

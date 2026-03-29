@@ -6,7 +6,6 @@ import {
 	Return,
 	type RuntimeClass,
 	type RuntimeField,
-	type RuntimeInstance,
 	type RuntimeInstanceType,
 	type RuntimeInterface,
 	type RuntimeLambda,
@@ -268,9 +267,11 @@ export function createRuntimeInstance(
 
 export class RuntimeLambdaFunction implements RuntimeLambda {
 
-	constructor(private readonly interpreter: ASTInterpreter,
-	            private readonly node: ASTLambdaNode,
-	            private readonly scope: ValueScope) {
+	constructor(
+		private readonly interpreter: ASTInterpreter,
+		private readonly node: ASTLambdaNode,
+		private readonly scope: ValueScope
+	) {
 
 	}
 
@@ -293,9 +294,9 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 		}
 
 		this.interpreter.pushContext({
-			scope: lambdaScope,
-			instance: this.interpreter.currentContext.instance
-		});
+			                             scope: lambdaScope,
+			                             instance: this.interpreter.currentContext.instance
+		                             });
 
 		try {
 			if (this.node.children.length === 1 && this.node.children[0]?.isExpression) {

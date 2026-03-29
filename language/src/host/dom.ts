@@ -71,8 +71,8 @@ export class HTMLElementCreator implements ElementCreator {
 
 	private assignComponentProperty(instance: RuntimeInstanceType, key: string, value: any): void {
 		const runtimeValue = value && typeof value === 'object' && 'runtimeClass' in value
-			? Value(value, value.runtimeClass.className, value.runtimeClass)
-			: Value(value);
+		                     ? Value(value, value.runtimeClass.className, value.runtimeClass)
+		                     : Value(value);
 
 		if (instance.instanceFields.has(key)) {
 			instance.instanceFields.set(key, runtimeValue);
@@ -86,10 +86,12 @@ export class HTMLElementCreator implements ElementCreator {
 }
 
 export class HTMLElementPatcher implements ElementPatcher {
-	constructor(private readonly mountPoint: HTMLElement,
-	            private readonly applicationRuntime: ApplicationRuntime,
-	            vdom: VDOM,
-	            private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime, vdom)) {
+	constructor(
+		private readonly mountPoint: HTMLElement,
+		private readonly applicationRuntime: ApplicationRuntime,
+		vdom: VDOM,
+		private readonly elementCreator: ElementCreator = new HTMLElementCreator(applicationRuntime, vdom)
+	) {
 	}
 
 	public patch(oldNode: VChild | null, newNode: VChild): void {

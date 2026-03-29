@@ -1,3 +1,4 @@
+import System;
 import Assert;
 import {Person, User} from "/lyrascript/tests/user.lyra";
 
@@ -271,6 +272,149 @@ class StringNativeTests {
         let r = s.toUpperCase().toLowerCase().toString();
 
         Assert.isTrue(r == "hello", "expected chained calls to return lowercase string");
+    }
+}
+
+class NumberNativeTests {
+
+    @test ( title = "converts numbers to strings correctly" )
+    public toStringValue(): void {
+        let n: number = 42;
+
+        Assert.isTrue(n.toString() == "42", "expected number to stringify correctly");
+    }
+
+    @test ( title = "supports unary minus on numbers" )
+    public unaryMinus(): void {
+        let n: number = 5;
+
+        Assert.isTrue((-n).toString() == "-5", "expected unary minus to negate the number");
+    }
+}
+
+class BooleanNativeTests {
+
+    @test ( title = "converts booleans to strings correctly" )
+    public toStringValue(): void {
+        let yes: boolean = true;
+        let no: boolean = false;
+
+        Assert.isTrue(yes.toString() == "true", "expected true to stringify correctly");
+        Assert.isTrue(no.toString() == "false", "expected false to stringify correctly");
+    }
+}
+
+class ArrayNativeTests {
+
+    @test ( title = "returns array length correctly" )
+    public length(): void {
+        let items: Array<number> = [1, 2, 3];
+
+        Assert.isTrue(items.length() == 3, "expected array length to match element count");
+    }
+
+    @test ( title = "supports array index access correctly" )
+    public indexAccess(): void {
+        let items: Array<string> = ["first", "second", "third"];
+
+        Assert.isTrue(items[1] == "second", "expected indexed access to return the matching element");
+    }
+
+    @test ( title = "supports push and get on arrays" )
+    public pushAndGet(): void {
+        let items: Array<number> = [1];
+        items.push(2);
+        items.push(3);
+
+        Assert.isTrue(items.get(0) == 1, "expected first array element to remain unchanged");
+        Assert.isTrue(items.get(2) == 3, "expected pushed element to be readable");
+    }
+
+    @test ( title = "removes array elements by index" )
+    public removeAt(): void {
+        let items: Array<number> = [1, 2, 3];
+        items.removeAt(1);
+
+        Assert.isTrue(items.length() == 2, "expected array length to shrink after removal");
+        Assert.isTrue(items.get(1) == 3, "expected remaining elements to shift left");
+    }
+}
+
+class ForeachTests {
+
+    @test ( title = "iterates over arrays with foreach" )
+    public sumArrayValues(): void {
+        let items: Array<number> = [1, 2, 3, 4];
+        let sum: number = 0;
+
+        foreach (item in items) {
+            sum = sum + item;
+        }
+
+        Assert.isTrue(sum == 10, "expected foreach to visit each array element once");
+    }
+}
+
+class MatchTests {
+
+    @test ( title = "matches explicit cases correctly" )
+    public explicitCase(): void {
+        let value: number = 2;
+        let result: string = "";
+
+        match (value) {
+            1: {
+                result = "one";
+            }
+            2: {
+                result = "two";
+            }
+            default: {
+                result = "other";
+            }
+        }
+
+        Assert.isTrue(result == "two", "expected matching case body to be executed");
+    }
+
+    @test ( title = "uses the default match case when no case matches" )
+    public defaultCase(): void {
+        let value: number = 99;
+        let result: string = "";
+
+        match (value) {
+            1: {
+                result = "one";
+            }
+            2: {
+                result = "two";
+            }
+            default: {
+                result = "other";
+            }
+        }
+
+        Assert.isTrue(result == "other", "expected default case to run when no explicit case matches");
+    }
+}
+
+class FieldMutationSubject {
+    public value: number = 0;
+
+    public increment(): void {
+        this.value = this.value + 1;
+    }
+}
+
+class FieldAssignmentTests {
+
+    @test ( title = "updates instance fields through assignment" )
+    public updatesInstanceField(): void {
+        let subject = new FieldMutationSubject();
+        subject.increment();
+        subject.increment();
+
+        Assert.isTrue(subject.value == 2, "expected instance field assignments to persist");
     }
 }
 

@@ -32,10 +32,11 @@ export class Assert extends NativeClass {
 				`
 class ${CLASS_NAME} {
 	public static isTrue(condition: boolean, message: string = ""): void;
-	
+
 	public static isFalse(condition: boolean, message: string = ""): void;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = false;
 	}

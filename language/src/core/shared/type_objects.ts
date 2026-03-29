@@ -63,7 +63,7 @@ export class PrimitiveType extends Type {
 
 	override equals(other: Type): boolean {
 		return other instanceof PrimitiveType
-			&& this.name === other.name;
+		       && this.name === other.name;
 	}
 }
 
@@ -166,7 +166,7 @@ export class TypeVariable extends Type {
 
 	override equals(other: Type): boolean {
 		return other instanceof TypeVariable
-			&& this.name === other.name;
+		       && this.name === other.name;
 	}
 
 	override accepts(): boolean {
@@ -333,7 +333,7 @@ export class ClassRefType extends Type {
 
 	override equals(other: Type): boolean {
 		return (other instanceof ClassRefType
-			&& other.classSymbol === this.classSymbol);
+		        && other.classSymbol === this.classSymbol);
 	}
 
 	override accepts(other: Type): boolean {
@@ -382,7 +382,7 @@ export class InterfaceRefType extends Type {
 
 	override equals(other: Type): boolean {
 		return (other instanceof InterfaceRefType
-			&& other.interfaceSymbol === this.interfaceSymbol);
+		        && other.interfaceSymbol === this.interfaceSymbol);
 	}
 
 	override accepts(other: Type): boolean {
@@ -497,8 +497,8 @@ export function createParameterSymbol(
 	scope: TypeScope = new TypeScope()
 ): ParameterSymbol {
 	const parameterType = parameterNode.typeAnnotation
-		? wrapType(parameterNode.typeAnnotation, objectRegistry, scope)
-		: Types.MIXED;
+	                      ? wrapType(parameterNode.typeAnnotation, objectRegistry, scope)
+	                      : Types.MIXED;
 
 	return new ParameterSymbol(
 		parameterNode.name,
@@ -521,7 +521,11 @@ export function wrapType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, 
 	throwTypeError(`Could not resolve type ${typeNode.name}.`, typeNode.span);
 }
 
-export function resolveBaseType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, scope: TypeScope | null = null): Type {
+export function resolveBaseType(
+	typeNode: ASTTypeNode,
+	objectRegistry: ObjectRegistry,
+	scope: TypeScope | null = null
+): Type {
 	switch (typeNode.kind) {
 		case ASTTypeNode.KIND_SIMPLE: {
 			if (scope && scope.hasTypeBinding(typeNode.name)) {
@@ -556,7 +560,10 @@ export function resolveBaseType(typeNode: ASTTypeNode, objectRegistry: ObjectReg
 	}
 }
 
-export function resolveRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry): ClassRefType | InterfaceRefType | Type {
+export function resolveRefType(
+	typeNode: ASTTypeNode,
+	objectRegistry: ObjectRegistry
+): ClassRefType | InterfaceRefType | Type {
 	if (typeNode.typeArguments.length > 0) {
 		throwTypeError(`Generic class ${typeNode.name} cannot have type arguments.`, typeNode.span);
 	}
@@ -572,7 +579,10 @@ export function resolveRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegi
 	throwTypeError(`Unknown class or interface ${typeNode.name}.`, typeNode.span);
 }
 
-export function resolveGenericRefType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry): ClassRefType | InterfaceRefType | Type {
+export function resolveGenericRefType(
+	typeNode: ASTTypeNode,
+	objectRegistry: ObjectRegistry
+): ClassRefType | InterfaceRefType | Type {
 	if (objectRegistry.types.classSymbols.has(typeNode.name)) {
 		return new ClassRefType(
 			objectRegistry.types.getClassSymbol(typeNode.name),
@@ -594,7 +604,11 @@ export function resolvePrimitiveType(typeNode: ASTTypeNode): Type {
 	return Types.getType(typeNode.name);
 }
 
-export function resolveLambdaType(typeNode: ASTTypeNode, objectRegistry: ObjectRegistry, scope: TypeScope | null = null): LambdaType {
+export function resolveLambdaType(
+	typeNode: ASTTypeNode,
+	objectRegistry: ObjectRegistry,
+	scope: TypeScope | null = null
+): LambdaType {
 	const parameterSymbols = typeNode.parameterTypes.map(
 		typeAnnotation => {
 			return new ParameterSymbol(
@@ -607,8 +621,8 @@ export function resolveLambdaType(typeNode: ASTTypeNode, objectRegistry: ObjectR
 	return new LambdaType(
 		parameterSymbols,
 		typeNode.returnType
-			? wrapType(typeNode.returnType, objectRegistry, scope)
-			: Types.MIXED
+		? wrapType(typeNode.returnType, objectRegistry, scope)
+		: Types.MIXED
 	);
 }
 
@@ -631,7 +645,10 @@ export function substituteType(type: Type, substitutionMap: Map<string, Type>): 
 	return type;
 }
 
-export function buildTypeSubstitutionMap(typeParameters: TypeParameterSymbol[], typeArguments: Type[]): Map<string, Type> {
+export function buildTypeSubstitutionMap(
+	typeParameters: TypeParameterSymbol[],
+	typeArguments: Type[]
+): Map<string, Type> {
 	const substitutionMap = new Map();
 
 	for (let i = 0; i < typeParameters.length; i++) {

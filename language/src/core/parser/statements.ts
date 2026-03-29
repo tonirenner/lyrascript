@@ -509,7 +509,12 @@ export function parseClassMember(parser: Parser): ASTNode | null {
 	throwParserError(`Invalid class member: ${nameToken.value}`);
 }
 
-function parseOperatorMember(parser: Parser, startToken: Token, annotations: ASTAnnotationNode[], modifiers: Modifiers): ASTOperatorNode {
+function parseOperatorMember(
+	parser: Parser,
+	startToken: Token,
+	annotations: ASTAnnotationNode[],
+	modifiers: Modifiers
+): ASTOperatorNode {
 
 	parser.expectKeyword(GRAMMAR.OPERATOR);
 
@@ -823,7 +828,7 @@ export function parseExpression(parser: Parser, precedence: number = 0): ASTNode
 		}
 
 		if (GRAMMAR.MATH_OPERATORS.includes(token.value)
-			|| GRAMMAR.LOGIC_OPERATORS.includes(token.value)) {
+		    || GRAMMAR.LOGIC_OPERATORS.includes(token.value)) {
 			const startToken: Token = parser.next();
 			const right: ASTNode = parseExpression(parser, tokenPrecedence + 1);
 			const endToken: Token = parser.peek();

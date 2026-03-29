@@ -1,9 +1,14 @@
 import {Interpreter} from "./interpreter.ts";
-import {createRuntimeInstance} from "./shared/ast_objects.ts";
+import {createRuntimeInstance, RuntimeScope} from "./shared/ast_objects.ts";
 import {throwRuntimeError} from "./shared/errors.ts";
-import {Value, type RuntimeClassType, type RuntimeInstanceType, type RuntimeMethodType, type RuntimeValue} from "./contracts/runtime_model.ts";
 import type {ExecutionContext} from "./contracts/runtime_model.ts";
-import {RuntimeScope} from "./shared/ast_objects.ts";
+import {
+	type RuntimeClassType,
+	type RuntimeInstanceType,
+	type RuntimeMethodType,
+	type RuntimeValue,
+	Value
+} from "./contracts/runtime_model.ts";
 import {GRAMMAR} from "./shared/ast_grammar.ts";
 
 export class ReflectionClass {
@@ -34,7 +39,8 @@ export class ReflectionClass {
 
 		const instance: RuntimeInstanceType = createRuntimeInstance(runtimeClass);
 		this.initializeInstanceFields(instance);
-		instance.nativeRuntimeObject = runtimeClass.nativeRuntimeConstructor(...args.map((arg: RuntimeValue): any => arg.value));
+		instance.nativeRuntimeObject =
+			runtimeClass.nativeRuntimeConstructor(...args.map((arg: RuntimeValue): any => arg.value));
 
 		this.interpreter.objectRegistry.instances.set(instance);
 
@@ -65,10 +71,10 @@ export class ReflectionClass {
 
 	private initializeInstanceFields(instance: RuntimeInstanceType): void {
 		this.interpreter.pushContext({
-			scope: new RuntimeScope(this.interpreter.runtimeScope),
-			instance,
-			method: instance.runtimeClass.constructorMethod
-		} as ExecutionContext);
+			                             scope: new RuntimeScope(this.interpreter.runtimeScope),
+			                             instance,
+			                             method: instance.runtimeClass.constructorMethod
+		                             } as ExecutionContext);
 
 		try {
 			this.interpreter.currentScope.define(
@@ -78,16 +84,22 @@ export class ReflectionClass {
 
 			for (const field of instance.runtimeClass.instanceFields.values()) {
 				const value: RuntimeValue = field.initializer
-					? this.interpreter.evalExpression(field.initializer).toNativeRuntimeValue(field.type)
-					: Value(null);
+				                            ?
+				                            this.interpreter.evalExpression(field.initializer)
+				                                .toNativeRuntimeValue(field.type)
+				                            :
+				                            Value(null);
 
 				instance.instanceFields.set(field.name, value);
 			}
 
 			for (const field of instance.runtimeClass.staticFields.values()) {
 				const value: RuntimeValue = field.initializer
-					? this.interpreter.evalExpression(field.initializer).toNativeRuntimeValue(field.type)
-					: Value(null);
+				                            ?
+				                            this.interpreter.evalExpression(field.initializer)
+				                                .toNativeRuntimeValue(field.type)
+				                            :
+				                            Value(null);
 
 				instance.staticFields.set(field.name, value);
 			}

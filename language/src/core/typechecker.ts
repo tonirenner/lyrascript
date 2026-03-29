@@ -252,7 +252,11 @@ export class TypeChecker {
 		}
 	}
 
-	private checkMethodCompatibility(classMethodSymbol: MethodSymbol, interfaceMethodSymbol: MethodSymbol, substitutionMap: Map<string, Type>): void {
+	private checkMethodCompatibility(
+		classMethodSymbol: MethodSymbol,
+		interfaceMethodSymbol: MethodSymbol,
+		substitutionMap: Map<string, Type>
+	): void {
 		if (classMethodSymbol.parameterSymbols.length !== interfaceMethodSymbol.parameterSymbols.length) {
 			this.typeError(`Method ${classMethodSymbol.name} has wrong parameter count`);
 		}
@@ -316,8 +320,8 @@ export class TypeChecker {
 
 	private checkVariable(node: ASTVariableNode, scope: TypeScope): void {
 		const declaredType: Type | null = node.typeAnnotation
-			? this.wrapType(node.typeAnnotation, scope)
-			: null;
+		                                  ? this.wrapType(node.typeAnnotation, scope)
+		                                  : null;
 
 		const actualType: Type = this.checkExpression(node.init, scope, declaredType);
 
@@ -535,6 +539,10 @@ export class TypeChecker {
 				this.typeError(`Unknown member ${node.property}`, node);
 			}
 
+			if (!instanceFieldSymbol.isReadonly) {
+				return;
+			}
+
 			const inConstructor: boolean = scope.currentMethodSymbol?.name === GRAMMAR.CONSTRUCTOR;
 			let isThis: boolean = false;
 			if (scope.currentObjectSymbol instanceof ClassSymbol) {
@@ -547,7 +555,12 @@ export class TypeChecker {
 		}
 	}
 
-	private checkFieldAccess(node: ASTMemberNode, classSymbol: ClassSymbol, fieldSymbol: FieldSymbol, scope: TypeScope): void {
+	private checkFieldAccess(
+		node: ASTMemberNode,
+		classSymbol: ClassSymbol,
+		fieldSymbol: FieldSymbol,
+		scope: TypeScope
+	): void {
 		if (fieldSymbol.isPublic) {
 			return;
 		}
@@ -558,14 +571,19 @@ export class TypeChecker {
 
 		if (scope.currentObjectSymbol !== fieldSymbol.owner) {
 			if (scope.currentObjectSymbol instanceof ClassSymbol
-				&& scope.currentObjectSymbol.superClassSymbol !== fieldSymbol.owner) {
+			    && scope.currentObjectSymbol.superClassSymbol !== fieldSymbol.owner) {
 				this.typeError(`Cannot access private member ${node.property} of ${classSymbol.name}`, node);
 
 			}
 		}
 	}
 
-	private checkInstanceMethodAccess(node: ASTMemberNode, classSymbol: ClassSymbol, methodSymbol: MethodSymbol, scope: TypeScope): void {
+	private checkInstanceMethodAccess(
+		node: ASTMemberNode,
+		classSymbol: ClassSymbol,
+		methodSymbol: MethodSymbol,
+		scope: TypeScope
+	): void {
 		if (methodSymbol.isPublic) {
 			return;
 		}
@@ -576,7 +594,7 @@ export class TypeChecker {
 
 		if (scope.currentObjectSymbol !== methodSymbol.owner) {
 			if (scope.currentObjectSymbol instanceof ClassSymbol
-				&& scope.currentObjectSymbol.superClassSymbol !== methodSymbol.owner) {
+			    && scope.currentObjectSymbol.superClassSymbol !== methodSymbol.owner) {
 				this.typeError(`Cannot access private method ${node.property} of ${classSymbol.name}`, node);
 
 			}
@@ -594,15 +612,19 @@ export class TypeChecker {
 		}
 
 		if (!scope.currentObjectSymbol) {
-			this.typeError(`Cannot access private method ${methodSymbol.name} of ${classSymbol.name}`,
-			               methodSymbol.node);
+			this.typeError(
+				`Cannot access private method ${methodSymbol.name} of ${classSymbol.name}`,
+				methodSymbol.node
+			);
 		}
 
 		if (scope.currentObjectSymbol !== methodSymbol.owner) {
 			if (scope.currentObjectSymbol instanceof ClassSymbol
-				&& scope.currentObjectSymbol.superClassSymbol !== methodSymbol.owner) {
-				this.typeError(`Cannot access private method ${methodSymbol.name} of ${classSymbol.name}`,
-				               methodSymbol.node);
+			    && scope.currentObjectSymbol.superClassSymbol !== methodSymbol.owner) {
+				this.typeError(
+					`Cannot access private method ${methodSymbol.name} of ${classSymbol.name}`,
+					methodSymbol.node
+				);
 
 			}
 		}
@@ -780,8 +802,8 @@ export class TypeChecker {
 
 		// Class.method()
 		if (callee instanceof ASTMemberNode
-			&& callee.object.type === ASTNodeType.IDENTIFIER
-			&& this.objectRegistry.types.hasSymbol(callee.object.name)
+		    && callee.object.type === ASTNodeType.IDENTIFIER
+		    && this.objectRegistry.types.hasSymbol(callee.object.name)
 		) {
 			return this.checkStaticCall(
 				callee.object.name,
@@ -864,8 +886,10 @@ export class TypeChecker {
 			);
 
 			if (methodSymbol.isStatic) {
-				this.typeError(`Cannot call static method ${callee.property} on instance of ${callee.object.name}`,
-				               callee);
+				this.typeError(
+					`Cannot call static method ${callee.property} on instance of ${callee.object.name}`,
+					callee
+				);
 			}
 
 			this.checkInstanceMethodAccess(callee, objectType.classSymbol, methodSymbol, scope);
@@ -921,8 +945,8 @@ export class TypeChecker {
 		this.checkCallArguments(nativeFunction, callArguments, scope);
 
 		return nativeFunction.returnType
-			? this.wrapType(nativeFunction.returnType, scope)
-			: Types.VOID;
+		       ? this.wrapType(nativeFunction.returnType, scope)
+		       : Types.VOID;
 	}
 
 	private parametersSymbolsFromCallableSymbol(callableSymbol: MethodSymbol | LambdaType | NativeFunction): ParameterSymbol[] {
@@ -1107,8 +1131,8 @@ export class TypeChecker {
 		const defaultType: Type = this.checkExpression(parameterSymbol.defaultType, new TypeScope());
 
 		if (defaultType
-			&& !defaultType.equals(Types.MIXED)
-			&& !parameterSymbol.parameterType.equals(defaultType)) {
+		    && !defaultType.equals(Types.MIXED)
+		    && !parameterSymbol.parameterType.equals(defaultType)) {
 			this.typeError(
 				`Default value for parameter '${parameterSymbol.name}' does not match type.`,
 				parameterSymbol.node

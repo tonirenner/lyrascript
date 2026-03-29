@@ -4,11 +4,7 @@ import {EventPipeline} from "../core/shared/event_pipeline.ts";
 import Events from "./events.ts";
 import {EventHandlerRegistry, VDOM} from "./registry.ts";
 import {LYRA_EVENTS} from "../core/contracts/runtime_events.ts";
-import type {
-	RuntimeInstanceType,
-	RuntimeLambda,
-	VChild
-} from "../core/contracts/runtime_model.ts";
+import type {RuntimeInstanceType, RuntimeLambda, VChild} from "../core/contracts/runtime_model.ts";
 
 export interface ApplicationRuntime {
 	get engine(): Engine;

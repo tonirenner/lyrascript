@@ -38,14 +38,15 @@ export class StringType extends NativeClass {
 				`
 class ${CLASS_NAME} {
 	public constructor(value);
-				
+
 	public toUpperCase(): ${CLASS_NAME};
-	
+
 	public toLowerCase(): ${CLASS_NAME};
 
 	public toString(): string;
 }`
-			));
+			)
+		);
 
 		this.isAutoloadAble = true;
 	}

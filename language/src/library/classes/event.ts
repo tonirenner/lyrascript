@@ -33,7 +33,8 @@ class ${CLASS_NAME} {
 	public getType(): string;
 
 	public preventDefault(): void;
-}`));
+}`)
+		);
 
 		this.isAutoloadAble = true;
 	}

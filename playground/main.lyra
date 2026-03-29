@@ -148,6 +148,7 @@ System.log(f2(3, 2));
 
 print("native print()");
 System.log({ a, b -> a + b }(3,3));
+System.log("halt");
 User.execLambda({a:number, b:number -> number : a + b});
 
 
