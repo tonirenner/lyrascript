@@ -1,17 +1,17 @@
 import {Source} from "./syntax/source.ts";
 import {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
 import {TypeChecker} from "./typechecker.ts";
-import {TestSuites} from "./testsuites.ts";
+import {TestSuites} from "./testing/testsuites.ts";
 import {Interpreter} from "./interpreter.ts";
-import {FetchFileLoader} from "./file_loader.ts";
 import {ASTNode} from "./syntax/ast.ts";
 import {Parser} from "./parser.ts";
 import {EventPipeline} from "./infrastructure/event_pipeline.ts";
 import {RuntimeScope} from "./shared/ast_objects.ts";
 import type {ValueScope} from "./model/runtime_model.ts";
 import {ReflectionClass} from "./reflection.ts";
-import {DependencyResolver} from "./dependency_resolver.ts";
+import {DependencyResolver} from "./loading/dependency_resolver.ts";
 import {RuntimeBootstrap} from "./runtime_bootstrap.ts";
+import {FetchFileLoader} from "./loading/file_loader.ts";
 
 export class LyraScriptProgram {
 	private readonly environment: ValueScope = new RuntimeScope();

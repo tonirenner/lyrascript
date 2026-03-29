@@ -24,7 +24,7 @@ import {
 	Value,
 	type ValueScope
 } from "./model/runtime_model.ts";
-import type {ASTInterpreter} from "./contracts/ast_interpreter.ts";
+import type {ASTInterpreter} from "./interfaces/ast_interpreter.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,

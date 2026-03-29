@@ -2,7 +2,7 @@ import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./syntax/ast_grammar.ts";
 import {TokenStream} from "./syntax/tokenizer.ts";
 import {throwParserError} from "./infrastructure/errors.ts";
 import {Source, spanFrom} from "./syntax/source.ts";
-import type {ASTParser} from "./contracts/ast_parser.ts";
+import type {ASTParser} from "./interfaces/ast_parser.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,

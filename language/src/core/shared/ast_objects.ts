@@ -27,7 +27,7 @@ import {
 import {GRAMMAR} from "../syntax/ast_grammar.ts";
 import {type EventDispatch, LYRA_EVENTS} from "../model/runtime_events.ts";
 import * as crypto from "node:crypto";
-import type {ASTInterpreter} from "../contracts/ast_interpreter.ts";
+import type {ASTInterpreter} from "../interfaces/ast_interpreter.ts";
 import {ReturnValue, wrapNativeInstance} from "./ast_objects_conversion.ts";
 
 export class RuntimeScope implements ValueScope {
