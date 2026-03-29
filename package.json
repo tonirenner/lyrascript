@@ -12,6 +12,7 @@
   },
   "scripts": {
     "test": "bun test",
+    "test:language": "bun test language/test",
     "check": "tsc --noEmit",
     "lyra:build": "bun build language/src/index.ts --outfile ./dist/language.js --sourcemap=inline",
     "lyra:build:watch": "bun build --watch language/src/index.ts --outfile ./dist/language.js --sourcemap=inline",
