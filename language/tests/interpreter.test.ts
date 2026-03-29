@@ -267,4 +267,14 @@ let result = user.getName();
 
 		expect(scope.get("result").value).toBe("Toni");
 	});
+
+	it("treats suspended native calls as synchronous for chained instance calls", async () => {
+		const scope = await executeProgramSource(`
+import Net;
+
+let result = Net.fetch().toUpperCase().toString();
+`);
+
+		expect(scope.get("result").value).toBe("HELLO FROM NET");
+	});
 });

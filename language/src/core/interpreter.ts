@@ -740,23 +740,23 @@ export class Interpreter implements ASTInterpreter {
 	}
 
 	public evalMember(expr: ASTMemberNode): RuntimeValue {
-		const value: RuntimeValue = this.evalExpression(expr.object);
+		let value: RuntimeValue;
 
-		if (!value.type.runtimeClass) {
-			throwRuntimeError(`Member access on null.`, expr.span);
+		try {
+			value = this.evalExpression(expr.object);
+		} catch (signal) {
+			if (signal instanceof InterpreterSuspensionSignal) {
+				throw new InterpreterSuspensionSignal(
+					this.chainSuspension(signal.suspension, (resolvedValue: RuntimeValue): ExecutionResult => {
+						return CompletedExecution(this.resolveMemberValue(expr, resolvedValue));
+					})
+				);
+			}
+
+			throw signal;
 		}
 
-		const instance: RuntimeInstanceType = value.asRuntimeInstance();
-
-		if (instance.instanceFields.has(expr.property)) {
-			return instance.instanceFields.get(expr.property)!;
-		}
-
-		if (instance.staticFields.has(expr.property)) {
-			return instance.staticFields.get(expr.property)!;
-		}
-
-		throwRuntimeError(`Property '${expr.property}' not found`, expr.span);
+		return this.resolveMemberValue(expr, value);
 	}
 
 	public evalCall(expr: ASTCallNode): RuntimeValue {
@@ -817,6 +817,21 @@ export class Interpreter implements ASTInterpreter {
 		if (instance.nativeRuntimeObject && method.name in instance.nativeRuntimeObject) {
 			const nativeArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
 			const result: any = instance.nativeRuntimeObject[method.name](...nativeArgs);
+
+			if (result instanceof Promise) {
+				throw new InterpreterSuspensionSignal(
+					SuspendedExecution(
+						result.then((resolved: any): RuntimeValue => {
+							return method.returnType
+							       ? Value(resolved).toNativeRuntimeValue(method.returnType.name)
+							       : Value(resolved);
+						}),
+						{
+							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
+						}
+					)
+				);
+			}
 
 			if (result instanceof LyraNativeObject) {
 				return wrapNativeInstance(result, this.objectRegistry);
@@ -919,8 +934,40 @@ export class Interpreter implements ASTInterpreter {
 			throwRuntimeError(`Invalid member expression ${callNode.type}`, callNode.span);
 		}
 
-		// Objekt auswerten (z.B. this, super, Variable)
-		let targetValue: RuntimeValue = this.evalExpression(callNode.callee.object);
+		let targetValue: RuntimeValue;
+
+		try {
+			targetValue = this.evalExpression(callNode.callee.object);
+		} catch (signal) {
+			if (signal instanceof InterpreterSuspensionSignal) {
+				throw new InterpreterSuspensionSignal(
+					this.chainSuspension(signal.suspension, (resolvedValue: RuntimeValue): ExecutionResult => {
+						return CompletedExecution(this.evalResolvedInstanceCall(callNode, resolvedValue));
+					})
+				);
+			}
+
+			throw signal;
+		}
+
+		return this.evalResolvedInstanceCall(callNode, targetValue);
+	}
+
+	private evalFunctionCall(callNode: ASTCallNode): RuntimeValue {
+		const args: RuntimeValue[] = this.evalCallArguments(callNode);
+
+		const functionInstance: any = this.evalExpression(callNode.callee).value;
+		if (functionInstance instanceof RuntimeLambdaFunction) {
+			return functionInstance.call(args);
+		}
+
+		return new RuntimeNativeFunction(this, callNode).call(args);
+	}
+
+	private evalResolvedInstanceCall(callNode: ASTCallNode, targetValue: RuntimeValue): RuntimeValue {
+		if (!(callNode.callee instanceof ASTMemberNode)) {
+			throwRuntimeError(`Invalid member expression ${callNode.type}`, callNode.span);
+		}
 
 		const targetInstance = this.autoboxRuntimeInstanceIfNeeded(targetValue);
 
@@ -950,39 +997,9 @@ export class Interpreter implements ASTInterpreter {
 			);
 		}
 
-		if (targetInstance.nativeRuntimeObject && method.name in targetInstance.nativeRuntimeObject) {
-			const args = this.getMethodArguments(callNode, method.parameters);
-			const rawArgs = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
-			const result = targetInstance.nativeRuntimeObject[method.name](...rawArgs);
+		const args = this.getMethodArguments(callNode, method.parameters);
 
-			if (result instanceof LyraNativeObject) {
-				return wrapNativeInstance(result, this.objectRegistry);
-			}
-
-			return this.evalReturn(
-				[ReturnValue(result)],
-				new RuntimeScope(this.runtimeScope),
-				method.returnType?.name,
-				targetInstance
-			);
-		}
-
-		const methodScope = new RuntimeScope(this.runtimeScope);
-		methodScope.define(GRAMMAR.THIS, targetValue);
-		this.bindMethodArguments(callNode, method.parameters, methodScope);
-
-		return this.evalReturn(method.body, methodScope, method.returnType?.name, targetInstance);
-	}
-
-	private evalFunctionCall(callNode: ASTCallNode): RuntimeValue {
-		const args: RuntimeValue[] = this.evalCallArguments(callNode);
-
-		const functionInstance: any = this.evalExpression(callNode.callee).value;
-		if (functionInstance instanceof RuntimeLambdaFunction) {
-			return functionInstance.call(args);
-		}
-
-		return new RuntimeNativeFunction(this, callNode).call(args);
+		return this.callInstanceMethod(targetInstance, method, args);
 	}
 
 	private evalCallArguments(callNode: ASTCallNode): RuntimeValue[] {
@@ -1072,6 +1089,24 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		return this.callInstanceMethod(iterator, method, args);
+	}
+
+	private resolveMemberValue(expr: ASTMemberNode, value: RuntimeValue): RuntimeValue {
+		if (!value.type.runtimeClass) {
+			throwRuntimeError(`Member access on null.`, expr.span);
+		}
+
+		const instance: RuntimeInstanceType = value.asRuntimeInstance();
+
+		if (instance.instanceFields.has(expr.property)) {
+			return instance.instanceFields.get(expr.property)!;
+		}
+
+		if (instance.staticFields.has(expr.property)) {
+			return instance.staticFields.get(expr.property)!;
+		}
+
+		throwRuntimeError(`Property '${expr.property}' not found`, expr.span);
 	}
 
 	private evalAnnotationValue(node: ASTNode): any {
