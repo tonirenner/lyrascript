@@ -13,10 +13,13 @@ export class FetchFileLoader extends AbstractFileLoader {
 
 export class FileSystemLoader extends AbstractFileLoader {
 	override async load(url: string): Promise<string> {
+		const workspaceRoot = resolve(process.cwd());
 		const file = url.startsWith("file://")
 		             ? Bun.file(new URL(url))
-		             : url.startsWith("/library/")
-		               ? Bun.file(resolve(process.cwd(), "." + url))
+		             : url.startsWith("/lyrascript/")
+		               ? Bun.file(resolve(workspaceRoot, "." + url.slice("/lyrascript".length)))
+		               : url.startsWith("/library/")
+		                 ? Bun.file(resolve(workspaceRoot, "." + url))
 		               : Bun.file(url);
 
 		return await file.text();

@@ -14,6 +14,7 @@
     "test": "bun test",
     "test:language": "bun test language/tests",
     "check": "tsc --noEmit",
+    "lyra:run": "bun run language/bin/lyra.ts",
     "lyra:compile": "bun run language/bin/compile.ts",
     "lyra:vm": "bun run language/bin/vm.ts",
     "lyra:build": "bun build language/src/index.ts --outfile ./dist/language.js --sourcemap=inline",
