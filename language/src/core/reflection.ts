@@ -1,15 +1,15 @@
 import {Interpreter} from "./interpreter.ts";
 import {createRuntimeInstance, RuntimeScope} from "./shared/ast_objects.ts";
-import {throwRuntimeError} from "./shared/errors.ts";
-import type {ExecutionContext} from "./contracts/runtime_model.ts";
+import {throwRuntimeError} from "./infrastructure/errors.ts";
+import type {ExecutionContext} from "./model/runtime_model.ts";
 import {
 	type RuntimeClassType,
 	type RuntimeInstanceType,
 	type RuntimeMethodType,
 	type RuntimeValue,
 	Value
-} from "./contracts/runtime_model.ts";
-import {GRAMMAR} from "./shared/ast_grammar.ts";
+} from "./model/runtime_model.ts";
+import {GRAMMAR} from "./syntax/ast_grammar.ts";
 
 export class ReflectionClass {
 	constructor(private readonly interpreter: Interpreter) {
@@ -117,3 +117,7 @@ export class ReflectionClass {
 		this.interpreter.callInstanceMethod(instance, constructor, args);
 	}
 }
+
+
+
+

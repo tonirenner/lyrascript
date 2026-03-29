@@ -8,3 +8,7 @@ export class FetchFileLoader extends AbstractFileLoader {
 			.then(response => response.text())
 	}
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import {TYPE_ENUM} from "./ast_grammar.ts";
+import {TYPE_ENUM} from "../syntax/ast_grammar.ts";
 import {
 	ASTClassNode,
 	ASTFieldNode,
@@ -7,9 +7,9 @@ import {
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
-} from "./ast.ts";
-import {throwTypeError} from "./errors.ts";
-import {ObjectRegistry} from "./runtime_registry.ts";
+} from "../syntax/ast.ts";
+import {throwTypeError} from "../infrastructure/errors.ts";
+import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
 
 export class PrimitiveTypes {
 	static readonly NUMBER: string = TYPE_ENUM.NUMBER;
@@ -662,3 +662,7 @@ export function buildTypeSubstitutionMap(
 
 	return substitutionMap;
 }
+
+
+
+

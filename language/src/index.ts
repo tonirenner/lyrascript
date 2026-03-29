@@ -1,12 +1,12 @@
 import {Parser} from "./core/parser.ts";
-import {wrapJsError} from "./core/shared/errors.ts";
-import {fetchSource, Source} from "./core/parser/source.ts";
-import {ASTNode} from "./core/shared/ast.ts";
-import {Tokenizer} from "./core/tokenizer.ts";
-import {Token} from "./core/shared/ast_grammar.ts";
+import {wrapJsError} from "./core/infrastructure/errors.ts";
+import {fetchSource, Source} from "./core/syntax/source.ts";
+import {ASTNode} from "./core/syntax/ast.ts";
+import {Tokenizer} from "./core/syntax/tokenizer.ts";
+import {Token} from "./core/syntax/ast_grammar.ts";
 import {LyraScriptProgram} from "./core/program.ts";
-import {EventPipeline} from "./core/shared/event_pipeline.ts";
-import {State} from "./core/shared/runtime_state.ts";
+import {EventPipeline} from "./core/infrastructure/event_pipeline.ts";
+import {State} from "./core/infrastructure/runtime_state.ts";
 import {HTMLElementCreator} from "./host/dom.ts";
 
 export {WebLyraScript} from "./host/engine.ts";
@@ -100,3 +100,7 @@ export async function parseTreeUrl(url: string): Promise<ASTNode> {
 }
 
 export default Lyra;
+
+
+
+

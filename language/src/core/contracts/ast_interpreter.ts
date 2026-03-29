@@ -1,6 +1,6 @@
-import {ObjectRegistry} from "../shared/runtime_registry.ts";
-import type {ExecutionContext, RuntimeInstanceType, RuntimeValue, ValueScope} from "./runtime_model.ts";
-import type {EventDispatch} from "./runtime_events.ts";
+import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
+import type {ExecutionContext, RuntimeInstanceType, RuntimeValue, ValueScope} from "../model/runtime_model.ts";
+import type {EventDispatch} from "../model/runtime_events.ts";
 import {
 	ASTAnnotationNode,
 	ASTArrayNode,
@@ -16,7 +16,7 @@ import {
 	ASTNewNode,
 	ASTNode,
 	ASTUnaryNode
-} from "../shared/ast.ts";
+} from "../syntax/ast.ts";
 import {NativeClasses} from "../../library/native_classes.ts";
 import {NativeFunctions} from "../../library/native_functions.ts";
 
@@ -90,3 +90,7 @@ export interface ASTInterpreter {
 		thisValue?: RuntimeInstanceType
 	): RuntimeValue;
 }
+
+
+
+

@@ -1,6 +1,6 @@
-import {ObjectRegistry} from "./shared/runtime_registry.ts";
-import {type EventPipeline} from "./shared/event_pipeline.ts";
-import {throwRuntimeError} from "./shared/errors.ts";
+import {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
+import {type EventPipeline} from "./infrastructure/event_pipeline.ts";
+import {throwRuntimeError} from "./infrastructure/errors.ts";
 import {NativeClasses} from "../library/native_classes.ts";
 import {NativeFunctions} from "../library/native_functions.ts";
 import {
@@ -10,8 +10,8 @@ import {
 	RuntimeNativeFunction,
 	RuntimeScope
 } from "./shared/ast_objects.ts";
-import type {EventDispatch} from "./contracts/runtime_events.ts";
-import type {VChild} from "./contracts/runtime_model.ts";
+import type {EventDispatch} from "./model/runtime_events.ts";
+import type {VChild} from "./model/runtime_model.ts";
 import {
 	type ExecutionContext,
 	LyraNativeObject,
@@ -23,7 +23,7 @@ import {
 	type RuntimeValue,
 	Value,
 	type ValueScope
-} from "./contracts/runtime_model.ts";
+} from "./model/runtime_model.ts";
 import type {ASTInterpreter} from "./contracts/ast_interpreter.ts";
 import {
 	ASTAnnotationNode,
@@ -51,8 +51,8 @@ import {
 	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
-} from "./shared/ast.ts";
-import {GRAMMAR, TYPE_ENUM} from "./shared/ast_grammar.ts";
+} from "./syntax/ast.ts";
+import {GRAMMAR, TYPE_ENUM} from "./syntax/ast_grammar.ts";
 import {LyraArray} from "../library/classes/array.ts";
 import {fromLyraValue, ReturnValue, wrapNativeInstance} from "./shared/ast_objects_conversion.ts";
 import {AutoboxedTypes} from "./shared/type_autoboxing.ts";
@@ -1298,3 +1298,7 @@ export class Interpreter implements ASTInterpreter {
 		return undefined;
 	}
 }
+
+
+
+

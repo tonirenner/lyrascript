@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
-import type {Props, RuntimeInstanceType, RuntimeLambda, VChild, VText} from "../core/contracts/runtime_model.ts";
-import {Value} from "../core/contracts/runtime_model.ts";
+import type {Props, RuntimeInstanceType, RuntimeLambda, VChild, VText} from "../core/model/runtime_model.ts";
+import {Value} from "../core/model/runtime_model.ts";
 import Events from "./events.ts";
 import type {ApplicationRuntime} from "./runtime.ts";
 import {VDOM} from "./registry.ts";
@@ -201,3 +201,7 @@ export class HTMLElementPatcher implements ElementPatcher {
 		}
 	}
 }
+
+
+
+

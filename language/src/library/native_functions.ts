@@ -1,6 +1,6 @@
-import {ASTParameterNode, ASTTypeNode} from "../core/shared/ast.ts";
-import {TYPE_ENUM} from "../core/shared/ast_grammar.ts";
-import {throwNativeError} from "../core/shared/errors.ts";
+import {ASTParameterNode, ASTTypeNode} from "../core/syntax/ast.ts";
+import {TYPE_ENUM} from "../core/syntax/ast_grammar.ts";
+import {throwNativeError} from "../core/infrastructure/errors.ts";
 
 export class NativeFunction {
 	readonly name: string;
@@ -68,3 +68,7 @@ function type(name: string, nullable = false): ASTTypeNode {
 function parameter(typeAnnotation: ASTTypeNode, name: string, defaultValue: any = null): ASTParameterNode {
 	return new ASTParameterNode(name, typeAnnotation, defaultValue);
 }
+
+
+
+

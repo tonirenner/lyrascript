@@ -1,8 +1,8 @@
-import {ASTClassNode, ASTNode, ASTNodeType} from "../core/shared/ast.ts";
+import {ASTClassNode, ASTNode, ASTNodeType} from "../core/syntax/ast.ts";
 import {Parser} from "../core/parser.ts";
-import {throwRuntimeError} from "../core/shared/errors.ts";
-import type {Source} from "../core/parser/source.ts";
-import type {RuntimeClass} from "../core/contracts/runtime_model.ts";
+import {throwRuntimeError} from "../core/infrastructure/errors.ts";
+import type {Source} from "../core/syntax/source.ts";
+import type {RuntimeClass} from "../core/model/runtime_model.ts";
 import {buildRuntimeClass} from "../core/shared/ast_objects.ts";
 
 export class NativeClass {
@@ -40,3 +40,7 @@ export class NativeClass {
 		throwRuntimeError(`Class ${this.name} not found.`, ast.span);
 	}
 }
+
+
+
+

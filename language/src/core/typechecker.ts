@@ -18,7 +18,7 @@ import {
 	ASTUnaryNode,
 	ASTVariableNode,
 	ASTVDomNode
-} from './shared/ast.ts';
+} from './syntax/ast.ts';
 import {
 	buildTypeSubstitutionMap,
 	ClassRefType,
@@ -42,9 +42,9 @@ import {
 } from "./shared/type_objects.ts";
 import {Type_autoboxing} from "./shared/type_autoboxing.ts";
 import {NativeFunction, NativeFunctions} from "../library/native_functions.ts";
-import {throwTypeError} from "./shared/errors.ts"
-import type {ObjectRegistry} from "./shared/runtime_registry.ts";
-import {GRAMMAR} from "./shared/ast_grammar.ts";
+import {throwTypeError} from "./infrastructure/errors.ts"
+import type {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
+import {GRAMMAR} from "./syntax/ast_grammar.ts";
 
 
 const globalFunctionTypeRegistry = new NativeFunctions()
@@ -1151,3 +1151,7 @@ export class TypeChecker {
 		throwTypeError(message, node?.span);
 	}
 }
+
+
+
+

@@ -1,6 +1,6 @@
 import {NativeClass} from "../native_class.ts";
-import {LyraNativeObject} from "../../core/contracts/runtime_model.ts";
-import {Source} from "../../core/parser/source.ts";
+import {LyraNativeObject} from "../../core/model/runtime_model.ts";
+import {Source} from "../../core/syntax/source.ts";
 
 const CLASS_NAME = 'String';
 
@@ -51,3 +51,7 @@ class ${CLASS_NAME} {
 		this.isAutoloadAble = true;
 	}
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import {throwRuntimeError} from "./errors.ts";
+import {throwRuntimeError} from "../infrastructure/errors.ts";
 import {
 	type AccessAttributes,
 	LyraNativeObject,
@@ -12,7 +12,7 @@ import {
 	type RuntimeMethod,
 	type RuntimeValue,
 	type ValueScope
-} from "../contracts/runtime_model.ts";
+} from "../model/runtime_model.ts";
 import {
 	ASTCallNode,
 	ASTClassNode,
@@ -23,9 +23,9 @@ import {
 	ASTNode,
 	ASTParameterNode,
 	ASTTypeNode
-} from "./ast.ts";
-import {GRAMMAR} from "./ast_grammar.ts";
-import {type EventDispatch, LYRA_EVENTS} from "../contracts/runtime_events.ts";
+} from "../syntax/ast.ts";
+import {GRAMMAR} from "../syntax/ast_grammar.ts";
+import {type EventDispatch, LYRA_EVENTS} from "../model/runtime_events.ts";
 import * as crypto from "node:crypto";
 import type {ASTInterpreter} from "../contracts/ast_interpreter.ts";
 import {ReturnValue, wrapNativeInstance} from "./ast_objects_conversion.ts";
@@ -356,3 +356,7 @@ export class RuntimeNativeFunction {
 		return functionObject[functionName];
 	}
 }
+
+
+
+

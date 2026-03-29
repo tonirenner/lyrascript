@@ -1,6 +1,6 @@
-import {ClassRefType, Type, Types} from "./type_objects";
-import {ObjectRegistry} from "./runtime_registry.js";
-import {throwRuntimeError} from "./errors.js";
+import {ClassRefType, Type, Types} from "./type_objects.ts";
+import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
+import {throwRuntimeError} from "../infrastructure/errors.ts";
 
 export class AutoboxedTypes {
 	static NUMBER: string = 'Number';
@@ -40,3 +40,7 @@ export class Type_autoboxing {
 		return objectType;
 	}
 }
+
+
+
+

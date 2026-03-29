@@ -1,8 +1,8 @@
-import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNewNode, type ASTNode, ASTTypeNode} from "./shared/ast.ts";
+import {ASTAnnotationNode, ASTClassNode, ASTMethodNode, ASTNewNode, type ASTNode, ASTTypeNode} from "./syntax/ast.ts";
 import {Interpreter} from "./interpreter.ts";
-import type {ObjectRegistry} from "./shared/runtime_registry.ts";
-import type {EventPipeline} from "./shared/event_pipeline.ts";
-import type {RuntimeInstanceType, RuntimeValue, ValueScope} from "./contracts/runtime_model.ts";
+import type {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
+import type {EventPipeline} from "./infrastructure/event_pipeline.ts";
+import type {RuntimeInstanceType, RuntimeValue, ValueScope} from "./model/runtime_model.ts";
 
 export class TestSuites {
 	private readonly interpreter: Interpreter;
@@ -75,3 +75,7 @@ export class TestSuites {
 		return instance.asRuntimeInstance();
 	}
 }
+
+
+
+

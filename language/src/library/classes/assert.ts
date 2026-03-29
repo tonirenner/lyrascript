@@ -1,5 +1,5 @@
 import {NativeClass} from "../native_class.ts";
-import {Source} from "../../core/parser/source.ts";
+import {Source} from "../../core/syntax/source.ts";
 
 const CLASS_NAME = 'Assert';
 
@@ -41,3 +41,7 @@ class ${CLASS_NAME} {
 		this.isAutoloadAble = false;
 	}
 }
+
+
+
+

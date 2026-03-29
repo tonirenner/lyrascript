@@ -1,8 +1,8 @@
-import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "./ast.ts";
-import {GRAMMAR, TYPE_ENUM} from "./ast_grammar.ts";
-import {ObjectRegistry} from "./runtime_registry.ts";
-import {throwNativeError} from "./errors.ts";
-import {LyraNativeObject, LyraObjectView, type RuntimeValue, Value} from "../contracts/runtime_model.ts";
+import {ASTArrayNode, ASTNode, ASTNodeType, ASTReturnNode} from "../syntax/ast.ts";
+import {GRAMMAR, TYPE_ENUM} from "../syntax/ast_grammar.ts";
+import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
+import {throwNativeError} from "../infrastructure/errors.ts";
+import {LyraNativeObject, LyraObjectView, type RuntimeValue, Value} from "../model/runtime_model.ts";
 import {createRuntimeInstance} from "./ast_objects.ts";
 
 export function toLyraString(value: string): ASTNode {
@@ -111,3 +111,7 @@ export function wrapNativeInstance(lyraNativeObject: LyraNativeObject, objectReg
 
 	return Value(instance, runtimeClass.className, runtimeClass);
 }
+
+
+
+

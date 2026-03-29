@@ -1,6 +1,6 @@
 import {NativeClass} from "../native_class.ts";
-import {Source} from "../../core/parser/source.ts";
-import {LyraNativeObject} from "../../core/contracts/runtime_model.ts";
+import {Source} from "../../core/syntax/source.ts";
+import {LyraNativeObject} from "../../core/model/runtime_model.ts";
 
 const ARRAY_CLASS_NAME = 'Array';
 const ARRAY_ITERATOR_CLASS_NAME = 'ArrayIterator';
@@ -156,3 +156,7 @@ class ${ARRAY_ITERATOR_CLASS_NAME}<T> implements Iterator<T> {
 		this.isAutoloadAble = true;
 	}
 }
+
+
+
+

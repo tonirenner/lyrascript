@@ -23,3 +23,7 @@ export class NativeClasses {
 		this.registry.set(EventType.CLASS_NAME, new EventType())
 	}
 }
+
+
+
+

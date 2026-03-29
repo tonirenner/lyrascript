@@ -1,15 +1,15 @@
-import {Source} from "./parser/source.ts";
-import {ObjectRegistry} from "./shared/runtime_registry.ts";
+import {Source} from "./syntax/source.ts";
+import {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
 import {TypeChecker} from "./typechecker.ts";
 import {Linker} from "./linker.ts";
 import {TestSuites} from "./testsuites.ts";
 import {Interpreter} from "./interpreter.ts";
 import {FetchFileLoader} from "./linker/loaders.ts";
-import {ASTNode} from "./shared/ast.ts";
+import {ASTNode} from "./syntax/ast.ts";
 import {Parser} from "./parser.ts";
-import {EventPipeline} from "./shared/event_pipeline.ts";
+import {EventPipeline} from "./infrastructure/event_pipeline.ts";
 import {RuntimeScope} from "./shared/ast_objects.ts";
-import type {ValueScope} from "./contracts/runtime_model.ts";
+import type {ValueScope} from "./model/runtime_model.ts";
 import {ReflectionClass} from "./reflection.ts";
 
 export class LyraScriptProgram {
@@ -115,3 +115,7 @@ export class LyraScriptProgram {
 		return ast;
 	}
 }
+
+
+
+

@@ -1,7 +1,7 @@
 import {NativeClass} from "../native_class.ts";
-import {LyraNativeObject, type RuntimeLambda} from "../../core/contracts/runtime_model.ts";
-import {Source} from "../../core/parser/source.ts";
-import {State} from "../../core/shared/runtime_state.ts";
+import {LyraNativeObject, type RuntimeLambda} from "../../core/model/runtime_model.ts";
+import {Source} from "../../core/syntax/source.ts";
+import {State} from "../../core/infrastructure/runtime_state.ts";
 
 const CLASS_NAME = 'State';
 
@@ -56,3 +56,7 @@ class ${CLASS_NAME}<T> {
 		this.isAutoloadAble = true;
 	}
 }
+
+
+
+
