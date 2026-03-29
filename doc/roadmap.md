@@ -1,125 +1,86 @@
-# 🧭 Lyrascript – Roadmap
+# LyraScript Roadmap
 
-## ✅ Aktueller Stand (DONE)
+## Current Status
 
-### 🔤 Sprache & Syntax
+### Done
 
-- [x] Tokenizer (Keywords, Identifiers, Numbers, Strings, Boolean)
-- [x] Parser mit:
-    - [x] Expressions (Binary, Assignment, Member, Call)
-    - [x] Operator-Precedence (Mathe + Logik)
-    - [x] Klammerung
-- [x] Klassen
-    - [x] `class`, `extends`
-    - [x] Constructor (`constructor`)
-    - [x] Methoden (static / instance)
-    - [x] Felder (static / instance)
-- [x] `this`
-- [x] `super()` (Constructor)
-- [x] `super.method()` (Methodenauflösung über Vererbung)
+#### Language and syntax
 
----
+- [x] Tokenizer for keywords, identifiers, numbers, strings, booleans, annotations, and punctuation
+- [x] Parser with expression precedence
+- [x] Variable declarations and assignments
+- [x] Member access, method calls, and index access
+- [x] Classes, constructors, fields, methods, static members
+- [x] Inheritance with `extends`
+- [x] `this`, `super()`, and `super.method()`
+- [x] Nullable types with `?`
+- [x] Arrays
+- [x] Lambdas
+- [x] `if / else`
+- [x] `match`
+- [x] `foreach`
+- [x] VDOM syntax and embedded expressions
 
-### 🧠 Runtime / Interpreter
+#### Runtime and type system
 
-- [x] Saubere Trennung:
-    - Static Calls
-    - Instance Calls
-    - Native Calls
-- [x] Vererbung mit rekursiver Method-Resolution
-- [x] Korrekte `this`-Weitergabe
-- [x] Mehrere Instanzen korrekt (keine Überschreibung mehr)
-- [x] Return-Handling (`ReturnValue`)
-- [x] Primitive Casts (Type_autoboxing light)
-- [x] Native Module System (`System.print`, `Net.fetch`, etc.)
+- [x] Interpreter with separate handling for instance, static, native, and lambda calls
+- [x] Recursive method resolution across inheritance
+- [x] Native class bootstrap
+- [x] Native function bootstrap
+- [x] Runtime object registry and runtime state infrastructure
+- [x] Type checker for variables, parameters, return types, assignments, and readonly checks
+- [x] Visibility checks in the type checker
+- [x] Primitive autoboxing support for native runtime classes
 
----
+#### Loading and program pipeline
 
-### 📦 Import-System
+- [x] Native imports
+- [x] File-based imports
+- [x] Recursive dependency loading
+- [x] Deterministic pipeline in `LyraScriptProgram`
+- [x] Separation of runtime bootstrap and dependency resolution
 
-- [x] Native Imports
+#### Tests and tooling
 
-```lyra
-  import System;
-```
+- [x] Lyra-native test framework via `@test`
+- [x] Bun-based component tests under `language/tests`
+- [x] Coverage for tokenizer, parser, interpreter, event pipeline, and runtime state
+- [x] Extended `tests/tests.lyra` coverage for current language features
+- [x] Project-level code style docs and PhpStorm importable config
 
-- [x] File-basierte Imports
+#### Core structure
 
-### Lyra import { User, Person } from "/lib/User.lyra";
+- [x] `core/syntax` for AST, grammar, source, tokenizer
+- [x] `core/model` for AST-independent runtime model contracts
+- [x] `core/infrastructure` for runtime infrastructure
+- [x] `core/interfaces` for AST-related interfaces
+- [x] `core/loading` for dependency and file loading
+- [x] `core/testing` for Lyra test execution
 
-- [x] Rekursive Abhängigkeitsauflösung
-- [x] Klassen werden vor Interpreter-Start gesammelt & registriert
-- [x] Async-Linking mit garantierter Reihenfolge
-- [x] Saubere Pipeline:
+## Next
 
-```
-tokenize → parse → link → typecheck → interpret
-```
+### Runtime and language features
 
-### 🧪 Type System (Grundlagen)
+- [ ] `while`
+- [ ] `do-while`
+- [ ] stronger interface conformance checks in the type checker
+- [ ] interpreter-level visibility enforcement
+- [ ] broader negative tests for invalid programs
 
-- [x] Typen an Variablen (let x: number)
-- [x] Typen an Parametern
-- [x] Typen an Rückgabewerten
-- [x] TypeChecker Skeleton
-- [x] Klassen-Registry für Typprüfung
-- [x] Type-Resolution
-- [x] Primitive Typ-Casts
-    - 🚧 Kurzfristig (NEXT)
-    - 🔐 Sichtbarkeit & Sicherheit
-- [X] readonly Modifier
-- [x] kombinierbar mit public / private
-- [x] Schützt vor Mutation in Subklassen und von Außen
-- [ ] Zugriffskontrolle im Interpreter
-- [x] Zugriffskontrolle im TypeChecker
-  🔁 Control Flow
-- [X] if / else
-- [X] match (Kotlin when-ähnlich)
-- [X] Array
-- [X] Array + Generics
-- [X] Array + Generics + Field-Access
-- [X] Lambdas
-- [x] foreach (über jede Array)
-- [x] for
-- [ ] while
-- [ ] do-while (optional / low priority)
-  🧪 Assertions & Tests
-- [X] assert(condition, message?)
-- [X] Tests direkt in Klassen
-- [ ] Tests laufen nur im Dev-Modus
-- [ ] Kein Einfluss auf Produktiv-Code
-  🧩 Interfaces & Abstraktion
-- [ ] interface
-- [ ] Methoden-Signaturen ohne Implementierung
-- [ ] implements
-- [ ] TypeChecker prüft Interface-Konformität
-- [ ] Grundlage für spätere DOM / JSX Features
-  🌐 JSX / DOM (geplant)
+### Architecture cleanup
 
-### Ziel
+- [ ] review `core/shared` and decide whether it should be renamed to a more specific runtime-support area
+- [ ] decide whether `reflection.ts` should stay in `core` root or move into a dedicated runtime/introspection area
+- [ ] review `host/` boundaries against `core/` and `library/`
 
-DOM als Sprachkonzept, nicht Framework.
-Geplant
+### Tooling
 
-- [x] interface DomRenderable { render(): VNode }
-- [x] JSX als Syntax (kein Runtime-Parsing)
-- [x] JSX → AST → VDOM
-- [x] {expr} Einbettung
-  Primitive → TextNode
-  Objekt mit dom() → aufrufen
-- [x] Minimaler DOM-Renderer
-- [x] VDOM-Patching (JS-seitig)
-  ⚙️ Tooling & Zukunft
-- [ ] PHPStorm Plugin (Syntax Highlighting)
-- [ ] Optional:
-- [ ] ByteCode (nur bei Bedarf)
-- [ ] Optimierungen
-- [ ] Dokumentation & Beispiele
+- [ ] restore a consistent local `check` workflow where `tsc --noEmit` is available in every shell
+- [ ] keep Bun tests in sync with `tests/tests.lyra`
+- [ ] improve developer docs around build, test, and runtime architecture
 
-### 🧠 Leitprinzipien
+## Notes
 
-- Klarheit > Magie
-- Sprache > Framework
-- Typen helfen, sie nerven nicht
-- Runtime bleibt einfach
-- Features entstehen aus echten Bedürfnissen
+- The formatter configuration is intentionally pragmatic. Line length `120` is a target, not a strict guarantee of the JetBrains formatter.
+- Vertically aligned assignment blocks are not part of the enforced project style.
+- The current focus is correctness, structure, and language maturity before IDE/plugin work.
