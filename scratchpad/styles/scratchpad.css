@@ -29,6 +29,19 @@ header h1 > img {
     height: 24px;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-status {
+    min-width: 220px;
+    font-size: 12px;
+    color: #7f8ea3;
+    text-align: right;
+}
+
 button {
     background: #2d6cdf;
     color: white;
