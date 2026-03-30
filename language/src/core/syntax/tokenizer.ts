@@ -175,7 +175,14 @@ export class Tokenizer {
 			return null;
 		}
 		let start = ++i;
-		while (this.source.charAt(i) !== '"') i++;
+		while (i < this.source.length && this.source.charAt(i) !== '"') {
+			i++;
+		}
+
+		if (i >= this.source.length) {
+			throwTokenError("Unterminated string literal.");
+		}
+
 		return new Token(TokenType.STRING, this.source.slice(start, i), start, i, this.source);
 	}
 

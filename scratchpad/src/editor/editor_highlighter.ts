@@ -19,6 +19,8 @@ interface VDomHighlightState {
 }
 
 export class EditorHighlighter {
+	private frameHandle: number | null = null;
+
 	constructor(
 		private readonly editor: HTMLTextAreaElement,
 		private readonly highlightLayer: HTMLElement
@@ -26,6 +28,28 @@ export class EditorHighlighter {
 	}
 
 	public render(sourceText: string): void {
+		if (this.frameHandle !== null) {
+			cancelAnimationFrame(this.frameHandle);
+		}
+
+		this.frameHandle = requestAnimationFrame(() => {
+			this.frameHandle = null;
+			this.renderNow(sourceText);
+		});
+	}
+
+	public syncScroll(): void {
+		this.highlightLayer.scrollTop = this.editor.scrollTop;
+		this.highlightLayer.scrollLeft = this.editor.scrollLeft;
+	}
+
+	private renderNow(sourceText: string): void {
+		if (this.hasUnterminatedStringLiteral(sourceText)) {
+			this.highlightLayer.innerHTML = this.escapeHtml(sourceText);
+			this.syncScroll();
+			return;
+		}
+
 		try {
 			const source = new Lyra.Source(sourceText);
 			const tokens = Lyra.tokenize(source) as ScratchpadToken[];
@@ -35,11 +59,6 @@ export class EditorHighlighter {
 		}
 
 		this.syncScroll();
-	}
-
-	public syncScroll(): void {
-		this.highlightLayer.scrollTop = this.editor.scrollTop;
-		this.highlightLayer.scrollLeft = this.editor.scrollLeft;
 	}
 
 	private renderSegments(sourceText: string, tokens: ScratchpadToken[]): string {
@@ -257,6 +276,35 @@ export class EditorHighlighter {
 		}
 
 		return /^[A-Z]/.test(value) || ["number", "string", "boolean", "void", "mixed", "null"].includes(value);
+	}
+
+	private hasUnterminatedStringLiteral(sourceText: string): boolean {
+		let inString = false;
+		let inComment = false;
+
+		for (let index = 0; index < sourceText.length; index++) {
+			const current = sourceText[index];
+			const next = sourceText[index + 1];
+
+			if (inComment) {
+				if (current === "\n") {
+					inComment = false;
+				}
+				continue;
+			}
+
+			if (!inString && current === "/" && next === "/") {
+				inComment = true;
+				index++;
+				continue;
+			}
+
+			if (current === "\"") {
+				inString = !inString;
+			}
+		}
+
+		return inString;
 	}
 
 	private escapeHtml(value: string): string {
