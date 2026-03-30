@@ -25,6 +25,9 @@ export class RuntimeBootstrap {
 	}
 
 	public loadNativeImports(ast: ASTNode): void {
+		const requestedClassNames = new Set<string>();
+		const spans = new Map<string, SourceSpan | null>();
+
 		for (const node of ast.children) {
 			if (!(node instanceof ASTImportNode) || node.from !== null) {
 				continue;
@@ -35,7 +38,19 @@ export class RuntimeBootstrap {
 				throwDependencyError(`Invalid import node ${node.type}.`, node.span);
 			}
 
-			this.loadNativeClass(className, node.span);
+			this.collectNativeClassNames(className, requestedClassNames, spans, node.span);
+		}
+
+		for (const className of requestedClassNames) {
+			this.declareNativeClassType(className, spans.get(className) ?? null);
+		}
+
+		for (const className of requestedClassNames) {
+			this.populateNativeClassType(className, spans.get(className) ?? null);
+		}
+
+		for (const className of requestedClassNames) {
+			this.registerNativeClassRuntime(className, spans.get(className) ?? null);
 		}
 	}
 
@@ -43,7 +58,7 @@ export class RuntimeBootstrap {
 		this.populateNativeClassTypes();
 	}
 
-	private loadNativeClass(className: string, span: SourceSpan | null = null): void {
+	private registerNativeClassRuntime(className: string, span: SourceSpan | null = null): void {
 		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
 		if (!nativeClass) {
 			throwDependencyError(`Unknown native class ${className}`, span);
@@ -51,18 +66,21 @@ export class RuntimeBootstrap {
 
 		const classDef: RuntimeClassType = nativeClass.getRuntimeClass();
 		if (this.objectRegistry.classes.has(className)) {
+			this.environment.define(className, Value(classDef, className, classDef));
 			return;
 		}
 
 		this.objectRegistry.classes.set(className, classDef);
-		this.declareNativeClassType(className);
-		this.populateNativeClassType(className);
 		this.environment.define(className, Value(classDef, className, classDef));
 	}
 
-	private declareNativeClassType(className: string): void {
+	private declareNativeClassType(className: string, span: SourceSpan | null = null): void {
 		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
-		if (!nativeClass || this.objectRegistry.types.hasSymbol(className)) {
+		if (!nativeClass) {
+			throwDependencyError(`Unknown native class ${className}`, span);
+		}
+
+		if (this.objectRegistry.types.hasSymbol(className)) {
 			return;
 		}
 
@@ -75,10 +93,10 @@ export class RuntimeBootstrap {
 		}
 	}
 
-	private populateNativeClassType(className: string): void {
+	private populateNativeClassType(className: string, span: SourceSpan | null = null): void {
 		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
 		if (!nativeClass) {
-			return;
+			throwDependencyError(`Unknown native class ${className}`, span);
 		}
 
 		const ast = nativeClass.getAst();
@@ -120,6 +138,36 @@ export class RuntimeBootstrap {
 			}
 
 			this.populateNativeClassType(nativeClass.name);
+		}
+	}
+
+	private collectNativeClassNames(
+		className: string,
+		classNames: Set<string>,
+		spans: Map<string, SourceSpan | null>,
+		span: SourceSpan | null = null
+	): void {
+		if (classNames.has(className)) {
+			return;
+		}
+
+		const nativeClass: NativeClass | null = nativeClasses.registry.get(className) || null;
+		if (!nativeClass) {
+			throwDependencyError(`Unknown native class ${className}`, span);
+		}
+
+		classNames.add(className);
+		spans.set(className, span);
+
+		const ast = nativeClass.getAst();
+		for (const node of ast.children) {
+			if (!(node instanceof ASTImportNode) || node.from !== null) {
+				continue;
+			}
+
+			for (const importedClassName of node.names) {
+				this.collectNativeClassNames(importedClassName, classNames, spans, node.span);
+			}
 		}
 	}
 

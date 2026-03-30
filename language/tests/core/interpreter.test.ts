@@ -357,4 +357,17 @@ let error = response.getError();
 		expect(scope.get("error").value)
 			.toBe("Failed to fetch");
 	});
+
+	it("supports explicit native dependency imports without relying on autoload order", async () => {
+		const scope = await executeProgramSource(`
+import Net;
+import NetResponse;
+
+let response: NetResponse = Net.tryGet("https://lyra.test/success");
+let text = response.getText();
+`);
+
+		expect(scope.get("text").value)
+			.toBe("hello from net");
+	});
 });

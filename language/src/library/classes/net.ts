@@ -119,6 +119,8 @@ export class NetType extends NativeClass {
 			LyraNet,
 			new Source(
 				`
+import NetResponse;
+
 class ${CLASS_NAME} {
 	public static get(url: string): string;
 
@@ -164,6 +166,6 @@ class ${RESPONSE_CLASS_NAME} {
 			)
 		);
 
-		this.isAutoloadAble = true;
+		this.isAutoloadAble = false;
 	}
 }
