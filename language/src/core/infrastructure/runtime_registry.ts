@@ -155,7 +155,9 @@ export class TypeRegistry {
 				continue;
 			}
 
-			if ((memberNode.type === ASTNodeType.METHOD || memberNode.type === ASTNodeType.CONSTRUCTOR)
+			if ((memberNode.type === ASTNodeType.METHOD
+			     || memberNode.type === ASTNodeType.OPERATOR
+			     || memberNode.type === ASTNodeType.CONSTRUCTOR)
 			    && memberNode instanceof ASTMethodNode) {
 				const methodScope = new TypeScope(classScope);
 				const methodSymbol = new MethodSymbol(memberNode);

@@ -1,6 +1,6 @@
 import {describe, expect, it, mock} from "bun:test";
-import {State} from "../src/core/infrastructure/runtime_state.ts";
-import {Value} from "../src/core/model/runtime_model.ts";
+import {State} from "../../src/core/infrastructure/runtime_state.ts";
+import {Value} from "../../src/core/model/runtime_model.ts";
 
 describe("State", () => {
 	it("returns the initial value", () => {

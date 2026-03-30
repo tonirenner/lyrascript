@@ -1,7 +1,7 @@
 import {describe, expect, it} from "bun:test";
-import {TokenType} from "../src/core/syntax/ast_grammar.ts";
-import {Source} from "../src/core/syntax/source.ts";
-import {Tokenizer} from "../src/core/syntax/tokenizer.ts";
+import {TokenType} from "../../src/core/syntax/ast_grammar.ts";
+import {Source} from "../../src/core/syntax/source.ts";
+import {Tokenizer} from "../../src/core/syntax/tokenizer.ts";
 
 describe("Tokenizer", () => {
 	it("tokenizes annotations, keywords and literals", () => {

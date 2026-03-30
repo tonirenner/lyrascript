@@ -3,10 +3,15 @@ import {
 	ASTAssignmentNode,
 	ASTBinaryNode,
 	ASTCallNode,
+	ASTElseNode,
 	ASTExpressionNode,
+	ASTFieldNode,
 	ASTForeachNode,
+	ASTIfNode,
 	ASTIndexNode,
 	ASTLambdaNode,
+	ASTMatchCaseNode,
+	ASTMatchNode,
 	ASTMemberNode,
 	ASTMethodNode,
 	ASTNewNode,
@@ -17,6 +22,7 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTVDomExpressionNode,
 	ASTVDomNode
 } from './syntax/ast.ts';
 import {
@@ -130,6 +136,8 @@ export class TypeChecker {
 				this.checkBody(constructorSymbol.body, constructorScope);
 			}
 
+			this.checkFieldInitializers(objectSymbol, instanceScope);
+
 			for (const methodSymbol of objectSymbol.instanceMethodSymbols.values()) {
 				const methodScope = new TypeScope(instanceScope);
 
@@ -190,6 +198,10 @@ export class TypeChecker {
 				);
 			});
 
+			for (const fieldSymbol of objectSymbol.staticFieldSymbols.values()) {
+				this.checkFieldInitializer(fieldSymbol, instanceScope);
+			}
+
 			for (const methodSymbol of objectSymbol.instanceMethodSymbols.values()) {
 				const methodScope = new TypeScope(instanceScope);
 
@@ -231,7 +243,7 @@ export class TypeChecker {
 			interfaceRefType.typeArguments
 		);
 
-		for (const interfaceMethodSymbol of interfaceSymbol.instanceMethodSymbols.values()) {
+		for (const interfaceMethodSymbol of this.collectInterfaceMethods(interfaceSymbol)) {
 			const classMethodSymbol: MethodSymbol = this.resolveInstanceMethode(
 				classSymbol,
 				interfaceMethodSymbol.name
@@ -263,15 +275,16 @@ export class TypeChecker {
 
 		for (let i = 0; i < interfaceMethodSymbol.parameterSymbols.length; i++) {
 			const parameterSymbol: ParameterSymbol | null = interfaceMethodSymbol.parameterSymbols[i] || null;
+			const classParameterSymbol: ParameterSymbol | null = classMethodSymbol.parameterSymbols[i] || null;
 
-			if (!parameterSymbol) {
+			if (!parameterSymbol || !classParameterSymbol) {
 				this.typeError(`Method ${classMethodSymbol.name} has too many parameters`);
 				break;
 			}
 
 			const expectedType: Type = substituteType(parameterSymbol.parameterType, substitutionMap);
 
-			const actualType: Type = parameterSymbol.parameterType;
+			const actualType: Type = classParameterSymbol.parameterType;
 
 			if (!expectedType.accepts(actualType)) {
 				this.typeError(`Parameter ${i + 1} of ${classMethodSymbol.name} incompatible with interface`);
@@ -290,7 +303,9 @@ export class TypeChecker {
 			case ASTNodeType.RETURN:
 				if (node instanceof ASTReturnNode) {
 					return StatementResult.withReturn(
-						this.checkExpression(node.argument, scope)
+						node.argument
+						? this.checkExpression(node.argument, scope)
+						: Types.VOID
 					);
 				}
 				break;
@@ -302,9 +317,17 @@ export class TypeChecker {
 				break;
 			case ASTNodeType.FOREACH:
 				if (node instanceof ASTForeachNode) {
-					return StatementResult.withReturn(
-						this.checkForeach(node, scope)
-					);
+					return this.checkForeach(node, scope);
+				}
+				break;
+			case ASTNodeType.IF:
+				if (node instanceof ASTIfNode) {
+					return this.checkIf(node, scope);
+				}
+				break;
+			case ASTNodeType.MATCH:
+				if (node instanceof ASTMatchNode) {
+					return this.checkMatch(node, scope);
 				}
 				break;
 			case ASTNodeType.EXPRESSION:
@@ -323,6 +346,15 @@ export class TypeChecker {
 		                                  ? this.wrapType(node.typeAnnotation, scope)
 		                                  : null;
 
+		if (node.init === null) {
+			if (declaredType === null) {
+				this.typeError(`Variable ${node.name} requires either a type annotation or an initializer`, node);
+			}
+
+			scope.defineType(node.name, declaredType);
+			return;
+		}
+
 		const actualType: Type = this.checkExpression(node.init, scope, declaredType);
 
 		if (declaredType && !declaredType.accepts(actualType)) {
@@ -332,7 +364,7 @@ export class TypeChecker {
 		scope.defineType(node.name, declaredType ?? actualType);
 	}
 
-	private checkForeach(node: ASTForeachNode, scope: TypeScope): Type {
+	private checkForeach(node: ASTForeachNode, scope: TypeScope): StatementResult {
 		let iterableType: Type = this.checkExpression(node.iterable, scope);
 
 		iterableType = Type_autoboxing.autoboxIfNeeded(iterableType, this.objectRegistry);
@@ -351,11 +383,71 @@ export class TypeChecker {
 			const loopScope = new TypeScope(scope);
 			loopScope.defineType(node.iterator, elementType);
 
-			return this.checkBody(node.body, loopScope);
+			return this.checkBodyResult(node.body, loopScope);
 
 		}
 
 		this.typeError(`foreach expects Array<T>, got ${iterableType.toString()}`, node.iterable);
+	}
+
+	private checkIf(node: ASTIfNode, scope: TypeScope): StatementResult {
+		const conditionType: Type = this.checkExpression(node.condition, scope);
+		this.checkAssignable(Types.BOOLEAN, conditionType, node.condition);
+
+		const thenResult = this.checkBodyResult(node.then.children, new TypeScope(scope));
+		const elseResult = node.else
+		                   ? this.checkElseBranch(node.else, scope)
+		                   : StatementResult.noReturn();
+
+		return this.mergeBranchResults(thenResult, elseResult, node);
+	}
+
+	private checkElseBranch(node: ASTIfNode | ASTElseNode, scope: TypeScope): StatementResult {
+		if (node instanceof ASTIfNode) {
+			return this.checkIf(node, scope);
+		}
+
+		return this.checkBodyResult(node.children, new TypeScope(scope));
+	}
+
+	private checkMatch(node: ASTMatchNode, scope: TypeScope): StatementResult {
+		const expressionType: Type = this.checkExpression(node.expression, scope);
+		const caseResults: StatementResult[] = [];
+
+		for (const matchCase of node.cases) {
+			caseResults.push(this.checkMatchCase(matchCase, expressionType, scope));
+		}
+
+		if (node.defaultCase) {
+			caseResults.push(this.checkMatchCase(node.defaultCase, expressionType, scope));
+		}
+
+		if (caseResults.length === 0) {
+			return StatementResult.noReturn();
+		}
+
+		let combinedResult = caseResults[0] || StatementResult.noReturn();
+		for (let i = 1; i < caseResults.length; i++) {
+			const currentResult = caseResults[i];
+			if (currentResult) {
+				combinedResult = this.mergeBranchResults(combinedResult, currentResult, node);
+			}
+		}
+
+		if (!node.defaultCase) {
+			return StatementResult.noReturn();
+		}
+
+		return combinedResult;
+	}
+
+	private checkMatchCase(node: ASTMatchCaseNode, expressionType: Type, scope: TypeScope): StatementResult {
+		if (node.test) {
+			const testType: Type = this.checkExpression(node.test, scope, expressionType);
+			this.checkAssignable(expressionType, testType, node.test);
+		}
+
+		return this.checkBodyResult(node.children, new TypeScope(scope));
 	}
 
 	private checkExpression(expr: ASTNode | null, scope: TypeScope, expectedType: Type | null = null): Type {
@@ -385,7 +477,7 @@ export class TypeChecker {
 
 			case ASTNodeType.VDOM: {
 				if (expr instanceof ASTVDomNode) {
-					return this.checkVDomNode(expr);
+					return this.checkVDomNode(expr, scope);
 				}
 				break;
 			}
@@ -448,7 +540,13 @@ export class TypeChecker {
 
 			case ASTNodeType.LAMBDA: {
 				if (expr instanceof ASTLambdaNode) {
-					return this.checkLambdaExpression(expr, scope);
+					return this.checkLambdaExpression(
+						expr,
+						scope,
+						expectedType instanceof LambdaType
+						? expectedType
+						: null
+					);
 				}
 				break;
 			}
@@ -468,6 +566,20 @@ export class TypeChecker {
 		const left: Type = this.checkExpression(expr.left, scope);
 		const right: Type = this.checkExpression(expr.right, scope);
 		const op: string = expr.operator;
+		if (left instanceof ClassRefType) {
+			const methodSymbol: MethodSymbol = this.resolveInstanceMethode(
+				left.classSymbol,
+				op
+			);
+			const substitutionMap: Map<string, Type> = buildTypeSubstitutionMap(
+				methodSymbol.typeParameterSymbols,
+				left.typeArguments
+			);
+
+			this.checkCallArguments(methodSymbol, [expr.right], scope, substitutionMap);
+
+			return substituteType(methodSymbol.returnType, substitutionMap);
+		}
 
 		if (left instanceof ClassRefType && right instanceof ClassRefType) {
 			if (left.accepts(right)) {
@@ -745,7 +857,23 @@ export class TypeChecker {
 		const op: string = node.operator;
 
 		if (operand instanceof ClassRefType) {
-			return operand;
+			const methodName = op === GRAMMAR.PLUS
+			                   ? GRAMMAR.UNARY_PLUS
+			                   : op === GRAMMAR.MINUS
+			                     ? GRAMMAR.UNARY_MINUS
+			                     : op;
+			const methodSymbol: MethodSymbol = this.resolveInstanceMethode(
+				operand.classSymbol,
+				methodName
+			);
+			const substitutionMap: Map<string, Type> = buildTypeSubstitutionMap(
+				methodSymbol.typeParameterSymbols,
+				operand.typeArguments
+			);
+
+			this.checkCallArguments(methodSymbol, [], scope, substitutionMap);
+
+			return substituteType(methodSymbol.returnType, substitutionMap);
 		}
 
 		switch (op) {
@@ -771,7 +899,11 @@ export class TypeChecker {
 		this.typeError(`Invalid unary operator ${op}`, node);
 	}
 
-	private checkLambdaExpression(node: ASTLambdaNode, scope: TypeScope): LambdaType {
+	private checkLambdaExpression(
+		node: ASTLambdaNode,
+		scope: TypeScope,
+		expectedLambdaType: LambdaType | null = null
+	): LambdaType {
 		const lambdaScope = new TypeScope(scope);
 		const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
 			const parameterSymbol: ParameterSymbol = createParameterSymbol(
@@ -786,8 +918,38 @@ export class TypeChecker {
 			return parameterSymbol;
 		});
 
-		if (node.children[0]) {
-			return new LambdaType(parameters, this.checkExpression(node.children[0], lambdaScope));
+		const declaredReturnType: Type = this.wrapType(node.returnType, lambdaScope);
+		const targetReturnType: Type = declaredReturnType instanceof MixedType && expectedLambdaType
+		                               ? expectedLambdaType.returnType
+		                               : declaredReturnType;
+
+		const lambdaExpressionBody = node.children.length === 1 && this.isExpressionNode(node.children[0] || null);
+
+		if (lambdaExpressionBody) {
+			const bodyNode = node.children[0] || null;
+			if (bodyNode === null) {
+				this.typeError('Lambda expression must have a return type', node);
+			}
+
+			const actualReturnType = this.checkExpression(bodyNode, lambdaScope, targetReturnType);
+			const lambdaReturnType = declaredReturnType instanceof MixedType
+			                         ? actualReturnType
+			                         : declaredReturnType;
+
+			this.checkAssignable(targetReturnType, actualReturnType, bodyNode);
+
+			return new LambdaType(parameters, lambdaReturnType);
+		}
+
+		if (node.children.length > 0) {
+			const bodyReturnType = this.checkBody(node.children, lambdaScope);
+			const lambdaReturnType = declaredReturnType instanceof MixedType
+			                         ? bodyReturnType
+			                         : declaredReturnType;
+
+			this.checkReturnType(targetReturnType, bodyReturnType, node);
+
+			return new LambdaType(parameters, lambdaReturnType);
 		}
 
 		this.typeError('Lambda expression must have a return type', node);
@@ -1028,19 +1190,34 @@ export class TypeChecker {
 	}
 
 	private checkBody(children: ASTNode[], scope: TypeScope): Type {
+		return this.checkBodyResult(children, scope).returnType ?? Types.MIXED;
+	}
+
+	private checkBodyResult(children: ASTNode[], scope: TypeScope): StatementResult {
 		let returnType: Type = Types.MIXED;
+		let didReturn = false;
 
 		for (const child of children) {
 			const statementResult = this.checkStatement(child, scope);
-			if (statementResult.didReturn && statementResult.returnType) {
-				returnType = statementResult.returnType;
+			if (!statementResult.didReturn || !statementResult.returnType) {
+				continue;
 			}
+
+			if (didReturn) {
+				returnType = this.mergeReturnTypes(returnType, statementResult.returnType, child);
+				continue;
+			}
+
+			didReturn = true;
+			returnType = statementResult.returnType;
 		}
 
-		return returnType;
+		return didReturn
+		       ? StatementResult.withReturn(returnType)
+		       : StatementResult.noReturn();
 	}
 
-	private checkReturnType(expectedType: Type, actualType: Type, node: ASTMethodNode): void {
+	private checkReturnType(expectedType: Type, actualType: Type, node: ASTNode): void {
 		// void-Methode
 		if (expectedType === Types.VOID) {
 			if (actualType !== Types.MIXED && actualType !== Types.VOID) {
@@ -1060,7 +1237,21 @@ export class TypeChecker {
 		}
 	}
 
-	private checkVDomNode(node: ASTVDomNode): Type {
+	private checkVDomNode(node: ASTVDomNode, scope: TypeScope): Type {
+		for (const value of node.props.values()) {
+			this.checkExpression(value, scope);
+		}
+
+		for (const child of node.children) {
+			if (child instanceof ASTVDomNode) {
+				this.checkVDomNode(child, scope);
+				continue;
+			}
+
+			if (child instanceof ASTVDomExpressionNode) {
+				this.checkExpression(child.expr, scope);
+			}
+		}
 
 		try {
 			const classSymbol: ClassSymbol = this.objectRegistry.types.getClassSymbol(node.tag);
@@ -1092,6 +1283,88 @@ export class TypeChecker {
 		}
 
 		return methodSymbol;
+	}
+
+	private checkFieldInitializers(classSymbol: ClassSymbol, scope: TypeScope): void {
+		for (const fieldSymbol of classSymbol.instanceFieldSymbols.values()) {
+			this.checkFieldInitializer(fieldSymbol, scope);
+		}
+
+		for (const fieldSymbol of classSymbol.staticFieldSymbols.values()) {
+			this.checkFieldInitializer(fieldSymbol, scope);
+		}
+	}
+
+	private checkFieldInitializer(fieldSymbol: FieldSymbol, scope: TypeScope): void {
+		const initializer = fieldSymbol.node.init;
+		if (!initializer) {
+			return;
+		}
+
+		const fieldScope = new TypeScope(scope);
+		const actualType = this.checkExpression(initializer, fieldScope, fieldSymbol.fieldType);
+		this.checkAssignable(fieldSymbol.fieldType, actualType, initializer);
+	}
+
+	private mergeBranchResults(left: StatementResult, right: StatementResult, node: ASTNode): StatementResult {
+		if (!left.didReturn || !right.didReturn || !left.returnType || !right.returnType) {
+			return StatementResult.noReturn();
+		}
+
+		return StatementResult.withReturn(
+			this.mergeReturnTypes(left.returnType, right.returnType, node)
+		);
+	}
+
+	private mergeReturnTypes(left: Type, right: Type, node: ASTNode): Type {
+		if (left.accepts(right)) {
+			return left;
+		}
+
+		if (right.accepts(left)) {
+			return right;
+		}
+
+		this.typeError(`Incompatible return types: ${left} <> ${right}`, node);
+	}
+
+	private collectInterfaceMethods(interfaceSymbol: InterfaceSymbol, visited: Set<string> = new Set()): MethodSymbol[] {
+		if (visited.has(interfaceSymbol.name)) {
+			return [];
+		}
+
+		visited.add(interfaceSymbol.name);
+
+		const methods: MethodSymbol[] = [];
+
+		for (const parentInterface of interfaceSymbol.extendsInterfaces) {
+			methods.push(...this.collectInterfaceMethods(parentInterface, visited));
+		}
+
+		for (const methodSymbol of interfaceSymbol.instanceMethodSymbols.values()) {
+			methods.push(methodSymbol);
+		}
+
+		return methods;
+	}
+
+	private isExpressionNode(node: ASTNode | null): boolean {
+		if (node === null) {
+			return false;
+		}
+
+		if (node.isExpression) {
+			return true;
+		}
+
+		return [
+			ASTNodeType.NUMBER,
+			ASTNodeType.STRING,
+			ASTNodeType.BOOLEAN,
+			ASTNodeType.NULL,
+			ASTNodeType.IDENTIFIER,
+			ASTNodeType.THIS
+		].includes(node.type);
 	}
 
 	private resolveInHierarchy(classSymbol: ClassSymbol, resolver: (classSymbol: ClassSymbol) => any): any {

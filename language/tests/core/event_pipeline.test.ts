@@ -1,5 +1,5 @@
 import {describe, expect, it, mock} from "bun:test";
-import {EventPipeline} from "../src/core/infrastructure/event_pipeline.ts";
+import {EventPipeline} from "../../src/core/infrastructure/event_pipeline.ts";
 
 describe("EventPipeline", () => {
 	it("delivers payloads to registered listeners", () => {

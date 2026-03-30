@@ -1,12 +1,12 @@
 import {describe, expect, it} from "bun:test";
-import {Interpreter} from "../src/core/interpreter.ts";
-import {Parser} from "../src/core/parser.ts";
-import {EventPipeline} from "../src/core/infrastructure/event_pipeline.ts";
-import {ObjectRegistry} from "../src/core/infrastructure/runtime_registry.ts";
-import {TYPE_ENUM} from "../src/core/syntax/ast_grammar.ts";
-import {RuntimeScope} from "../src/core/shared/ast_objects.ts";
-import {Source} from "../src/core/syntax/source.ts";
-import {LyraScriptProgram} from "../src/core/program.ts";
+import {Interpreter} from "../../src/core/interpreter.ts";
+import {Parser} from "../../src/core/parser.ts";
+import {EventPipeline} from "../../src/core/infrastructure/event_pipeline.ts";
+import {ObjectRegistry} from "../../src/core/infrastructure/runtime_registry.ts";
+import {TYPE_ENUM} from "../../src/core/syntax/ast_grammar.ts";
+import {RuntimeScope} from "../../src/core/shared/ast_objects.ts";
+import {Source} from "../../src/core/syntax/source.ts";
+import {LyraScriptProgram} from "../../src/core/program.ts";
 
 function executeSource(code: string): RuntimeScope {
 	const source = new Source(code);

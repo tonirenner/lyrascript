@@ -1,4 +1,4 @@
-import type {RuntimeInstanceType, VNode} from "../core/model/runtime_model.ts";
+import type {RuntimeInstanceType, VNode} from "../../core/model/runtime_model.ts";
 
 export class EventHandlerRegistry {
 	private registry: WeakMap<HTMLElement, Record<string, Function>> = new WeakMap<HTMLElement, Record<string, Function>>();

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "bun:test";
-import {Parser} from "../src/core/parser.ts";
-import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode} from "../src/core/syntax/ast.ts";
-import {Source} from "../src/core/syntax/source.ts";
+import {Parser} from "../../src/core/parser.ts";
+import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode} from "../../src/core/syntax/ast.ts";
+import {Source} from "../../src/core/syntax/source.ts";
 
 describe("Parser", () => {
 	it("parses variable declarations with type annotations", () => {

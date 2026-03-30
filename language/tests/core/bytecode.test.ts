@@ -1,10 +1,10 @@
 import {describe, expect, it} from "bun:test";
-import {BytecodeCompiler} from "../src/core/compiler/bytecode_compiler.ts";
-import {Parser} from "../src/core/parser.ts";
-import {RuntimeScope} from "../src/core/shared/ast_objects.ts";
-import {Source} from "../src/core/syntax/source.ts";
-import {VirtualMachine} from "../src/core/vm/virtual_machine.ts";
-import {TYPE_ENUM} from "../src/core/syntax/ast_grammar.ts";
+import {BytecodeCompiler} from "../../src/core/compiler/bytecode_compiler.ts";
+import {Parser} from "../../src/core/parser.ts";
+import {RuntimeScope} from "../../src/core/shared/ast_objects.ts";
+import {Source} from "../../src/core/syntax/source.ts";
+import {VirtualMachine} from "../../src/core/vm/virtual_machine.ts";
+import {TYPE_ENUM} from "../../src/core/syntax/ast_grammar.ts";
 
 function executeBytecode(code: string): RuntimeScope {
 	const ast = new Parser(new Source(code)).parse();
