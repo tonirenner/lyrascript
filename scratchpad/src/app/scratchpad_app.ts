@@ -1,11 +1,13 @@
 import Lyra, {WebApplicationRuntime} from "../../../dist/language.js";
 import {EditorHighlighter} from "../editor/editor_highlighter.ts";
+import {EditorLineNumbers} from "../editor/editor_line_numbers.ts";
 import {ScratchpadFileAccess} from "../fs/scratchpad_file_access.ts";
 import {ScratchpadOutput, wrapConsole} from "../output/scratchpad_output.ts";
 import {AstTreeBuilder} from "../tree/ast_tree_builder.ts";
 
 interface ScratchpadElements {
 	editor: HTMLTextAreaElement;
+	editorLineNumbers: HTMLElement;
 	editorHighlight: HTMLElement;
 	preview: HTMLElement;
 	fileStatus: HTMLElement;
@@ -23,10 +25,12 @@ export class ScratchpadApp {
 	private readonly output: ScratchpadOutput = new ScratchpadOutput();
 	private readonly treeBuilder: AstTreeBuilder = new AstTreeBuilder();
 	private readonly editorHighlighter: EditorHighlighter;
+	private readonly editorLineNumbers: EditorLineNumbers;
 	private readonly fileAccess: ScratchpadFileAccess = new ScratchpadFileAccess();
 
 	constructor(private readonly elements: ScratchpadElements) {
 		this.editorHighlighter = new EditorHighlighter(elements.editor, elements.editorHighlight);
+		this.editorLineNumbers = new EditorLineNumbers(elements.editor, elements.editorLineNumbers);
 
 		wrapConsole(
 			(...args: any[]): void => this.output.log(...args),
@@ -76,13 +80,16 @@ export class ScratchpadApp {
 
 		this.elements.editor.addEventListener("input", () => {
 			this.editorHighlighter.render(this.elements.editor.value);
+			this.editorLineNumbers.render(this.elements.editor.value);
 		});
 
 		this.elements.editor.addEventListener("scroll", () => {
 			this.editorHighlighter.syncScroll();
+			this.editorLineNumbers.syncScroll();
 		});
 
 		this.editorHighlighter.render(this.elements.editor.value);
+		this.editorLineNumbers.render(this.elements.editor.value);
 		this.renderFileStatus();
 	}
 
@@ -129,6 +136,7 @@ export class ScratchpadApp {
 			const result = await this.fileAccess.open();
 			this.elements.editor.value = result.content;
 			this.editorHighlighter.render(result.content);
+			this.editorLineNumbers.render(result.content);
 			this.renderFileStatus();
 		} catch (error) {
 			if (error instanceof DOMException && error.name === "AbortError") {
@@ -192,6 +200,7 @@ export class ScratchpadApp {
 
 export function bootstrapScratchpad(): ScratchpadApp {
 	const editor = document.getElementById("editor");
+	const editorLineNumbers = document.getElementById("editor-line-numbers");
 	const editorHighlight = document.getElementById("editor-highlight");
 	const preview = document.getElementById("preview");
 	const fileStatus = document.getElementById("file-status");
@@ -205,6 +214,7 @@ export function bootstrapScratchpad(): ScratchpadApp {
 	const runButton = document.getElementById("run-button");
 
 	if (!(editor instanceof HTMLTextAreaElement)
+		|| !(editorLineNumbers instanceof HTMLElement)
 		|| !(editorHighlight instanceof HTMLElement)
 		|| !(preview instanceof HTMLElement)
 		|| !(fileStatus instanceof HTMLElement)
@@ -221,6 +231,7 @@ export function bootstrapScratchpad(): ScratchpadApp {
 
 	const app = new ScratchpadApp({
 		editor,
+		editorLineNumbers,
 		editorHighlight,
 		preview,
 		fileStatus,

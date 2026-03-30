@@ -71,11 +71,33 @@ main {
 }
 
 .editor-shell {
-    position: relative;
+    display: grid;
+    grid-template-columns: 56px 1fr;
     flex: 1 1 auto;
     min-height: 220px;
     overflow: hidden;
     background: #0f1115;
+}
+
+.editor-gutter {
+    overflow: hidden;
+    padding: 12px 8px 12px 0;
+    border-right: 1px solid #2a2f3a;
+    background: #0b0d11;
+    color: #5f6b7a;
+    text-align: right;
+    user-select: none;
+}
+
+.editor-line-number {
+    display: block;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.editor-stage {
+    position: relative;
+    overflow: hidden;
 }
 
 .editor-highlight,

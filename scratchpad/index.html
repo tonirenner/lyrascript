@@ -24,8 +24,10 @@
 <main>
     <div class="editor">
         <div class="editor-shell">
-            <pre aria-hidden="true" class="editor-highlight" id="editor-highlight"></pre>
-            <textarea aria-label="editor" id="editor" spellcheck="false">
+            <div aria-hidden="true" class="editor-gutter" id="editor-line-numbers"></div>
+            <div class="editor-stage">
+                <pre aria-hidden="true" class="editor-highlight" id="editor-highlight"></pre>
+                <textarea aria-label="editor" id="editor" spellcheck="false">
 class Toggle {
 
     private visible: boolean = true;
@@ -79,6 +81,7 @@ class Program {
     }
 }
 		</textarea>
+            </div>
         </div>
         <div class="preview">
             <div class="preview-header">Live Preview</div>
