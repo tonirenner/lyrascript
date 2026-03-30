@@ -1,0 +1,294 @@
+body {
+    margin: 0;
+    font-family: monospace;
+    background: #0f1115;
+    color: #e6e6e6;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 10px 16px;
+    background: #161a22;
+    border-bottom: 1px solid #2a2f3a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header h1 {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.8;
+}
+
+header h1 > img {
+    vertical-align: middle;
+    width: 24px;
+    height: 24px;
+}
+
+button {
+    background: #2d6cdf;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: monospace;
+}
+
+button:hover {
+    background: #3a7bfd;
+}
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+}
+
+.editor {
+    border-right: 1px solid #2a2f3a;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.editor-shell {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 220px;
+    overflow: hidden;
+    background: #0f1115;
+}
+
+.editor-highlight,
+.editor textarea {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 12px;
+    border: none;
+    outline: none;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+}
+
+.editor-highlight {
+    color: #e6e6e6;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.editor textarea {
+    flex: 1 1 auto;
+    background: transparent;
+    color: transparent;
+    caret-color: #f4efe5;
+    resize: none;
+    z-index: 2;
+    -webkit-text-fill-color: transparent;
+}
+
+.editor textarea::selection {
+    background: rgba(76, 111, 166, 0.45);
+}
+
+.token-keyword {
+    color: #ff7b72;
+}
+
+.token-type {
+    color: #79c0ff;
+}
+
+.token-identifier {
+    color: #e6edf3;
+}
+
+.token-string {
+    color: #a5d6ff;
+}
+
+.token-number {
+    color: #f2cc60;
+}
+
+.token-boolean {
+    color: #ffa657;
+}
+
+.token-comment {
+    color: #6e7681;
+    font-style: italic;
+}
+
+.token-annotation {
+    color: #d2a8ff;
+}
+
+.token-operator,
+.token-punctuation {
+    color: #c9d1d9;
+}
+
+.token-vdom-delimiter {
+    color: #7ee787;
+}
+
+.token-vdom-tag {
+    color: #56d364;
+}
+
+.token-vdom-attr {
+    color: #79c0ff;
+}
+
+.token-vdom-text {
+    color: #c9d1d9;
+}
+
+.preview {
+    min-height: 220px;
+    border-top: 1px solid #2a2f3a;
+    background: #f4efe5;
+    color: #111;
+    overflow: auto;
+    padding: 14px;
+}
+
+.preview-header {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #5f5a52;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+#preview {
+    min-height: 160px;
+}
+
+.preview-empty {
+    color: #7a6d5b;
+    font-style: italic;
+}
+
+#preview .box {
+    padding: 14px 16px;
+    border: 1px solid #d7cab3;
+    border-radius: 10px;
+    background: #fffaf0;
+    cursor: pointer;
+}
+
+#preview button {
+    background: #1f5bd8;
+    border-radius: 8px;
+    padding: 8px 14px;
+}
+
+#preview h1,
+#preview h2,
+#preview h3,
+#preview p,
+#preview b,
+#preview div {
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.output {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.panel {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    border-bottom: 1px solid #2a2f3a;
+    min-height: 0;
+}
+
+.panel:last-child {
+    border-bottom: none;
+}
+
+.panel h2 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.stdout {
+    white-space: pre-wrap;
+    color: #c6f68d;
+}
+
+.stderr {
+    white-space: pre-wrap;
+    color: #ff6b6b;
+}
+
+#ast {
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.ast-node {
+    position: relative;
+}
+
+.ast-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+    padding: 1px 6px 1px 4px;
+    border-radius: 4px;
+    user-select: none;
+}
+
+.ast-row:hover {
+    background: #171c26;
+}
+
+.ast-toggle {
+    width: 12px;
+    color: #7f8ea3;
+    cursor: pointer;
+    flex: 0 0 12px;
+    text-align: center;
+}
+
+.ast-toggle.is-leaf {
+    visibility: hidden;
+    cursor: default;
+}
+
+.ast-label {
+    color: #9cdcfe;
+}
+
+.ast-children {
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid #2a2f3a;
+    display: none;
+}
+
+.ast-children.is-open {
+    display: block;
+}
+
+.ast-meta {
+    color: #7f8ea3;
+}

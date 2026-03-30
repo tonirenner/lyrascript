@@ -3,218 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <title>Lyra Scratchpad</title>
-
-    <style>
-        body {
-            margin: 0;
-            font-family: monospace;
-            background: #0f1115;
-            color: #e6e6e6;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            padding: 10px 16px;
-            background: #161a22;
-            border-bottom: 1px solid #2a2f3a;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        header h1 {
-            font-size: 14px;
-            margin: 0;
-            opacity: 0.8;
-        }
-
-        header h1 > img {
-            vertical-align: middle;
-            width: 24px;
-            height: 24px;
-        }
-
-        button {
-            background: #2d6cdf;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: monospace;
-        }
-
-        button:hover {
-            background: #3a7bfd;
-        }
-
-        main {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 0;
-        }
-
-        .editor {
-            border-right: 1px solid #2a2f3a;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        .editor textarea {
-            flex: 1 1 auto;
-            min-height: 220px;
-            background: #0f1115;
-            color: #e6e6e6;
-            border: none;
-            padding: 12px;
-            resize: none;
-            outline: none;
-            font-family: monospace;
-            font-size: 14px;
-        }
-
-        .preview {
-            min-height: 220px;
-            border-top: 1px solid #2a2f3a;
-            background: #f4efe5;
-            color: #111;
-            overflow: auto;
-            padding: 14px;
-        }
-
-        .preview-header {
-            margin: 0 0 10px 0;
-            font-size: 12px;
-            color: #5f5a52;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        #preview {
-            min-height: 160px;
-        }
-
-        .preview-empty {
-            color: #7a6d5b;
-            font-style: italic;
-        }
-
-        #preview .box {
-            padding: 14px 16px;
-            border: 1px solid #d7cab3;
-            border-radius: 10px;
-            background: #fffaf0;
-            cursor: pointer;
-        }
-
-        #preview button {
-            background: #1f5bd8;
-            border-radius: 8px;
-            padding: 8px 14px;
-        }
-
-        #preview h1,
-        #preview h2,
-        #preview h3,
-        #preview p,
-        #preview b,
-        #preview div {
-            font-family: Georgia, "Times New Roman", serif;
-        }
-
-        .output {
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        .panel {
-            flex: 1;
-            padding: 10px;
-            overflow: auto;
-            border-bottom: 1px solid #2a2f3a;
-            min-height: 0;
-        }
-
-        .panel:last-child {
-            border-bottom: none;
-        }
-
-        .panel h2 {
-            margin: 0 0 6px 0;
-            font-size: 12px;
-            opacity: 0.6;
-        }
-
-        .stdout {
-            white-space: pre-wrap;
-            color: #c6f68d;
-        }
-
-        .stderr {
-            white-space: pre-wrap;
-            color: #ff6b6b;
-        }
-
-        #ast {
-            font-size: 13px;
-            line-height: 1.45;
-        }
-
-        .ast-node {
-            position: relative;
-        }
-
-        .ast-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-height: 22px;
-            padding: 1px 6px 1px 4px;
-            border-radius: 4px;
-            user-select: none;
-        }
-
-        .ast-row:hover {
-            background: #171c26;
-        }
-
-        .ast-toggle {
-            width: 12px;
-            color: #7f8ea3;
-            cursor: pointer;
-            flex: 0 0 12px;
-            text-align: center;
-        }
-
-        .ast-toggle.is-leaf {
-            visibility: hidden;
-            cursor: default;
-        }
-
-        .ast-label {
-            color: #9cdcfe;
-        }
-
-        .ast-children {
-            margin-left: 12px;
-            padding-left: 12px;
-            border-left: 1px solid #2a2f3a;
-            display: none;
-        }
-
-        .ast-children.is-open {
-            display: block;
-        }
-
-        .ast-meta {
-            color: #7f8ea3;
-        }
-    </style>
+    <link rel="stylesheet" href="./styles/scratchpad.css">
 </head>
 <body>
 
@@ -228,7 +17,9 @@
 
 <main>
     <div class="editor">
-        <textarea aria-label="editor" id="editor" spellcheck="false">
+        <div class="editor-shell">
+            <pre aria-hidden="true" class="editor-highlight" id="editor-highlight"></pre>
+            <textarea aria-label="editor" id="editor" spellcheck="false">
 class Toggle {
 
     private visible: boolean = true;
@@ -282,6 +73,7 @@ class Program {
     }
 }
 		</textarea>
+        </div>
         <div class="preview">
             <div class="preview-header">Live Preview</div>
             <div id="preview"></div>

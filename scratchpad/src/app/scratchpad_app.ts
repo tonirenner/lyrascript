@@ -1,9 +1,11 @@
 import Lyra, {WebApplicationRuntime} from "../../../dist/language.js";
+import {EditorHighlighter} from "../editor/editor_highlighter.ts";
 import {ScratchpadOutput, wrapConsole} from "../output/scratchpad_output.ts";
 import {AstTreeBuilder} from "../tree/ast_tree_builder.ts";
 
 interface ScratchpadElements {
 	editor: HTMLTextAreaElement;
+	editorHighlight: HTMLElement;
 	preview: HTMLElement;
 	stdout: HTMLElement;
 	stderr: HTMLElement;
@@ -15,8 +17,11 @@ interface ScratchpadElements {
 export class ScratchpadApp {
 	private readonly output: ScratchpadOutput = new ScratchpadOutput();
 	private readonly treeBuilder: AstTreeBuilder = new AstTreeBuilder();
+	private readonly editorHighlighter: EditorHighlighter;
 
 	constructor(private readonly elements: ScratchpadElements) {
+		this.editorHighlighter = new EditorHighlighter(elements.editor, elements.editorHighlight);
+
 		wrapConsole(
 			(...args: any[]): void => this.output.log(...args),
 			(...args: any[]): void => this.output.error(args)
@@ -43,6 +48,16 @@ export class ScratchpadApp {
 				void this.run();
 			}
 		});
+
+		this.elements.editor.addEventListener("input", () => {
+			this.editorHighlighter.render(this.elements.editor.value);
+		});
+
+		this.elements.editor.addEventListener("scroll", () => {
+			this.editorHighlighter.syncScroll();
+		});
+
+		this.editorHighlighter.render(this.elements.editor.value);
 	}
 
 	public async run(): Promise<void> {
@@ -83,12 +98,12 @@ export class ScratchpadApp {
 			.join("\n");
 	}
 
-	private async renderPreview(source: any): Promise<void> {
+	private async renderPreview(source: unknown): Promise<void> {
 		this.elements.preview.innerHTML = "";
 
 		try {
 			const runtime = new WebApplicationRuntime(this.elements.preview, false);
-			await runtime.startSource(source, "Program");
+			await runtime.startSource(source as any, "Program");
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			this.elements.preview.innerHTML = `<div class="preview-empty">${message}</div>`;
@@ -98,6 +113,7 @@ export class ScratchpadApp {
 
 export function bootstrapScratchpad(): ScratchpadApp {
 	const editor = document.getElementById("editor");
+	const editorHighlight = document.getElementById("editor-highlight");
 	const preview = document.getElementById("preview");
 	const stdout = document.getElementById("stdout");
 	const stderr = document.getElementById("stderr");
@@ -106,6 +122,7 @@ export function bootstrapScratchpad(): ScratchpadApp {
 	const runButton = document.getElementById("run-button");
 
 	if (!(editor instanceof HTMLTextAreaElement)
+		|| !(editorHighlight instanceof HTMLElement)
 		|| !(preview instanceof HTMLElement)
 		|| !(stdout instanceof HTMLElement)
 		|| !(stderr instanceof HTMLElement)
@@ -117,6 +134,7 @@ export function bootstrapScratchpad(): ScratchpadApp {
 
 	const app = new ScratchpadApp({
 		editor,
+		editorHighlight,
 		preview,
 		stdout,
 		stderr,
