@@ -1,4 +1,5 @@
 import {describe, expect, it} from "bun:test";
+import {LyraParserError} from "../../src/core/infrastructure/errors.ts";
 import {Parser} from "../../src/core/parser.ts";
 import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode} from "../../src/core/syntax/ast.ts";
 import {Source} from "../../src/core/syntax/source.ts";
@@ -52,5 +53,33 @@ class Example {
 			.toBe(1);
 		expect(classNode?.children[0]?.type)
 			.toBe(ASTNodeType.METHOD);
+	});
+
+	it("captures structured stack frames for parser errors", () => {
+		let thrown: unknown;
+
+		try {
+			new Parser(new Source(`
+class Broken {
+	public test(): number {
+		return 1 + ;
+	}
+}
+`)).parse();
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect(thrown)
+			.toBeInstanceOf(LyraParserError);
+
+		const parserError = thrown as LyraParserError;
+
+		expect(parserError.stackFrames.map(frame => frame.name))
+			.toContain("parseExpression");
+		expect(parserError.stackFrames.map(frame => frame.name))
+			.toContain("parseClassDeclaration");
+		expect(parserError.format())
+			.toContain("Stacktrace:");
 	});
 });

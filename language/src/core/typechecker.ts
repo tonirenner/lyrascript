@@ -48,9 +48,10 @@ import {
 } from "./shared/type_objects.ts";
 import {Type_autoboxing} from "./shared/type_autoboxing.ts";
 import {NativeFunction, NativeFunctions} from "../library/native_functions.ts";
-import {throwTypeError} from "./infrastructure/errors.ts"
+import {LyraError, LyraTypeError} from "./infrastructure/errors.ts"
 import type {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
 import {GRAMMAR} from "./syntax/ast_grammar.ts";
+import type {StackFrame} from "./model/runtime_model.ts";
 
 
 const globalFunctionTypeRegistry = new NativeFunctions()
@@ -76,17 +77,79 @@ export class StatementResult {
 
 export class TypeChecker {
 	objectRegistry: ObjectRegistry;
+	private readonly traceStack: StackFrame[] = [];
 
 	constructor(objectRegistry: ObjectRegistry) {
 		this.objectRegistry = objectRegistry;
 	}
 
 	check(ast: ASTNode): void {
-		this.validateInheritance();
-		this.checkProgram(ast);
-		this.checkInterfaceBodies();
-		this.checkClassesBodies();
-		this.checkClassesImplements();
+		return this.withTrace(this.createTraceFrame("function", "typecheck", ast), () => {
+			this.validateInheritance();
+			this.checkProgram(ast);
+			this.checkInterfaceBodies();
+			this.checkClassesBodies();
+			this.checkClassesImplements();
+		});
+	}
+
+	private createTraceFrame(
+		kind: StackFrame["kind"],
+		name: string,
+		node: ASTNode | null = null,
+		className?: string
+	): StackFrame {
+		return {
+			kind,
+			name,
+			className,
+			span: node?.span
+				? {
+					source: node.span.source.url,
+					line: node.span.line,
+					column: node.span.column,
+					text: node.span.text(),
+					lineText: node.span.lineText(),
+					length: node.span.end - node.span.start
+				}
+				: null
+		};
+	}
+
+	private captureTraceFrames(): StackFrame[] {
+		return [...this.traceStack].reverse();
+	}
+
+	private enrichError(error: unknown): never {
+		if (error instanceof LyraError) {
+			if (error.stackFrames.length === 0) {
+				error.stackFrames = this.captureTraceFrames();
+			}
+
+			throw error;
+		}
+
+		if (error instanceof Error) {
+			const typeError = new LyraTypeError(error.message || String(error));
+			typeError.stackFrames = this.captureTraceFrames();
+			throw typeError;
+		}
+
+		const typeError = new LyraTypeError(String(error));
+		typeError.stackFrames = this.captureTraceFrames();
+		throw typeError;
+	}
+
+	private withTrace<T>(frame: StackFrame, action: () => T): T {
+		this.traceStack.push(frame);
+
+		try {
+			return action();
+		} catch (error) {
+			return this.enrichError(error);
+		} finally {
+			this.traceStack.pop();
+		}
 	}
 
 	private validateInheritance(): void {
@@ -106,83 +169,92 @@ export class TypeChecker {
 
 	private checkClassesBodies(): void {
 		for (const objectSymbol of this.objectRegistry.types.allClassSymbols()) {
-			const instanceScope = new TypeScope();
-			instanceScope.currentObjectSymbol = objectSymbol;
+			this.withTrace(this.createTraceFrame("function", objectSymbol.name, objectSymbol.node, objectSymbol.name), () => {
+				const instanceScope = new TypeScope();
+				instanceScope.currentObjectSymbol = objectSymbol;
 
-			objectSymbol.typeParameterSymbols.forEach(typeParameter => {
-				instanceScope.defineTypeBinding(
-					typeParameter.name,
-					new TypeVariable(typeParameter.name)
-				);
+				objectSymbol.typeParameterSymbols.forEach(typeParameter => {
+					instanceScope.defineTypeBinding(
+						typeParameter.name,
+						new TypeVariable(typeParameter.name)
+					);
+				});
+
+				if (objectSymbol.constructorMethodSymbol) {
+					const constructorSymbol: MethodSymbol = objectSymbol.constructorMethodSymbol;
+					const constructorScope = new TypeScope(instanceScope);
+
+					constructorScope.currentMethodSymbol = constructorSymbol;
+
+					objectSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
+						constructorScope.defineTypeBinding(
+							typeParameterSymbol.name,
+							new TypeVariable(typeParameterSymbol.name)
+						);
+					});
+
+					for (const parameterSymbol of constructorSymbol.parameterSymbols) {
+						constructorScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
+					}
+
+					this.withTrace(
+						this.createTraceFrame("constructor", GRAMMAR.CONSTRUCTOR, constructorSymbol.node, objectSymbol.name),
+						() => this.checkBody(constructorSymbol.body, constructorScope)
+					);
+				}
+
+				this.checkFieldInitializers(objectSymbol, instanceScope);
+
+				for (const methodSymbol of objectSymbol.instanceMethodSymbols.values()) {
+					const methodScope = new TypeScope(instanceScope);
+
+					methodSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
+						methodScope.defineTypeBinding(
+							typeParameterSymbol.name,
+							new TypeVariable(typeParameterSymbol.name)
+						);
+					});
+
+					methodScope.currentMethodSymbol = methodSymbol;
+
+					for (const parameterSymbol of methodSymbol.parameterSymbols) {
+						methodScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
+					}
+
+					const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
+					if (hasBody) {
+						this.withTrace(this.createTraceFrame("method", methodSymbol.name, methodSymbol.node, objectSymbol.name), () => {
+							const actual: Type = this.checkBody(methodSymbol.body, methodScope);
+							this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
+						});
+					}
+				}
+
+				for (const methodSymbol of objectSymbol.staticMethodSymbols.values()) {
+					const staticScope = new TypeScope(instanceScope);
+
+					methodSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
+						staticScope.defineTypeBinding(
+							typeParameterSymbol.name,
+							new TypeVariable(typeParameterSymbol.name)
+						);
+					});
+
+					staticScope.currentMethodSymbol = methodSymbol;
+
+					for (const parameterSymbol of methodSymbol.parameterSymbols) {
+						staticScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
+					}
+
+					const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
+					if (hasBody) {
+						this.withTrace(this.createTraceFrame("function", methodSymbol.name, methodSymbol.node, objectSymbol.name), () => {
+							const actual: Type = this.checkBody(methodSymbol.body, staticScope);
+							this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
+						});
+					}
+				}
 			});
-
-			if (objectSymbol.constructorMethodSymbol) {
-				const constructorSymbol: MethodSymbol = objectSymbol.constructorMethodSymbol;
-				const constructorScope = new TypeScope(instanceScope);
-
-				constructorScope.currentMethodSymbol = constructorSymbol;
-
-				objectSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
-					constructorScope.defineTypeBinding(
-						typeParameterSymbol.name,
-						new TypeVariable(typeParameterSymbol.name)
-					);
-				});
-
-				for (const parameterSymbol of constructorSymbol.parameterSymbols) {
-					constructorScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
-				}
-
-				this.checkBody(constructorSymbol.body, constructorScope);
-			}
-
-			this.checkFieldInitializers(objectSymbol, instanceScope);
-
-			for (const methodSymbol of objectSymbol.instanceMethodSymbols.values()) {
-				const methodScope = new TypeScope(instanceScope);
-
-				methodSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
-					methodScope.defineTypeBinding(
-						typeParameterSymbol.name,
-						new TypeVariable(typeParameterSymbol.name)
-					);
-				});
-
-				methodScope.currentMethodSymbol = methodSymbol;
-
-				for (const parameterSymbol of methodSymbol.parameterSymbols) {
-					methodScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
-				}
-
-				const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
-				if (hasBody) {
-					const actual: Type = this.checkBody(methodSymbol.body, methodScope);
-					this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
-				}
-			}
-
-			for (const methodSymbol of objectSymbol.staticMethodSymbols.values()) {
-				const staticScope = new TypeScope(instanceScope);
-
-				methodSymbol.typeParameterSymbols.forEach(typeParameterSymbol => {
-					staticScope.defineTypeBinding(
-						typeParameterSymbol.name,
-						new TypeVariable(typeParameterSymbol.name)
-					);
-				});
-
-				staticScope.currentMethodSymbol = methodSymbol;
-
-				for (const parameterSymbol of methodSymbol.parameterSymbols) {
-					staticScope.defineType(parameterSymbol.name, parameterSymbol.parameterType);
-				}
-
-				const hasBody: boolean = methodSymbol.body && methodSymbol.body.length > 0;
-				if (hasBody) {
-					const actual: Type = this.checkBody(methodSymbol.body, staticScope);
-					this.checkReturnType(methodSymbol.returnType, actual, methodSymbol.node);
-				}
-			}
 		}
 	}
 
@@ -904,55 +976,57 @@ export class TypeChecker {
 		scope: TypeScope,
 		expectedLambdaType: LambdaType | null = null
 	): LambdaType {
-		const lambdaScope = new TypeScope(scope);
-		const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
-			const parameterSymbol: ParameterSymbol = createParameterSymbol(
-				parameterNode,
-				this.objectRegistry
-			);
+		return this.withTrace(this.createTraceFrame("lambda", "<lambda>", node, scope.currentObjectSymbol?.name), () => {
+			const lambdaScope = new TypeScope(scope);
+			const parameters: ParameterSymbol[] = node.parameters.map((parameterNode: ASTParameterNode): ParameterSymbol => {
+				const parameterSymbol: ParameterSymbol = createParameterSymbol(
+					parameterNode,
+					this.objectRegistry
+				);
 
-			this.checkParameterDefaultType(parameterSymbol);
+				this.checkParameterDefaultType(parameterSymbol);
 
-			lambdaScope.defineType(parameterNode.name, parameterSymbol.parameterType);
+				lambdaScope.defineType(parameterNode.name, parameterSymbol.parameterType);
 
-			return parameterSymbol;
-		});
+				return parameterSymbol;
+			});
 
-		const declaredReturnType: Type = this.wrapType(node.returnType, lambdaScope);
-		const targetReturnType: Type = declaredReturnType instanceof MixedType && expectedLambdaType
-		                               ? expectedLambdaType.returnType
-		                               : declaredReturnType;
+			const declaredReturnType: Type = this.wrapType(node.returnType, lambdaScope);
+			const targetReturnType: Type = declaredReturnType instanceof MixedType && expectedLambdaType
+			                               ? expectedLambdaType.returnType
+			                               : declaredReturnType;
 
-		const lambdaExpressionBody = node.children.length === 1 && this.isExpressionNode(node.children[0] || null);
+			const lambdaExpressionBody = node.children.length === 1 && this.isExpressionNode(node.children[0] || null);
 
-		if (lambdaExpressionBody) {
-			const bodyNode = node.children[0] || null;
-			if (bodyNode === null) {
-				this.typeError('Lambda expression must have a return type', node);
+			if (lambdaExpressionBody) {
+				const bodyNode = node.children[0] || null;
+				if (bodyNode === null) {
+					this.typeError('Lambda expression must have a return type', node);
+				}
+
+				const actualReturnType = this.checkExpression(bodyNode, lambdaScope, targetReturnType);
+				const lambdaReturnType = declaredReturnType instanceof MixedType
+				                         ? actualReturnType
+				                         : declaredReturnType;
+
+				this.checkAssignable(targetReturnType, actualReturnType, bodyNode);
+
+				return new LambdaType(parameters, lambdaReturnType);
 			}
 
-			const actualReturnType = this.checkExpression(bodyNode, lambdaScope, targetReturnType);
-			const lambdaReturnType = declaredReturnType instanceof MixedType
-			                         ? actualReturnType
-			                         : declaredReturnType;
+			if (node.children.length > 0) {
+				const bodyReturnType = this.checkBody(node.children, lambdaScope);
+				const lambdaReturnType = declaredReturnType instanceof MixedType
+				                         ? bodyReturnType
+				                         : declaredReturnType;
 
-			this.checkAssignable(targetReturnType, actualReturnType, bodyNode);
+				this.checkReturnType(targetReturnType, bodyReturnType, node);
 
-			return new LambdaType(parameters, lambdaReturnType);
-		}
+				return new LambdaType(parameters, lambdaReturnType);
+			}
 
-		if (node.children.length > 0) {
-			const bodyReturnType = this.checkBody(node.children, lambdaScope);
-			const lambdaReturnType = declaredReturnType instanceof MixedType
-			                         ? bodyReturnType
-			                         : declaredReturnType;
-
-			this.checkReturnType(targetReturnType, bodyReturnType, node);
-
-			return new LambdaType(parameters, lambdaReturnType);
-		}
-
-		this.typeError('Lambda expression must have a return type', node);
+			this.typeError('Lambda expression must have a return type', node);
+		});
 	}
 
 	private checkCallExpression(node: ASTCallNode, scope: TypeScope): Type {
@@ -1301,9 +1375,11 @@ export class TypeChecker {
 			return;
 		}
 
-		const fieldScope = new TypeScope(scope);
-		const actualType = this.checkExpression(initializer, fieldScope, fieldSymbol.fieldType);
-		this.checkAssignable(fieldSymbol.fieldType, actualType, initializer);
+		this.withTrace(this.createTraceFrame("function", fieldSymbol.name, fieldSymbol.node, scope.currentObjectSymbol?.name), () => {
+			const fieldScope = new TypeScope(scope);
+			const actualType = this.checkExpression(initializer, fieldScope, fieldSymbol.fieldType);
+			this.checkAssignable(fieldSymbol.fieldType, actualType, initializer);
+		});
 	}
 
 	private mergeBranchResults(left: StatementResult, right: StatementResult, node: ASTNode): StatementResult {
@@ -1421,7 +1497,9 @@ export class TypeChecker {
 
 
 	private typeError(message: string, node: ASTNode | null = null): never {
-		throwTypeError(message, node?.span);
+		const error = new LyraTypeError(message, node?.span);
+		error.stackFrames = this.captureTraceFrames();
+		throw error;
 	}
 }
 

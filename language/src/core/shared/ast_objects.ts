@@ -11,6 +11,7 @@ import {
 	type RuntimeLambda,
 	type RuntimeMethod,
 	type RuntimeValue,
+	type StackFrame,
 	type ValueScope
 } from "../model/runtime_model.ts";
 import {
@@ -294,9 +295,26 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 			lambdaScope.define(parameter.name, argument);
 		}
 
+		const frame: StackFrame = {
+			kind: "lambda",
+			name: "<lambda>",
+			className: this.instance?.runtimeClass.className,
+			span: this.node.span
+				? {
+					source: this.node.span.source.url,
+					line: this.node.span.line,
+					column: this.node.span.column,
+					text: this.node.span.text(),
+					lineText: this.node.span.lineText(),
+					length: this.node.span.end - this.node.span.start
+				}
+				: null
+		};
+
 		this.interpreter.pushContext({
 			                             scope: lambdaScope,
-			                             instance: this.instance
+			                             instance: this.instance,
+			                             frame
 		                             });
 
 		try {
@@ -309,7 +327,7 @@ export class RuntimeLambdaFunction implements RuntimeLambda {
 			if (returnValue instanceof Return) {
 				return returnValue.value;
 			}
-			throw returnValue;
+			return this.interpreter.enrichError(returnValue);
 		} finally {
 			this.interpreter.popContext();
 		}

@@ -2,6 +2,7 @@ import {describe, expect, it} from "bun:test";
 import {Interpreter} from "../../src/core/interpreter.ts";
 import {Parser} from "../../src/core/parser.ts";
 import {EventPipeline} from "../../src/core/infrastructure/event_pipeline.ts";
+import {LyraError} from "../../src/core/infrastructure/errors.ts";
 import {ObjectRegistry} from "../../src/core/infrastructure/runtime_registry.ts";
 import {TYPE_ENUM} from "../../src/core/syntax/ast_grammar.ts";
 import {RuntimeScope} from "../../src/core/shared/ast_objects.ts";
@@ -153,6 +154,39 @@ let result = counter.value;
 
 		expect(scope.get("result").value)
 			.toBe(2);
+	});
+
+	it("captures nested method frames on runtime errors", () => {
+		let thrown: unknown;
+
+		try {
+			executeSource(`
+class Failer {
+	public first(): number {
+		return this.second();
+	}
+
+	public second(): number {
+		return missingValue;
+	}
+}
+
+let failer = new Failer();
+failer.first();
+`);
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect(thrown)
+			.toBeInstanceOf(LyraError);
+
+		const lyraError = thrown as LyraError;
+
+		expect(lyraError.stackFrames.map(frame => `${frame.className}.${frame.name}`))
+			.toEqual(["Failer.second", "Failer.first"]);
+		expect(lyraError.format())
+			.toContain("Stacktrace:");
 	});
 });
 

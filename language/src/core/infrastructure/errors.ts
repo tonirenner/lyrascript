@@ -1,4 +1,5 @@
 import {Source, SourceSpan} from "../syntax/source.ts";
+import type {StackFrame} from "../model/runtime_model.ts";
 
 class ErrorTypes {
 	static TYPE_ERROR: string = 'TypeError';
@@ -16,6 +17,7 @@ export class LyraError extends Error {
 	kind: string;
 	span: SourceSpan | null = null;
 	override cause: string | null = null;
+	stackFrames: StackFrame[] = [];
 
 	constructor(
 		kind: string,
@@ -30,18 +32,42 @@ export class LyraError extends Error {
 	}
 
 	format(): string {
-		if (this.span) {
+		const location: string = this.span
+		                         ? `\n  at ${this.span.source.url}:${this.span.line}:${this.span.column}\n\n${this.formatSpanSnippet({
+			                         lineText: this.span.lineText(),
+			                         column: this.span.column,
+			                         length: this.span.highlightLength()
+		                         })}\n`
+		                         : "";
+		const stackTrace = this.formatStackTrace();
 
-			return `
-[${this.kind}] ${this.message}
-  at ${this.span.source.url}:${this.span.line}:${this.span.column}
+		return `[${this.kind}] ${this.message}${location}${stackTrace}`;
+	}
 
-${this.span.text()}
-${" ".repeat(this.span.column)}${"^".repeat(this.span.end - this.span.start)}
-`;
+	private formatStackTrace(): string {
+		if (this.stackFrames.length === 0) {
+			return "";
 		}
 
-		return `[${this.kind}] ${this.message}`;
+		const lines = this.stackFrames.map((frame: StackFrame): string => {
+			const qualifiedName = frame.className
+				? `${frame.className}.${frame.name}`
+				: frame.name;
+			const location = frame.span
+				? `${frame.span.source}:${frame.span.line}:${frame.span.column}`
+				: "<native>";
+			const snippet = frame.span
+				? `\n\n${this.formatSpanSnippet(frame.span)}`
+				: "";
+
+			return `  at ${qualifiedName} (${location})${snippet}`;
+		});
+
+		return `\nStacktrace:\n${lines.join("\n")}`;
+	}
+
+	private formatSpanSnippet(span: {lineText: string; column: number; length: number}): string {
+		return `${span.lineText}\n${" ".repeat(Math.max(0, span.column - 1))}${"^".repeat(Math.max(1, span.length))}`;
 	}
 }
 

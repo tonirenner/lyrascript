@@ -1,5 +1,5 @@
 import {ObjectRegistry} from "../infrastructure/runtime_registry.ts";
-import type {ExecutionContext, RuntimeInstanceType, RuntimeValue, ValueScope} from "../model/runtime_model.ts";
+import type {ExecutionContext, RuntimeInstanceType, RuntimeValue, StackFrame, ValueScope} from "../model/runtime_model.ts";
 import type {EventDispatch} from "../model/runtime_events.ts";
 import {
 	ASTAnnotationNode,
@@ -38,6 +38,10 @@ export interface ASTInterpreter {
 	pushContext(context: ExecutionContext): void;
 
 	popContext(): ExecutionContext;
+
+	captureStackFrames(): StackFrame[];
+
+	enrichError(error: unknown, frames?: StackFrame[]): never;
 
 	// statements
 
@@ -87,7 +91,8 @@ export interface ASTInterpreter {
 		blockNodes: ASTNode[],
 		methodEnv: ValueScope,
 		returnType?: string,
-		thisValue?: RuntimeInstanceType
+		thisValue?: RuntimeInstanceType,
+		frame?: StackFrame
 	): RuntimeValue;
 }
 

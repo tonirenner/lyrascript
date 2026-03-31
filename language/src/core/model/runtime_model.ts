@@ -209,6 +209,21 @@ export interface ExecutionContext {
 	scope: ValueScope
 	instance?: RuntimeInstanceType
 	method?: RuntimeMethod<any, any, any, any>
+	frame?: StackFrame
+}
+
+export interface StackFrame {
+	kind: "function" | "method" | "constructor" | "lambda" | "native";
+	name: string;
+	className?: string;
+	span?: {
+		source: string;
+		line: number;
+		column: number;
+		text: string;
+		lineText: string;
+		length: number;
+	} | null;
 }
 
 export interface CallFrame {
@@ -362,7 +377,5 @@ export interface VText extends VNode {
 	type: 'text';
 	value: string;
 }
-
-
 
 

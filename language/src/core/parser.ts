@@ -1,6 +1,6 @@
 import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./syntax/ast_grammar.ts";
 import {TokenStream} from "./syntax/tokenizer.ts";
-import {throwParserError} from "./infrastructure/errors.ts";
+import {LyraError, LyraParserError, throwParserError} from "./infrastructure/errors.ts";
 import {Source, spanFrom} from "./syntax/source.ts";
 import type {ASTParser} from "./interfaces/ast_parser.ts";
 import {
@@ -37,41 +37,99 @@ import {
 	ASTVDomNode,
 	ASTVDomTextNode
 } from "./syntax/ast.ts";
-import {Modifiers, SuperClass} from "./model/runtime_model.ts";
+import {Modifiers, type StackFrame, SuperClass} from "./model/runtime_model.ts";
 
 
 export class Parser implements ASTParser {
 	source: Source;
 	tokenStream: TokenStream | null = null;
+	private readonly traceStack: StackFrame[] = [];
 
 	constructor(source: Source) {
 		this.source = source;
 	}
 
 	parse(): ASTNode {
-		this.tokenStream = this.source
-		                       .getTokenizer()
-		                       .getTokenStream();
+		return this.withTrace(this.createTraceFrame("function", "parse"), () => {
+			this.tokenStream = this.source
+			                       .getTokenizer()
+			                       .getTokenStream();
 
-		return this.parseProgram();
+			return this.parseProgram();
+		});
+	}
+
+	private createTraceFrame(kind: StackFrame["kind"], name: string, span = null as ASTNode["span"]): StackFrame {
+		return {
+			kind,
+			name,
+			span: span
+				? {
+					source: span.source.url,
+					line: span.line,
+					column: span.column,
+					text: span.text(),
+					lineText: span.lineText(),
+					length: span.end - span.start
+				}
+				: null
+		};
+	}
+
+	private captureTraceFrames(): StackFrame[] {
+		return [...this.traceStack].reverse();
+	}
+
+	private enrichError(error: unknown): never {
+		if (error instanceof LyraError) {
+			if (error.stackFrames.length === 0) {
+				error.stackFrames = this.captureTraceFrames();
+			}
+
+			throw error;
+		}
+
+		if (error instanceof Error) {
+			const parserError = new LyraParserError(error.message || String(error));
+			parserError.stackFrames = this.captureTraceFrames();
+			throw parserError;
+		}
+
+		const parserError = new LyraParserError(String(error));
+		parserError.stackFrames = this.captureTraceFrames();
+		throw parserError;
+	}
+
+	private withTrace<T>(frame: StackFrame, action: () => T): T {
+		this.traceStack.push(frame);
+
+		try {
+			return action();
+		} catch (error) {
+			return this.enrichError(error);
+		} finally {
+			this.traceStack.pop();
+		}
 	}
 
 	parseProgram(): ASTNode {
-		const children: ASTNode[] = [];
+		return this.withTrace(this.createTraceFrame("function", "parseProgram"), () => {
+			const children: ASTNode[] = [];
 
-		while (this.peek().type !== TokenType.EOF) {
-			if (this.peek().type === TokenType.COMMENT) {
-				this.next();
-				continue;
+			while (this.peek().type !== TokenType.EOF) {
+				if (this.peek().type === TokenType.COMMENT) {
+					this.next();
+					continue;
+				}
+
+				const node = this.parseStatement();
+				if (node) {
+					children.push(node);
+				}
 			}
 
-			const node = this.parseStatement();
-			if (node) {
-				children.push(node);
-			}
-		}
-
-		return new ASTNode(ASTNodeType.PROGRAM, children);
+			return new ASTNode(ASTNodeType.PROGRAM, children);
+		});
 	}
 
 	parseStatement(): ASTNode | null {
@@ -231,118 +289,122 @@ export class Parser implements ASTParser {
 	}
 
 	parseClassDeclaration(): ASTClassNode {
-		const annotations = this.parseAnnotations();
-		const modifiers = this.parseModifiers([GRAMMAR.OPEN]);
+		return this.withTrace(this.createTraceFrame("function", "parseClassDeclaration"), () => {
+			const annotations = this.parseAnnotations();
+			const modifiers = this.parseModifiers([GRAMMAR.OPEN]);
 
-		const classToken = this.expectKeyword(GRAMMAR.CLASS);
-		const nameToken = this.expectIdentifier();
+			const classToken = this.expectKeyword(GRAMMAR.CLASS);
+			const nameToken = this.expectIdentifier();
 
-		let typeParameters: string[] = [];
-		if (this.peek().value === GRAMMAR.LESS_THAN) {
-			typeParameters = this.parseTypeParameters();
-		}
+			let typeParameters: string[] = [];
+			if (this.peek().value === GRAMMAR.LESS_THAN) {
+				typeParameters = this.parseTypeParameters();
+			}
 
-		let superClass: SuperClass | null = null;
-		if (this.consumeIfKeyword(GRAMMAR.EXTENDS)) {
-			superClass = new SuperClass(ASTNodeType.IDENTIFIER, this.expectIdentifier().value);
-		}
+			let superClass: SuperClass | null = null;
+			if (this.consumeIfKeyword(GRAMMAR.EXTENDS)) {
+				superClass = new SuperClass(ASTNodeType.IDENTIFIER, this.expectIdentifier().value);
+			}
 
-		const implementsInterfaces: ASTTypeNode[] = [];
-		if (this.peek().value === GRAMMAR.IMPLEMENTS) {
-			this.next();
-
-			do {
-				implementsInterfaces.push(this.parseType());
-			} while (this.consumeIfPunctuation(GRAMMAR.COMMA));
-		}
-
-		this.expectPunctuation(GRAMMAR.BRACE_OPEN);
-
-		const children: ASTNode[] = [];
-		while (this.peek().value !== GRAMMAR.BRACE_CLOSE) {
-			if (this.peek().type === TokenType.COMMENT) {
+			const implementsInterfaces: ASTTypeNode[] = [];
+			if (this.peek().value === GRAMMAR.IMPLEMENTS) {
 				this.next();
-				continue;
+
+				do {
+					implementsInterfaces.push(this.parseType());
+				} while (this.consumeIfPunctuation(GRAMMAR.COMMA));
 			}
 
-			const member = this.parseClassMember();
-			if (member) {
-				children.push(member);
+			this.expectPunctuation(GRAMMAR.BRACE_OPEN);
+
+			const children: ASTNode[] = [];
+			while (this.peek().value !== GRAMMAR.BRACE_CLOSE) {
+				if (this.peek().type === TokenType.COMMENT) {
+					this.next();
+					continue;
+				}
+
+				const member = this.parseClassMember();
+				if (member) {
+					children.push(member);
+				}
 			}
-		}
 
-		const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
+			const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 
-		const node = new ASTClassNode(
-			nameToken.value,
-			annotations,
-			modifiers,
-			typeParameters,
-			implementsInterfaces,
-			superClass,
-			children
-		);
+			const node = new ASTClassNode(
+				nameToken.value,
+				annotations,
+				modifiers,
+				typeParameters,
+				implementsInterfaces,
+				superClass,
+				children
+			);
 
-		node.span = spanFrom(classToken, braceCloseToken);
-		return node;
+			node.span = spanFrom(classToken, braceCloseToken);
+			return node;
+		});
 	}
 
 	parseInterfaceDeclaration(): ASTInterfaceNode {
-		const annotations = this.parseAnnotations();
-		const modifiers = this.parseModifiers([]);
+		return this.withTrace(this.createTraceFrame("function", "parseInterfaceDeclaration"), () => {
+			const annotations = this.parseAnnotations();
+			const modifiers = this.parseModifiers([]);
 
-		const interfaceToken = this.expectKeyword(GRAMMAR.INTERFACE);
-		const nameToken = this.expectIdentifier();
+			const interfaceToken = this.expectKeyword(GRAMMAR.INTERFACE);
+			const nameToken = this.expectIdentifier();
 
-		let typeParameters: string[] = [];
-		if (this.peek().value === GRAMMAR.LESS_THAN) {
-			typeParameters = this.parseTypeParameters();
-		}
-
-		const extendsInterfaces: string[] = [];
-		if (this.consumeIfKeyword(GRAMMAR.EXTENDS)) {
-			do {
-				extendsInterfaces.push(this.expectIdentifier().value);
-			} while (this.consumeIfPunctuation(GRAMMAR.COMMA));
-		}
-
-		this.expectPunctuation(GRAMMAR.BRACE_OPEN);
-
-		const children: ASTNode[] = [];
-		while (this.peek().value !== GRAMMAR.BRACE_CLOSE) {
-			if (this.consumeIfComment()) {
-				continue;
+			let typeParameters: string[] = [];
+			if (this.peek().value === GRAMMAR.LESS_THAN) {
+				typeParameters = this.parseTypeParameters();
 			}
 
-			const member = this.parseClassMember();
-			if (member === null) {
-				continue;
+			const extendsInterfaces: string[] = [];
+			if (this.consumeIfKeyword(GRAMMAR.EXTENDS)) {
+				do {
+					extendsInterfaces.push(this.expectIdentifier().value);
+				} while (this.consumeIfPunctuation(GRAMMAR.COMMA));
 			}
 
-			if (member instanceof ASTFieldNode && !member.modifiers.static) {
-				throwParserError("Interface fields must be static.");
+			this.expectPunctuation(GRAMMAR.BRACE_OPEN);
+
+			const children: ASTNode[] = [];
+			while (this.peek().value !== GRAMMAR.BRACE_CLOSE) {
+				if (this.consumeIfComment()) {
+					continue;
+				}
+
+				const member = this.parseClassMember();
+				if (member === null) {
+					continue;
+				}
+
+				if (member instanceof ASTFieldNode && !member.modifiers.static) {
+					throwParserError("Interface fields must be static.");
+				}
+
+				if (member instanceof ASTMethodNode && member.children.length > 0) {
+					throwParserError("Interface methods must not have a body.");
+				}
+
+				children.push(member);
 			}
 
-			if (member instanceof ASTMethodNode && member.children.length > 0) {
-				throwParserError("Interface methods must not have a body.");
-			}
+			const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 
-			children.push(member);
-		}
+			const node = new ASTInterfaceNode(
+				nameToken.value,
+				annotations,
+				modifiers,
+				typeParameters,
+				extendsInterfaces,
+				children
+			);
 
-		const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
-
-		const node = new ASTInterfaceNode(
-			nameToken.value,
-			annotations,
-			modifiers,
-			typeParameters,
-			extendsInterfaces,
-			children
-		);
-
-		node.span = spanFrom(interfaceToken, braceCloseToken);
-		return node;
+			node.span = spanFrom(interfaceToken, braceCloseToken);
+			return node;
+		});
 	}
 
 	parseAnnotations(): ASTAnnotationNode[] {
@@ -571,46 +633,50 @@ export class Parser implements ASTParser {
 	}
 
 	parseExpressionStatement(): ASTExpressionNode {
-		const expr = this.parseExpression();
+		return this.withTrace(this.createTraceFrame("function", "parseExpressionStatement"), () => {
+			const expr = this.parseExpression();
 
-		this.expectPunctuation(GRAMMAR.SEMICOLON);
+			this.expectPunctuation(GRAMMAR.SEMICOLON);
 
-		return new ASTExpressionNode(expr);
+			return new ASTExpressionNode(expr);
+		});
 	}
 
 	parseExpression(precedence: number = 0): ASTNode {
-		let expr = this.parsePostfix(this.parseUnary());
+		return this.withTrace(this.createTraceFrame("function", "parseExpression"), () => {
+			let expr = this.parsePostfix(this.parseUnary());
 
-		while (true) {
-			const token = this.peek();
-			const tokenPrecedence = this.lookupPrecedence(token);
+			while (true) {
+				const token = this.peek();
+				const tokenPrecedence = this.lookupPrecedence(token);
 
-			if (tokenPrecedence < precedence) {
+				if (tokenPrecedence < precedence) {
+					break;
+				}
+
+				if (token.value === GRAMMAR.ASSIGN) {
+					this.next();
+					expr = new ASTAssignmentNode(expr, this.parseExpression(tokenPrecedence));
+					continue;
+				}
+
+				if (GRAMMAR.MATH_OPERATORS.includes(token.value)
+				    || GRAMMAR.LOGIC_OPERATORS.includes(token.value)) {
+					const startToken = this.next();
+					const right = this.parseExpression(tokenPrecedence + 1);
+					const endToken = this.peek();
+
+					const node = new ASTBinaryNode(expr, right, token.value);
+					node.span = spanFrom(startToken, endToken);
+					expr = node;
+					continue;
+				}
+
 				break;
 			}
 
-			if (token.value === GRAMMAR.ASSIGN) {
-				this.next();
-				expr = new ASTAssignmentNode(expr, this.parseExpression(tokenPrecedence));
-				continue;
-			}
-
-			if (GRAMMAR.MATH_OPERATORS.includes(token.value)
-			    || GRAMMAR.LOGIC_OPERATORS.includes(token.value)) {
-				const startToken = this.next();
-				const right = this.parseExpression(tokenPrecedence + 1);
-				const endToken = this.peek();
-
-				const node = new ASTBinaryNode(expr, right, token.value);
-				node.span = spanFrom(startToken, endToken);
-				expr = node;
-				continue;
-			}
-
-			break;
-		}
-
-		return expr;
+			return expr;
+		});
 	}
 
 	parseVDomExpression(): ASTVDomNode {
@@ -859,54 +925,56 @@ export class Parser implements ASTParser {
 	}
 
 	parseLambda(): ASTLambdaNode {
-		const startToken = this.expectPunctuation(GRAMMAR.BRACE_OPEN);
+		return this.withTrace(this.createTraceFrame("lambda", "parseLambda"), () => {
+			const startToken = this.expectPunctuation(GRAMMAR.BRACE_OPEN);
 
-		const parameters: ASTParameterNode[] = [];
-		while (this.peek().value !== GRAMMAR.ARROW) {
-			const name = this.expectIdentifier().value;
-			let type: ASTTypeNode | null = null;
-			let defaultValue: ASTNode | null = null;
+			const parameters: ASTParameterNode[] = [];
+			while (this.peek().value !== GRAMMAR.ARROW) {
+				const name = this.expectIdentifier().value;
+				let type: ASTTypeNode | null = null;
+				let defaultValue: ASTNode | null = null;
 
-			if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
-				type = this.parseType();
+				if (this.consumeIfPunctuation(GRAMMAR.COLON)) {
+					type = this.parseType();
+				}
+
+				if (this.peek().value === GRAMMAR.ASSIGN) {
+					this.next();
+					defaultValue = this.parseExpression();
+				}
+
+				parameters.push(new ASTParameterNode(name, type, defaultValue));
+
+				this.consumeIfPunctuation(GRAMMAR.COMMA);
 			}
 
-			if (this.peek().value === GRAMMAR.ASSIGN) {
-				this.next();
-				defaultValue = this.parseExpression();
+			this.expectOperator(GRAMMAR.ARROW);
+
+			let returnType: ASTTypeNode = this.createMixedType();
+			if (this.peek().type === TokenType.IDENTIFIER) {
+				returnType = this.parseType();
+				if (this.peek().value === GRAMMAR.COLON) {
+					this.next();
+				} else {
+					returnType = this.createMixedType();
+					this.rewind();
+				}
 			}
 
-			parameters.push(new ASTParameterNode(name, type, defaultValue));
-
-			this.consumeIfPunctuation(GRAMMAR.COMMA);
-		}
-
-		this.expectOperator(GRAMMAR.ARROW);
-
-		let returnType: ASTTypeNode = this.createMixedType();
-		if (this.peek().type === TokenType.IDENTIFIER) {
-			returnType = this.parseType();
-			if (this.peek().value === GRAMMAR.COLON) {
-				this.next();
+			const children: ASTNode[] = [];
+			if (this.peek().value === GRAMMAR.BRACE_OPEN) {
+				children.push(...this.parseBlock());
 			} else {
-				returnType = this.createMixedType();
-				this.rewind();
+				children.push(this.parseExpression());
 			}
-		}
 
-		const children: ASTNode[] = [];
-		if (this.peek().value === GRAMMAR.BRACE_OPEN) {
-			children.push(...this.parseBlock());
-		} else {
-			children.push(this.parseExpression());
-		}
+			const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
 
-		const braceCloseToken = this.expectPunctuation(GRAMMAR.BRACE_CLOSE);
+			const node = new ASTLambdaNode(parameters, returnType, children);
+			node.span = spanFrom(startToken, braceCloseToken);
 
-		const node = new ASTLambdaNode(parameters, returnType, children);
-		node.span = spanFrom(startToken, braceCloseToken);
-
-		return node;
+			return node;
+		});
 	}
 
 	looksLikeLambda(): boolean {
@@ -1247,7 +1315,4 @@ export class Parser implements ASTParser {
 		return node;
 	}
 }
-
-
-
 

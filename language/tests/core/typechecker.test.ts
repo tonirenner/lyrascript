@@ -130,4 +130,30 @@ class Component {
 }
 `)).toThrow(LyraTypeError);
 	});
+
+	it("captures structured stack frames for type errors inside methods", () => {
+		let thrown: unknown;
+
+		try {
+			checkSource(`
+class Failer {
+	public broken(): number {
+		return missingValue;
+	}
+}
+`);
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect(thrown)
+			.toBeInstanceOf(LyraTypeError);
+
+		const typeError = thrown as LyraTypeError;
+
+		expect(typeError.stackFrames.map(frame => frame.className ? `${frame.className}.${frame.name}` : frame.name))
+			.toEqual(["Failer.broken", "Failer.Failer", "typecheck"]);
+		expect(typeError.format())
+			.toContain("Stacktrace:");
+	});
 });

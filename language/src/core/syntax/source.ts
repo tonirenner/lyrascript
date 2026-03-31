@@ -24,6 +24,14 @@ export class Source {
 		return this.code.slice(start, end);
 	}
 
+	lineAt(line: number): string {
+		if (line < 1) {
+			return '';
+		}
+
+		return this.code.split(Source.NEWLINE)[line - 1] || '';
+	}
+
 	charAt(index: number): string {
 		return this.code.charAt(index);
 	}
@@ -54,6 +62,14 @@ export class SourceSpan {
 
 	text(): string {
 		return this.source.slice(this.start, this.end);
+	}
+
+	lineText(): string {
+		return this.source.lineAt(this.line);
+	}
+
+	highlightLength(): number {
+		return Math.max(1, this.end - this.start);
 	}
 }
 

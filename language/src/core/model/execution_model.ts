@@ -1,4 +1,4 @@
-import type {RuntimeValue} from "./runtime_model.ts";
+import type {RuntimeValue, StackFrame} from "./runtime_model.ts";
 
 export interface ExecutionContinuation {
 	resume(value: RuntimeValue): ExecutionResult;
@@ -13,6 +13,7 @@ export interface ExecutionSuspension {
 	kind: "suspended";
 	awaitable: Promise<RuntimeValue>;
 	continuation: ExecutionContinuation;
+	frames: StackFrame[];
 }
 
 export type ExecutionResult = ExecutionValue | ExecutionSuspension;
@@ -26,12 +27,14 @@ export function CompletedExecution(value: RuntimeValue): ExecutionValue {
 
 export function SuspendedExecution(
 	awaitable: Promise<RuntimeValue>,
-	continuation: ExecutionContinuation
+	continuation: ExecutionContinuation,
+	frames: StackFrame[] = []
 ): ExecutionSuspension {
 	return {
 		kind: "suspended",
 		awaitable,
-		continuation
+		continuation,
+		frames
 	};
 }
 
@@ -57,6 +60,7 @@ export function chainExecutionResult(
 			resume: (value: RuntimeValue): ExecutionResult => {
 				return chainExecutionResult(result.continuation.resume(value), mapper);
 			}
-		}
+		},
+		result.frames
 	);
 }

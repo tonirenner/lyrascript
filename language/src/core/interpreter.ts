@@ -1,6 +1,6 @@
 import {ObjectRegistry} from "./infrastructure/runtime_registry.ts";
 import {type EventPipeline} from "./infrastructure/event_pipeline.ts";
-import {throwRuntimeError} from "./infrastructure/errors.ts";
+import {LyraError, LyraNativeError, throwRuntimeError} from "./infrastructure/errors.ts";
 import {NativeClasses} from "../library/native_classes.ts";
 import {NativeFunctions} from "../library/native_functions.ts";
 import {
@@ -21,6 +21,7 @@ import {
 	type RuntimeInstanceType,
 	type RuntimeMethodType,
 	type RuntimeValue,
+	type StackFrame,
 	Value,
 	type ValueScope
 } from "./model/runtime_model.ts";
@@ -100,22 +101,84 @@ export class Interpreter implements ASTInterpreter {
 		return this.contextStack.pop() as ExecutionContext;
 	}
 
+	public captureStackFrames(): StackFrame[] {
+		return this.contextStack
+			.map((context: ExecutionContext): StackFrame | null => context.frame ?? null)
+			.filter((frame: StackFrame | null): frame is StackFrame => frame !== null)
+			.reverse();
+	}
+
+	public enrichError(error: unknown, frames: StackFrame[] = this.captureStackFrames()): never {
+		if (error instanceof InterpreterSuspensionSignal || error instanceof Return) {
+			throw error;
+		}
+
+		if (error instanceof LyraError) {
+			if (error.stackFrames.length === 0) {
+				error.stackFrames = frames;
+			}
+
+			throw error;
+		}
+
+		if (error instanceof Error) {
+			const nativeError = new LyraNativeError(error.message || String(error));
+			nativeError.stackFrames = frames;
+			throw nativeError;
+		}
+
+		const nativeError = new LyraNativeError(String(error));
+		nativeError.stackFrames = frames;
+		throw nativeError;
+	}
+
+	private createStackFrame(
+		kind: StackFrame["kind"],
+		name: string,
+		span = null as ASTNode["span"],
+		className?: string
+	): StackFrame {
+		return {
+			kind,
+			name,
+			className,
+			span: span
+				? {
+					source: span.source.url,
+					line: span.line,
+					column: span.column,
+					text: span.text(),
+					lineText: span.lineText(),
+					length: span.end - span.start
+				}
+				: null
+		};
+	}
+
 	// statements
 
 	public run(node: ASTNode): RuntimeValue {
-		return this.evalNode(node);
+		try {
+			return this.evalNode(node);
+		} catch (error) {
+			return this.enrichError(error);
+		}
 	}
 
 	public async runAsync(node: ASTNode): Promise<RuntimeValue> {
-		if (node.type === ASTNodeType.PROGRAM) {
-			for (const child of node.children) {
-				await this.resolveExecution(() => this.evalNode(child));
+		try {
+			if (node.type === ASTNodeType.PROGRAM) {
+				for (const child of node.children) {
+					await this.resolveExecution(() => this.evalNode(child));
+				}
+
+				return Value(null);
 			}
 
-			return Value(null);
+			return await this.resolveExecution(() => this.evalNode(node));
+		} catch (error) {
+			return this.enrichError(error);
 		}
-
-		return await this.resolveExecution(() => this.evalNode(node));
 	}
 
 	public evalNode(node: ASTNode)
@@ -207,9 +270,10 @@ export class Interpreter implements ASTInterpreter {
 		blockNodes: ASTNode[],
 		methodEnv: ValueScope,
 		returnType?: string,
-		thisValue?: RuntimeInstanceType
+		thisValue?: RuntimeInstanceType,
+		frame?: StackFrame
 	): RuntimeValue {
-		this.pushContext({scope: methodEnv, instance: thisValue});
+		this.pushContext({scope: methodEnv, instance: thisValue, frame});
 
 		try {
 			this.evalBlock(blockNodes);
@@ -220,7 +284,7 @@ export class Interpreter implements ASTInterpreter {
 				       ? signal.value.toNativeRuntimeValue(returnType)
 				       : signal.value;
 			}
-			throw signal;
+			return this.enrichError(signal);
 		} finally {
 			this.popContext();
 		}
@@ -783,7 +847,13 @@ export class Interpreter implements ASTInterpreter {
 			);
 
 			this.bindMethodArguments(expr, constructorMethod.parameters, constructorScope);
-			this.evalReturn(constructorMethod.body, constructorScope, constructorMethod.returnType?.name, thisInstance);
+			this.evalReturn(
+				constructorMethod.body,
+				constructorScope,
+				constructorMethod.returnType?.name,
+				thisInstance,
+				this.createStackFrame("constructor", GRAMMAR.CONSTRUCTOR, constructorMethod.origin?.span, thisInstance.runtimeClass.className)
+			);
 
 			return Value(null);
 		}
@@ -808,6 +878,12 @@ export class Interpreter implements ASTInterpreter {
 		: RuntimeValue {
 
 		const methodScope = new RuntimeScope(this.runtimeScope);
+		const frame = this.createStackFrame(
+			"method",
+			method.name,
+			method.origin?.span,
+			instance.runtimeClass.className
+		);
 
 		methodScope.define(
 			GRAMMAR.THIS,
@@ -816,7 +892,14 @@ export class Interpreter implements ASTInterpreter {
 
 		if (instance.nativeRuntimeObject && method.name in instance.nativeRuntimeObject) {
 			const nativeArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
-			const result: any = instance.nativeRuntimeObject[method.name](...nativeArgs);
+			let result: any;
+			const frames = [...this.captureStackFrames(), frame];
+
+			try {
+				result = instance.nativeRuntimeObject[method.name](...nativeArgs);
+			} catch (error) {
+				return this.enrichError(error, frames);
+			}
 
 			if (result instanceof Promise) {
 				throw new InterpreterSuspensionSignal(
@@ -826,7 +909,8 @@ export class Interpreter implements ASTInterpreter {
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
-						}
+						},
+						frames
 					)
 				);
 			}
@@ -835,7 +919,7 @@ export class Interpreter implements ASTInterpreter {
 				return wrapNativeInstance(result, this.objectRegistry);
 			}
 
-			return this.evalReturn([ReturnValue(result)], methodScope, method.returnType?.name, instance);
+			return this.evalReturn([ReturnValue(result)], methodScope, method.returnType?.name, instance, frame);
 		}
 
 		for (let i: number = 0; i < method.parameters.length; i++) {
@@ -865,7 +949,7 @@ export class Interpreter implements ASTInterpreter {
 			methodScope.define(parameter.name, castedValue);
 		}
 
-		return this.evalReturn(method.body, methodScope, method.returnType?.name, instance);
+		return this.evalReturn(method.body, methodScope, method.returnType?.name, instance, frame);
 	}
 
 	private evalThis(node: ASTNode): RuntimeValue {
@@ -887,6 +971,7 @@ export class Interpreter implements ASTInterpreter {
 
 		const runtimeClass: RuntimeClassType = this.objectRegistry.classes.get(className);
 		const method = runtimeClass.staticMethods.get(callNode.callee.property);
+		const frame = this.createStackFrame("function", method?.name ?? callNode.callee.property, method?.origin?.span, className);
 
 		if (!method) {
 			throwRuntimeError(`Static method ${className}.${callNode.callee.property} not found`, callNode.callee.span);
@@ -895,7 +980,14 @@ export class Interpreter implements ASTInterpreter {
 		if (runtimeClass.nativeRuntimeConstructor && runtimeClass.nativeRuntimeConstructor[method.name]) {
 			const args: RuntimeValue[] = this.getMethodArguments(callNode, method.parameters);
 			const rawArgs: any[] = args.map((arg: RuntimeValue): any => fromLyraValue(arg).value);
-			const result: any = runtimeClass.nativeRuntimeConstructor[method.name](...rawArgs);
+			let result: any;
+			const frames = [...this.captureStackFrames(), frame];
+
+			try {
+				result = runtimeClass.nativeRuntimeConstructor[method.name](...rawArgs);
+			} catch (error) {
+				return this.enrichError(error, frames);
+			}
 
 			if (result instanceof Promise) {
 				throw new InterpreterSuspensionSignal(
@@ -905,7 +997,8 @@ export class Interpreter implements ASTInterpreter {
 						}),
 						{
 							resume: (value: RuntimeValue): ExecutionResult => CompletedExecution(value)
-						}
+						},
+						frames
 					)
 				);
 			}
@@ -914,13 +1007,13 @@ export class Interpreter implements ASTInterpreter {
 				return wrapNativeInstance(result, this.objectRegistry);
 			}
 
-			return this.evalReturn([ReturnValue(result)], new RuntimeScope(this.runtimeScope), method.returnType?.name);
+			return this.evalReturn([ReturnValue(result)], new RuntimeScope(this.runtimeScope), method.returnType?.name, undefined, frame);
 		}
 
 		const methodScope = new RuntimeScope(this.runtimeScope);
 		this.bindMethodArguments(callNode, method.parameters, methodScope);
 
-		return this.evalReturn(method.body, methodScope, method.returnType?.name);
+		return this.evalReturn(method.body, methodScope, method.returnType?.name, undefined, frame);
 	}
 
 	private evalInstanceCall(callNode: ASTCallNode)
@@ -1223,7 +1316,8 @@ export class Interpreter implements ASTInterpreter {
 			{
 				scope: this.runtimeScope,
 				instance: instance,
-				method: constructor
+				method: constructor,
+				frame: this.createStackFrame("constructor", GRAMMAR.CONSTRUCTOR, constructor?.origin?.span, runtimeClass.className)
 			}
 		);
 
@@ -1231,6 +1325,8 @@ export class Interpreter implements ASTInterpreter {
 			instance.nativeRuntimeObject = new runtimeClass.nativeRuntimeConstructor(
 				...constructorArgs.map((arg: RuntimeValue): any => fromLyraValue(arg).value)
 			);
+		} catch (error) {
+			return this.enrichError(error);
 		} finally {
 			this.popContext();
 		}
@@ -1266,7 +1362,13 @@ export class Interpreter implements ASTInterpreter {
 		this.pushContext({
 			                 scope: new RuntimeScope(this.runtimeScope),
 			                 instance,
-			                 method: runtimeClass.constructorMethod
+			                 method: runtimeClass.constructorMethod,
+			                 frame: this.createStackFrame(
+				                 "constructor",
+				                 GRAMMAR.CONSTRUCTOR,
+				                 runtimeClass.constructorMethod?.origin?.span,
+				                 runtimeClass.className
+			                 )
 		                 } as ExecutionContext);
 
 		try {
@@ -1304,6 +1406,8 @@ export class Interpreter implements ASTInterpreter {
 
 				this.evalBlock(constructor.body);
 			}
+		} catch (error) {
+			return this.enrichError(error);
 		} finally {
 			this.popContext();
 		}
@@ -1422,13 +1526,26 @@ export class Interpreter implements ASTInterpreter {
 				return await this.resumeSuspension(signal.suspension);
 			}
 
-			throw signal;
+			return this.enrichError(signal);
 		}
 	}
 
 	private async resumeSuspension(suspension: ExecutionSuspension): Promise<RuntimeValue> {
-		const value: RuntimeValue = await suspension.awaitable;
-		const result: ExecutionResult = suspension.continuation.resume(value);
+		let value: RuntimeValue;
+
+		try {
+			value = await suspension.awaitable;
+		} catch (error) {
+			return this.enrichError(error, suspension.frames);
+		}
+
+		let result: ExecutionResult;
+
+		try {
+			result = suspension.continuation.resume(value);
+		} catch (error) {
+			return this.enrichError(error, suspension.frames);
+		}
 
 		if (isExecutionSuspended(result)) {
 			return await this.resumeSuspension(result);
@@ -1450,7 +1567,8 @@ export class Interpreter implements ASTInterpreter {
 			Promise.resolve(chainedResult.value),
 			{
 				resume: (): ExecutionResult => chainedResult
-			}
+			},
+			suspension.frames
 		);
 	}
 
@@ -1480,5 +1598,3 @@ class InterpreterSuspensionSignal extends Error {
 		super("InterpreterSuspension");
 	}
 }
-
-
