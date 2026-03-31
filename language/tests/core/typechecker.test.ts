@@ -156,4 +156,32 @@ class Failer {
 		expect(typeError.format())
 			.toContain("Stacktrace:");
 	});
+
+	it("accepts while loops with break and continue inside loop bodies", () => {
+		expect(() => checkSource(`
+let count: number = 0;
+
+while (count < 10) {
+	count = count + 1;
+
+	if (count == 3) {
+		continue;
+	}
+
+	if (count == 5) {
+		break;
+	}
+}
+`)).not.toThrow();
+	});
+
+	it("rejects break and continue outside loops", () => {
+		expect(() => checkSource(`
+break;
+`)).toThrow(LyraTypeError);
+
+		expect(() => checkSource(`
+continue;
+`)).toThrow(LyraTypeError);
+	});
 });

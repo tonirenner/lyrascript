@@ -13,6 +13,8 @@ import {
 import type {EventDispatch} from "./model/runtime_events.ts";
 import type {VChild} from "./model/runtime_model.ts";
 import {
+	Break,
+	Continue,
 	type ExecutionContext,
 	LyraNativeObject,
 	Return,
@@ -39,8 +41,10 @@ import {
 	ASTArrayNode,
 	ASTAssignmentNode,
 	type ASTBinaryNode,
+	ASTBreakNode,
 	type ASTCallNode,
 	type ASTClassNode,
+	ASTContinueNode,
 	ASTExpressionNode,
 	type ASTForeachNode,
 	type ASTIfNode,
@@ -57,6 +61,7 @@ import {
 	ASTReturnNode,
 	type ASTUnaryNode,
 	ASTVariableNode,
+	type ASTWhileNode,
 	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
@@ -111,6 +116,14 @@ export class Interpreter implements ASTInterpreter {
 	public enrichError(error: unknown, frames: StackFrame[] = this.captureStackFrames()): never {
 		if (error instanceof InterpreterSuspensionSignal || error instanceof Return) {
 			throw error;
+		}
+
+		if (error instanceof Break) {
+			throwRuntimeError('break used outside of loop.');
+		}
+
+		if (error instanceof Continue) {
+			throwRuntimeError('continue used outside of loop.');
 		}
 
 		if (error instanceof LyraError) {
@@ -234,6 +247,9 @@ export class Interpreter implements ASTInterpreter {
 			case ASTNodeType.MATCH: {
 				return this.evalMatch(node as ASTMatchNode);
 			}
+			case ASTNodeType.WHILE: {
+				return this.evalWhile(node as ASTWhileNode);
+			}
 			case ASTNodeType.FOREACH: {
 				return this.evalForeach(node as ASTForeachNode);
 			}
@@ -250,6 +266,12 @@ export class Interpreter implements ASTInterpreter {
 				                            : Value(null);
 
 				throw new Return(value);
+			}
+			case ASTNodeType.BREAK: {
+				return this.evalBreak(node as ASTBreakNode);
+			}
+			case ASTNodeType.CONTINUE: {
+				return this.evalContinue(node as ASTContinueNode);
 			}
 			default: {
 				throwRuntimeError(`Unhandled node ${node.type}.`, node.span);
@@ -733,7 +755,6 @@ export class Interpreter implements ASTInterpreter {
 			.value) {
 			const value: RuntimeValue = this.callIteratorMethod(iterator.asRuntimeInstance(), 'current');
 
-			// neuer Kontext für jede Iteration
 			this.pushContext({
 				                 scope: new RuntimeScope(this.currentScope),
 				                 instance: this.currentContext.instance
@@ -742,10 +763,21 @@ export class Interpreter implements ASTInterpreter {
 				this.currentScope.define(node.iterator, value);
 
 				this.evalBlock(node.body);
-			} catch (ReturnSignal) {
-				if (ReturnSignal instanceof Return) {
-					return ReturnSignal.value;
+			} catch (signal) {
+				if (signal instanceof Return) {
+					return signal.value;
 				}
+
+				if (signal instanceof Break) {
+					break;
+				}
+
+				if (signal instanceof Continue) {
+					this.callIteratorMethod(iterator.asRuntimeInstance(), 'next');
+					continue;
+				}
+
+				throw signal;
 			} finally {
 				this.popContext();
 			}
@@ -754,6 +786,46 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		return Value(null);
+	}
+
+	public evalWhile(node: ASTWhileNode): RuntimeValue {
+		while (this.evalExpression(node.condition)
+		           .toNativeRuntimeValue(TYPE_ENUM.BOOLEAN).value) {
+			this.pushContext({
+				                 scope: new RuntimeScope(this.currentScope),
+				                 instance: this.currentContext.instance
+			                 });
+
+			try {
+				this.evalBlock(node.body);
+			} catch (signal) {
+				if (signal instanceof Return) {
+					return signal.value;
+				}
+
+				if (signal instanceof Break) {
+					break;
+				}
+
+				if (signal instanceof Continue) {
+					continue;
+				}
+
+				throw signal;
+			} finally {
+				this.popContext();
+			}
+		}
+
+		return Value(null);
+	}
+
+	public evalBreak(_node: ASTBreakNode): RuntimeValue {
+		throw new Break();
+	}
+
+	public evalContinue(_node: ASTContinueNode): RuntimeValue {
+		throw new Continue();
 	}
 
 	public evalClass(node: ASTClassNode): RuntimeValue {

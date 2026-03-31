@@ -273,6 +273,54 @@ foreach (item in items) {
 			.toBe(10);
 	});
 
+	it("supports while loops with break and continue", async () => {
+		const scope = await executeProgramSource(`
+let count: number = 0;
+let sum: number = 0;
+
+while (count < 6) {
+	count = count + 1;
+
+	if (count == 2) {
+		continue;
+	}
+
+	sum = sum + count;
+
+	if (count == 4) {
+		break;
+	}
+}
+`);
+
+		expect(scope.get("count").value)
+			.toBe(4);
+		expect(scope.get("sum").value)
+			.toBe(8);
+	});
+
+	it("supports break and continue inside foreach loops", async () => {
+		const scope = await executeProgramSource(`
+let items: Array<number> = [1, 2, 3, 4, 5];
+let sum: number = 0;
+
+foreach (item in items) {
+	if (item == 2) {
+		continue;
+	}
+
+	if (item == 5) {
+		break;
+	}
+
+	sum = sum + item;
+}
+`);
+
+		expect(scope.get("sum").value)
+			.toBe(8);
+	});
+
 	it("supports match statements with explicit and default cases", async () => {
 		const scope = await executeProgramSource(`
 let label: string = "";

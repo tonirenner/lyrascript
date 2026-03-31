@@ -23,9 +23,12 @@ export class GRAMMAR {
 	static FALSE: string = 'false';
 	static IF: string = 'if';
 	static ELSE: string = 'else';
+	static WHILE: string = 'while';
 	static MATCH: string = 'match';
 	static DEFAULT: string = 'default';
 	static FOREACH: string = 'foreach';
+	static BREAK: string = 'break';
+	static CONTINUE: string = 'continue';
 	static IN: string = 'in';
 	static NULL: string = 'null';
 	static VDOM: string = 'vdom';
@@ -84,9 +87,12 @@ export class GRAMMAR {
 		GRAMMAR.THIS,
 		GRAMMAR.IF,
 		GRAMMAR.ELSE,
+		GRAMMAR.WHILE,
 		GRAMMAR.MATCH,
 		GRAMMAR.DEFAULT,
 		GRAMMAR.FOREACH,
+		GRAMMAR.BREAK,
+		GRAMMAR.CONTINUE,
 		GRAMMAR.IN,
 		GRAMMAR.NULL,
 		GRAMMAR.VDOM,

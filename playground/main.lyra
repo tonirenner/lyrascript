@@ -221,3 +221,53 @@ System.log(ok);
 System.log(status);
 System.log(text);
 
+class Counter {
+	public loop(n: number): number {
+		if (n == 0) {
+			return 0;
+		}
+
+		return this.loop(n - 1);
+	}
+}
+
+let counter = new Counter();
+System.log(counter.loop(10));
+
+System.print("Loop control demo");
+
+let whileCount: number = 0;
+let whileSum: number = 0;
+
+while (whileCount < 6) {
+	whileCount = whileCount + 1;
+
+	if (whileCount == 2) {
+		continue;
+	}
+
+	whileSum = whileSum + whileCount;
+
+	if (whileCount == 4) {
+		break;
+	}
+}
+
+System.log(whileCount);
+System.log(whileSum);
+
+let foreachSum: number = 0;
+
+foreach (item in [1, 2, 3, 4, 5]) {
+	if (item == 2) {
+		continue;
+	}
+
+	if (item == 5) {
+		break;
+	}
+
+	foreachSum = foreachSum + item;
+}
+
+System.log(foreachSum);

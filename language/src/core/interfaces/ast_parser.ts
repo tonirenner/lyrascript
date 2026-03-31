@@ -4,6 +4,8 @@ import type {
 	ASTArrayNode,
 	ASTClassNode,
 	ASTExpressionNode,
+	ASTBreakNode,
+	ASTContinueNode,
 	ASTForeachNode,
 	ASTIfNode,
 	ASTImportNode,
@@ -17,6 +19,7 @@ import type {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTWhileNode,
 	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
@@ -54,11 +57,17 @@ export interface ASTParser {
 
 	parseIfDeclaration(): ASTIfNode;
 
+	parseWhileDeclaration(): ASTWhileNode;
+
 	parseMatchDeclaration(): ASTMatchNode;
 
 	parseMatchCaseDeclaration(): ASTMatchCaseNode;
 
 	parseForeachDeclaration(): ASTForeachNode;
+
+	parseBreakStatement(): ASTBreakNode;
+
+	parseContinueStatement(): ASTContinueNode;
 
 	parseExpressionStatement(): ASTExpressionNode;
 
@@ -96,7 +105,6 @@ export interface ASTParser {
 
 	lookupPrecedence(token: Token): number;
 }
-
 
 
 

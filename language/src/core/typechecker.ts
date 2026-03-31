@@ -2,7 +2,9 @@ import {
 	ASTArrayNode,
 	ASTAssignmentNode,
 	ASTBinaryNode,
+	ASTBreakNode,
 	ASTCallNode,
+	ASTContinueNode,
 	ASTElseNode,
 	ASTExpressionNode,
 	ASTFieldNode,
@@ -22,6 +24,7 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTWhileNode,
 	ASTVDomExpressionNode,
 	ASTVDomNode
 } from './syntax/ast.ts';
@@ -392,6 +395,21 @@ export class TypeChecker {
 					return this.checkForeach(node, scope);
 				}
 				break;
+			case ASTNodeType.WHILE:
+				if (node instanceof ASTWhileNode) {
+					return this.checkWhile(node, scope);
+				}
+				break;
+			case ASTNodeType.BREAK:
+				if (node instanceof ASTBreakNode) {
+					return this.checkBreak(node, scope);
+				}
+				break;
+			case ASTNodeType.CONTINUE:
+				if (node instanceof ASTContinueNode) {
+					return this.checkContinue(node, scope);
+				}
+				break;
 			case ASTNodeType.IF:
 				if (node instanceof ASTIfNode) {
 					return this.checkIf(node, scope);
@@ -453,6 +471,7 @@ export class TypeChecker {
 			}
 
 			const loopScope = new TypeScope(scope);
+			loopScope.loopDepth++;
 			loopScope.defineType(node.iterator, elementType);
 
 			return this.checkBodyResult(node.body, loopScope);
@@ -460,6 +479,33 @@ export class TypeChecker {
 		}
 
 		this.typeError(`foreach expects Array<T>, got ${iterableType.toString()}`, node.iterable);
+	}
+
+	private checkWhile(node: ASTWhileNode, scope: TypeScope): StatementResult {
+		const conditionType: Type = this.checkExpression(node.condition, scope);
+		this.checkAssignable(Types.BOOLEAN, conditionType, node.condition);
+
+		const loopScope = new TypeScope(scope);
+		loopScope.loopDepth++;
+		this.checkBodyResult(node.body, loopScope);
+
+		return StatementResult.noReturn();
+	}
+
+	private checkBreak(node: ASTBreakNode, scope: TypeScope): StatementResult {
+		if (scope.loopDepth <= 0) {
+			this.typeError('break used outside of loop', node);
+		}
+
+		return StatementResult.noReturn();
+	}
+
+	private checkContinue(node: ASTContinueNode, scope: TypeScope): StatementResult {
+		if (scope.loopDepth <= 0) {
+			this.typeError('continue used outside of loop', node);
+		}
+
+		return StatementResult.noReturn();
 	}
 
 	private checkIf(node: ASTIfNode, scope: TypeScope): StatementResult {

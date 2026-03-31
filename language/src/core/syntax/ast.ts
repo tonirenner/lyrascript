@@ -38,9 +38,12 @@ export class ASTNodeType {
 	static IF: string = 'if_statement';
 	static THEN: string = 'then_statement';
 	static ELSE: string = 'else_statement';
+	static WHILE: string = 'while_statement';
 	static MATCH: string = 'match_statement';
 	static MATCH_CASE: string = 'match_case_statement';
 	static FOREACH: string = 'foreach_statement';
+	static BREAK: string = 'break_statement';
+	static CONTINUE: string = 'continue_statement';
 }
 
 export class ASTNode {
@@ -427,6 +430,18 @@ export class ASTElseNode extends ASTNode {
 	}
 }
 
+export class ASTWhileNode extends ASTNode {
+	condition: ASTNode;
+	body: ASTNode[];
+
+	constructor(condition: ASTNode, body: ASTNode[] = []) {
+		super(ASTNodeType.WHILE);
+
+		this.condition = condition;
+		this.body = body;
+	}
+}
+
 export class ASTMatchNode extends ASTNode {
 	expression: ASTNode;
 	cases: ASTMatchCaseNode[];
@@ -460,6 +475,18 @@ export class ASTForeachNode extends ASTNode {
 		this.iterator = iterator;
 		this.iterable = iterable;
 		this.body = body;
+	}
+}
+
+export class ASTBreakNode extends ASTNode {
+	constructor() {
+		super(ASTNodeType.BREAK);
+	}
+}
+
+export class ASTContinueNode extends ASTNode {
+	constructor() {
+		super(ASTNodeType.CONTINUE);
 	}
 }
 

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "bun:test";
 import {LyraParserError} from "../../src/core/infrastructure/errors.ts";
 import {Parser} from "../../src/core/parser.ts";
-import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode} from "../../src/core/syntax/ast.ts";
+import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode, ASTWhileNode} from "../../src/core/syntax/ast.ts";
 import {Source} from "../../src/core/syntax/source.ts";
 
 describe("Parser", () => {
@@ -53,6 +53,23 @@ class Example {
 			.toBe(1);
 		expect(classNode?.children[0]?.type)
 			.toBe(ASTNodeType.METHOD);
+	});
+
+	it("parses while loops with break and continue", () => {
+		const ast = new Parser(new Source(`
+while (true) {
+	continue;
+	break;
+}
+`)).parse();
+		const whileNode = ast.children[0];
+
+		expect(whileNode)
+			.toBeInstanceOf(ASTWhileNode);
+		expect((whileNode as ASTWhileNode).body[0]?.type)
+			.toBe(ASTNodeType.CONTINUE);
+		expect((whileNode as ASTWhileNode).body[1]?.type)
+			.toBe(ASTNodeType.BREAK);
 	});
 
 	it("captures structured stack frames for parser errors", () => {

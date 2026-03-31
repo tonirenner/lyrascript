@@ -350,6 +350,18 @@ export class Return extends Error {
 	}
 }
 
+export class Break extends Error {
+	constructor() {
+		super('RuntimeBreak');
+	}
+}
+
+export class Continue extends Error {
+	constructor() {
+		super('RuntimeContinue');
+	}
+}
+
 export type VChild = VText | VElement | VComponent;
 export type Props = Record<string, any>;
 
@@ -377,5 +389,4 @@ export interface VText extends VNode {
 	type: 'text';
 	value: string;
 }
-
 

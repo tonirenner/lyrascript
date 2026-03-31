@@ -5,8 +5,10 @@ import {
 	ASTAnnotationNode,
 	ASTArrayNode,
 	ASTBinaryNode,
+	ASTBreakNode,
 	ASTCallNode,
 	ASTClassNode,
+	ASTContinueNode,
 	ASTForeachNode,
 	ASTIfNode,
 	ASTIndexNode,
@@ -15,7 +17,8 @@ import {
 	ASTMemberNode,
 	ASTNewNode,
 	ASTNode,
-	ASTUnaryNode
+	ASTUnaryNode,
+	ASTWhileNode,
 } from "../syntax/ast.ts";
 import {NativeClasses} from "../../library/native_classes.ts";
 import {NativeFunctions} from "../../library/native_functions.ts";
@@ -74,6 +77,12 @@ export interface ASTInterpreter {
 	evalMatch(node: ASTMatchNode): RuntimeValue;
 
 	evalForeach(node: ASTForeachNode): RuntimeValue;
+
+	evalWhile(node: ASTWhileNode): RuntimeValue;
+
+	evalBreak(node: ASTBreakNode): RuntimeValue;
+
+	evalContinue(node: ASTContinueNode): RuntimeValue;
 
 	// objects
 

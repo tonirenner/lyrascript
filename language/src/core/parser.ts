@@ -12,6 +12,8 @@ import {
 	ASTClassNode,
 	ASTElseNode,
 	ASTExpressionNode,
+	ASTBreakNode,
+	ASTContinueNode,
 	ASTFieldNode,
 	ASTForeachNode,
 	ASTIfNode,
@@ -33,6 +35,7 @@ import {
 	ASTTypeNode,
 	ASTUnaryNode,
 	ASTVariableNode,
+	ASTWhileNode,
 	ASTVDomExpressionNode,
 	ASTVDomNode,
 	ASTVDomTextNode
@@ -151,10 +154,16 @@ export class Parser implements ASTParser {
 				return this.parseVariableDeclaration();
 			case GRAMMAR.IF:
 				return this.parseIfDeclaration();
+			case GRAMMAR.WHILE:
+				return this.parseWhileDeclaration();
 			case GRAMMAR.MATCH:
 				return this.parseMatchDeclaration();
 			case GRAMMAR.FOREACH:
 				return this.parseForeachDeclaration();
+			case GRAMMAR.BREAK:
+				return this.parseBreakStatement();
+			case GRAMMAR.CONTINUE:
+				return this.parseContinueStatement();
 			default:
 				return this.parseExpressionStatement();
 		}
@@ -590,6 +599,19 @@ export class Parser implements ASTParser {
 		return node;
 	}
 
+	parseWhileDeclaration(): ASTWhileNode {
+		const startToken = this.expectKeyword(GRAMMAR.WHILE);
+
+		this.expectPunctuation(GRAMMAR.PARENTHESES_OPEN);
+		const condition = this.parseExpression();
+		const parenthesesCloseToken = this.expectPunctuation(GRAMMAR.PARENTHESES_CLOSE);
+
+		const node = new ASTWhileNode(condition, this.parseBlock());
+		node.span = spanFrom(startToken, parenthesesCloseToken);
+
+		return node;
+	}
+
 	parseMatchCaseDeclaration(): ASTMatchCaseNode {
 		const caseNode = new ASTMatchCaseNode();
 
@@ -629,6 +651,22 @@ export class Parser implements ASTParser {
 		const node = new ASTForeachNode(iterator, iterable, this.parseBlock());
 		node.span = spanFrom(startToken, parenthesesCloseToken);
 
+		return node;
+	}
+
+	parseBreakStatement(): ASTBreakNode {
+		const token = this.expectKeyword(GRAMMAR.BREAK);
+		const semicolonToken = this.expectPunctuation(GRAMMAR.SEMICOLON);
+		const node = new ASTBreakNode();
+		node.span = spanFrom(token, semicolonToken);
+		return node;
+	}
+
+	parseContinueStatement(): ASTContinueNode {
+		const token = this.expectKeyword(GRAMMAR.CONTINUE);
+		const semicolonToken = this.expectPunctuation(GRAMMAR.SEMICOLON);
+		const node = new ASTContinueNode();
+		node.span = spanFrom(token, semicolonToken);
 		return node;
 	}
 
@@ -1315,4 +1353,3 @@ export class Parser implements ASTParser {
 		return node;
 	}
 }
-

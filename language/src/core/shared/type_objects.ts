@@ -453,11 +453,13 @@ export class TypeScope {
 
 	currentObjectSymbol: ClassSymbol | InterfaceSymbol | null;
 	currentMethodSymbol: MethodSymbol | null = null;
+	loopDepth: number;
 
 	constructor(parent: TypeScope | null = null) {
 		this.parent = parent;
 		this.currentObjectSymbol = parent?.currentObjectSymbol ?? null;
 		this.currentMethodSymbol = parent?.currentMethodSymbol ?? null;
+		this.loopDepth = parent?.loopDepth ?? 0;
 	}
 
 	defineType(name: string, type: Type): void {
