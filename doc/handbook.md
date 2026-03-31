@@ -12,7 +12,7 @@ LyraScript is a statically checked scripting language with:
 - nullable types
 - arrays
 - lambdas
-- control flow with `if`, `match`, and `foreach`
+- control flow with `if`, `match`, `while`, and `foreach`
 - native runtime classes such as `String`, `Number`, `Boolean`, `Array`, `Assert`, `System`, `Event`, and `State`
 - a built-in `@test`-based language test mechanism
 - a browser-oriented host/runtime layer with VDOM support
@@ -179,6 +179,57 @@ let sum: number = 0;
 
 foreach (item in items) {
     sum = sum + item;
+}
+```
+
+`break` and `continue` are supported inside `foreach`:
+
+```lyra
+foreach (item in items) {
+    if (item == 2) {
+        continue;
+    }
+
+    if (item == 5) {
+        break;
+    }
+
+    sum = sum + item;
+}
+```
+
+### while
+
+`while` repeats as long as its condition evaluates to `true`:
+
+```lyra
+let count: number = 0;
+
+while (count < 10) {
+    count = count + 1;
+}
+```
+
+### break / continue
+
+Loop control statements are supported inside `while` and `foreach` bodies:
+
+```lyra
+let count: number = 0;
+let sum: number = 0;
+
+while (count < 6) {
+    count = count + 1;
+
+    if (count == 2) {
+        continue;
+    }
+
+    sum = sum + count;
+
+    if (count == 4) {
+        break;
+    }
 }
 ```
 
@@ -423,7 +474,6 @@ This area exists, but the language handbook should still be read primarily as a 
 
 The following are not established as complete language features yet:
 
-- `while`
 - `do-while`
 - fully documented interface semantics
 - fully documented generic semantics beyond current class-based usage

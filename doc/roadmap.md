@@ -19,6 +19,9 @@
 - [x] `if / else`
 - [x] `match`
 - [x] `foreach`
+- [x] `while`
+- [x] `break`
+- [x] `continue`
 - [x] VDOM syntax and embedded expressions
 
 #### Runtime and type system
@@ -100,7 +103,6 @@
 
 ### Runtime and language features
 
-- [ ] `while`
 - [ ] `do-while`
 - [ ] `try / catch / finally` support in Lyra
 - [ ] stronger interface conformance checks in the type checker
