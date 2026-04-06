@@ -72,6 +72,39 @@ class Implementation implements FullContract {
 `)).toThrow(LyraTypeError);
 	});
 
+	it("accepts interface upcasts for implementing classes", () => {
+		expect(() => checkSource(`
+interface Named {
+	public getName(): string;
+}
+
+class User implements Named {
+	public getName(): string {
+		return "Toni";
+	}
+}
+
+let user: Named = new User();
+`)).not.toThrow();
+	});
+
+	it("accepts method calls on interface-typed values", () => {
+		expect(() => checkSource(`
+interface Named {
+	public getName(): string;
+}
+
+class User implements Named {
+	public getName(): string {
+		return "Toni";
+	}
+}
+
+let user: Named = new User();
+let label: string = user.getName();
+`)).not.toThrow();
+	});
+
 	it("rejects incompatible field initializers", () => {
 		expect(() => checkSource(`
 class Example {
@@ -92,6 +125,27 @@ let left = new Box();
 let right = new Box();
 let result: Box = left + right;
 `)).not.toThrow();
+	});
+
+	it("accepts increment and decrement on numeric writable targets", () => {
+		expect(() => checkSource(`
+class Counter {
+	public value: number = 1;
+}
+
+let number: number = 1;
+++number;
+
+let counter = new Counter();
+counter.value--;
+`)).not.toThrow();
+	});
+
+	it("rejects increment on non-numeric expressions", () => {
+		expect(() => checkSource(`
+let label: string = "a";
+label++;
+`)).toThrow(LyraTypeError);
 	});
 
 	it("validates block lambda return types", () => {

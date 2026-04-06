@@ -1,0 +1,43 @@
+class Toggle {
+    private visible: boolean = true;
+
+    public render(): VNode {
+        if (this.visible) {
+            return vdom
+                <div class="box" onClick={e -> this.visible = false}>
+                    Click to hide me
+                </div>;
+        }
+
+        return vdom
+            <div class="box" onClick={e -> this.visible = true}>
+                Hidden. Click to show me again.
+            </div>;
+    }
+}
+
+class Counter {
+    private count: number = 0;
+
+    public render(): VNode {
+        return vdom
+            <div>
+                <p>Count: {this.count}</p>
+                <button onClick={e -> this.count = this.count + 1}>
+                    +1
+                </button>
+            </div>;
+    }
+}
+
+class Program {
+    public render(): VNode {
+        return vdom
+            <div>
+                <h1>VDOM</h1>
+                <p>Interactive preview directly below the editor.</p>
+                <Toggle/>
+                <Counter/>
+            </div>;
+    }
+}

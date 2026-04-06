@@ -107,8 +107,13 @@ export class LyraObjectView extends LyraNativeObject {
 
 	public override serialize(): Serializable {
 		const object: Serializable = {};
+		const fields: Serializable = {};
 
-		object[this.className] = {...this.instance?.instanceFields};
+		for (const [key, value] of this.instance.instanceFields.entries()) {
+			fields[key] = runtimeValueToSerializable(value);
+		}
+
+		object[this.className] = fields;
 
 		return object;
 	}
@@ -247,6 +252,29 @@ export class SuperClass {
 		this.type = type;
 		this.name = name;
 	}
+}
+
+function runtimeValueToSerializable(runtimeValue: RuntimeValue): any {
+	if (!runtimeValue.type.runtimeClass) {
+		return runtimeValue.value;
+	}
+
+	const instance = runtimeValue.asRuntimeInstance();
+
+	if (instance.nativeRuntimeObject instanceof LyraNativeObject) {
+		return instance.nativeRuntimeObject.serialize();
+	}
+
+	const fields: Serializable = {};
+
+	for (const [key, value] of instance.instanceFields.entries()) {
+		fields[key] = runtimeValueToSerializable(value);
+	}
+
+	return {
+		className: instance.runtimeClass.className,
+		fields
+	};
 }
 
 export class Modifiers {
@@ -389,4 +417,3 @@ export interface VText extends VNode {
 	type: 'text';
 	value: string;
 }
-

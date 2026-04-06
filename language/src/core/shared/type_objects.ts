@@ -386,11 +386,11 @@ export class InterfaceRefType extends Type {
 	}
 
 	override accepts(other: Type): boolean {
-		if (!this.equals(other)) {
-			return false;
-		}
-
 		if (other instanceof InterfaceRefType) {
+			if (!this.equals(other)) {
+				return interfaceImplementsInterface(other, this);
+			}
+
 			if (this.typeArguments.length !== other.typeArguments.length) {
 				return false;
 			}
@@ -404,6 +404,10 @@ export class InterfaceRefType extends Type {
 			}
 
 			return true;
+		}
+
+		if (other instanceof ClassRefType) {
+			return classImplementsInterface(other.classSymbol, this);
 		}
 
 		return false;
@@ -663,6 +667,55 @@ export function buildTypeSubstitutionMap(
 	}
 
 	return substitutionMap;
+}
+
+function classImplementsInterface(classSymbol: ClassSymbol, expected: InterfaceRefType): boolean {
+	for (const implementedInterface of classSymbol.implementsInterfaces) {
+		if (interfaceMatchesExpected(implementedInterface, expected)) {
+			return true;
+		}
+	}
+
+	if (classSymbol.superClassSymbol) {
+		return classImplementsInterface(classSymbol.superClassSymbol, expected);
+	}
+
+	return false;
+}
+
+function interfaceImplementsInterface(candidate: InterfaceRefType, expected: InterfaceRefType): boolean {
+	if (interfaceMatchesExpected(candidate, expected)) {
+		return true;
+	}
+
+	for (const parentInterface of candidate.interfaceSymbol.extendsInterfaces) {
+		if (interfaceImplementsInterface(new InterfaceRefType(parentInterface), expected)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function interfaceMatchesExpected(candidate: InterfaceRefType, expected: InterfaceRefType): boolean {
+	if (candidate.interfaceSymbol !== expected.interfaceSymbol) {
+		return false;
+	}
+
+	if (candidate.typeArguments.length !== expected.typeArguments.length) {
+		return false;
+	}
+
+	for (let i = 0; i < expected.typeArguments.length; i++) {
+		const expectedType = expected.typeArguments[i];
+		const candidateType = candidate.typeArguments[i];
+
+		if (!expectedType || !candidateType || !expectedType.accepts(candidateType)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 

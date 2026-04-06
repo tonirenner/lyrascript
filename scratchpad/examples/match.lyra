@@ -1,0 +1,25 @@
+class Program {
+    public render(): VNode {
+        let value: number = 2;
+        let label: string = "";
+
+        match (value) {
+            1: {
+                label = "one";
+            }
+            2: {
+                label = "two";
+            }
+            default: {
+                label = "other";
+            }
+        }
+
+        return vdom
+            <div>
+                <h1>Match</h1>
+                <p>value = {value}</p>
+                <p>label = {label}</p>
+            </div>;
+    }
+}

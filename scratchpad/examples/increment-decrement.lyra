@@ -1,0 +1,26 @@
+class Counter {
+    public value: number = 2;
+}
+
+class Program {
+    public render(): VNode {
+        let number: number = 1;
+        let prefix = ++number;
+        let postfix = number++;
+
+        let counter = new Counter();
+        let memberPrefix = ++counter.value;
+        let memberPostfix = counter.value--;
+
+        return vdom
+            <div>
+                <h1>Increment / Decrement</h1>
+                <p>prefix = {prefix}</p>
+                <p>postfix = {postfix}</p>
+                <p>number = {number}</p>
+                <p>memberPrefix = {memberPrefix}</p>
+                <p>memberPostfix = {memberPostfix}</p>
+                <p>counter.value = {counter.value}</p>
+            </div>;
+    }
+}

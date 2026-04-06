@@ -1,0 +1,29 @@
+open class Person {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+}
+
+class User extends Person {
+    constructor(name: string) {
+        super(name);
+    }
+}
+
+class Program {
+    public render(): VNode {
+        let user = new User("Toni");
+
+        return vdom
+            <div>
+                <h1>Classes and Inheritance</h1>
+                <p>User: {user.getName()}</p>
+            </div>;
+    }
+}

@@ -163,7 +163,12 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 
 		this.eventPipeline
 		    .on(LYRA_EVENTS.INSTANCE_DIRTY_STATE, ({instance}: any): void => {
-			    this.requestComponentRender(instance, this.vdom.findNodeByComponent(instance) as VChild);
+			    const oldChild: VChild | null = this.vdom.tryFindNodeByComponent(instance);
+			    if (!oldChild) {
+				    return;
+			    }
+
+			    this.requestComponentRender(instance, oldChild);
 		    });
 
 		this.listenersRegistered = true;
@@ -178,7 +183,6 @@ export class WebApplicationRuntime extends AbstractApplicationRuntime {
 		};
 	}
 }
-
 
 
 

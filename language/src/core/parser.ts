@@ -1,7 +1,7 @@
 import {GRAMMAR, Token, TokenType, TYPE_ENUM} from "./syntax/ast_grammar.ts";
 import {TokenStream} from "./syntax/tokenizer.ts";
 import {LyraError, LyraParserError, throwParserError} from "./infrastructure/errors.ts";
-import {Source, spanFrom} from "./syntax/source.ts";
+import {Source, SourceSpan, spanFrom} from "./syntax/source.ts";
 import type {ASTParser} from "./interfaces/ast_parser.ts";
 import {
 	ASTAnnotationNode,
@@ -835,8 +835,14 @@ export class Parser implements ASTParser {
 			case GRAMMAR.EXCLAMATION_MARK:
 			case GRAMMAR.MINUS:
 			case GRAMMAR.PLUS:
+			case GRAMMAR.INCREMENT:
+			case GRAMMAR.DECREMENT:
 				this.next();
-				return new ASTUnaryNode(token.value, this.parseUnary());
+				return new ASTUnaryNode(
+					token.value,
+					this.parsePostfix(this.parseUnary()),
+					ASTUnaryNode.PREFIX
+				);
 			default:
 				return this.parsePrimary();
 		}
@@ -936,6 +942,16 @@ export class Parser implements ASTParser {
 
 				expr = new ASTIndexNode(expr, index);
 				continue;
+			}
+
+			if (token.value === GRAMMAR.INCREMENT || token.value === GRAMMAR.DECREMENT) {
+				const operatorToken = this.next();
+				const node = new ASTUnaryNode(operatorToken.value, expr, ASTUnaryNode.POSTFIX);
+				node.span = expr.span
+				            ? new SourceSpan(expr.span.source, expr.span.start, operatorToken.end)
+				            : spanFrom(operatorToken, operatorToken);
+				expr = node;
+				break;
 			}
 
 			break;
@@ -1049,6 +1065,9 @@ export class Parser implements ASTParser {
 			case GRAMMAR.DIVIDE:
 			case GRAMMAR.MODULUS:
 				return 60;
+			case GRAMMAR.INCREMENT:
+			case GRAMMAR.DECREMENT:
+				return 70;
 			case GRAMMAR.PLUS:
 			case GRAMMAR.MINUS:
 				return 50;

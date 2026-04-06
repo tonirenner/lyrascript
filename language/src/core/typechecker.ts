@@ -741,17 +741,29 @@ export class TypeChecker {
 
 
 	private checkAssignment(node: ASTAssignmentNode, scope: TypeScope): Type {
+		this.checkWritableTarget(node.left, scope);
+
 		const leftType: Type = this.checkExpression(node.left, scope);
 		const rightType: Type = this.checkExpression(node.right, scope);
 
 		this.checkAssignable(leftType, rightType, node.right);
 
-		this.checkReadonly(node.left, scope);
-
 		return leftType;
 	}
 
-	private checkReadonly(node: ASTNode, scope: TypeScope): void {
+	private checkWritableTarget(node: ASTNode, scope: TypeScope): void {
+		if (node.type === ASTNodeType.IDENTIFIER) {
+			if (!scope.hasType(node.name)) {
+				this.typeError(`Unknown identifier ${node.name}`, node);
+			}
+
+			return;
+		}
+
+		if (!(node instanceof ASTMemberNode)) {
+			this.typeError(`Invalid assignment target`, node);
+		}
+
 		if (node instanceof ASTMemberNode) {
 			const objectType: Type = this.checkExpression(node.object, scope);
 			if (!(objectType instanceof ClassRefType)) {
@@ -971,6 +983,18 @@ export class TypeChecker {
 	}
 
 	private checkUnaryExpression(node: ASTUnaryNode, scope: TypeScope): Type {
+		if (node.operator === GRAMMAR.INCREMENT || node.operator === GRAMMAR.DECREMENT) {
+			this.checkWritableTarget(node.argument, scope);
+
+			const operandType: Type = this.checkExpression(node.argument, scope);
+
+			if (!operandType.equals(Types.NUMBER)) {
+				this.typeError(`Unary '${node.operator}' requires number, got ${operandType.name}`, node);
+			}
+
+			return Types.NUMBER;
+		}
+
 		const operand: Type = this.checkExpression(node.argument, scope);
 		const op: string = node.operator;
 
@@ -1192,6 +1216,22 @@ export class TypeChecker {
 			return substituteType(methodSymbol.returnType, substitutionMap);
 		}
 
+		if (objectType instanceof InterfaceRefType) {
+			const methodSymbol: MethodSymbol = this.resolveInterfaceMethod(
+				objectType.interfaceSymbol,
+				callee.property
+			);
+
+			const substitutionMap: Map<string, Type> = buildTypeSubstitutionMap(
+				objectType.interfaceSymbol.typeParameterSymbols,
+				objectType.typeArguments
+			);
+
+			this.checkCallArguments(methodSymbol, callArguments, scope, substitutionMap);
+
+			return substituteType(methodSymbol.returnType, substitutionMap);
+		}
+
 		this.typeError(`Cannot call method on non-object`, callee);
 	}
 
@@ -1403,6 +1443,42 @@ export class TypeChecker {
 		}
 
 		return methodSymbol;
+	}
+
+	private resolveInterfaceMethod(interfaceSymbol: InterfaceSymbol, methodName: string): MethodSymbol {
+		const methodSymbol: MethodSymbol | null = this.resolveMethodInInterfaceHierarchy(interfaceSymbol, methodName);
+
+		if (!methodSymbol) {
+			this.typeError(`Unknown method ${interfaceSymbol.name}.${methodName}`, interfaceSymbol.node);
+		}
+
+		return methodSymbol;
+	}
+
+	private resolveMethodInInterfaceHierarchy(
+		interfaceSymbol: InterfaceSymbol,
+		methodName: string,
+		visited: Set<string> = new Set()
+	): MethodSymbol | null {
+		if (visited.has(interfaceSymbol.name)) {
+			return null;
+		}
+
+		visited.add(interfaceSymbol.name);
+
+		const ownMethod = interfaceSymbol.instanceMethodSymbols.get(methodName) || null;
+		if (ownMethod) {
+			return ownMethod;
+		}
+
+		for (const parentInterface of interfaceSymbol.extendsInterfaces) {
+			const parentMethod = this.resolveMethodInInterfaceHierarchy(parentInterface, methodName, visited);
+			if (parentMethod) {
+				return parentMethod;
+			}
+		}
+
+		return null;
 	}
 
 	private checkFieldInitializers(classSymbol: ClassSymbol, scope: TypeScope): void {

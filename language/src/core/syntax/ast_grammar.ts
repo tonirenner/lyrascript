@@ -48,6 +48,8 @@ export class GRAMMAR {
 	static ASSIGN: string = '=';
 	static PLUS: string = '+';
 	static MINUS: string = '-';
+	static INCREMENT: string = '++';
+	static DECREMENT: string = '--';
 	static DIVIDE: string = '/';
 	static MULTIPLY: string = '*';
 	static MODULUS: string = '%';
@@ -124,6 +126,8 @@ export class GRAMMAR {
 		GRAMMAR.ARROW,
 		GRAMMAR.DOT,
 		GRAMMAR.ASSIGN,
+		GRAMMAR.INCREMENT,
+		GRAMMAR.DECREMENT,
 		GRAMMAR.PLUS,
 		GRAMMAR.MINUS,
 		GRAMMAR.DIVIDE,

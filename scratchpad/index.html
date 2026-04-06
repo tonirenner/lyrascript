@@ -23,66 +23,30 @@
 
 <main>
     <div class="editor">
+        <div class="example-tabs">
+            <div class="example-tabs-label">Examples</div>
+            <div class="example-tabs-list" id="example-tabs"></div>
+            <div class="run-mode-toggle" id="run-mode-toggle">
+                <button class="run-mode-button" data-run-mode="program" type="button">Program</button>
+                <button class="run-mode-button" data-run-mode="tests" type="button">Tests</button>
+            </div>
+        </div>
         <div class="editor-shell">
             <div aria-hidden="true" class="editor-gutter" id="editor-line-numbers"></div>
             <div class="editor-stage">
                 <pre aria-hidden="true" class="editor-highlight" id="editor-highlight"></pre>
                 <textarea aria-label="editor" id="editor" spellcheck="false">
-class Toggle {
-
-    private visible: boolean = true;
-
-    public render(): VNode {
-        if (this.visible) {
-            return vdom
-                <div class="box" onClick={e -> this.visible = false}>
-                    Click to hide me
-                </div>;
-        }
-
-        return vdom
-            <div class="box" onClick={e -> this.visible = true}>
-                Hidden. Click to show me again.
-            </div>;
-    }
-}
-
-class Counter {
-
-    private count: number = 0;
-
-    public render(): VNode {
-        return vdom
-            <div>
-                <p>Count: {this.count}</p>
-                <button onClick={e -> this.count = this.count + 1}>
-                    +1
-                </button>
-            </div>;
-    }
-}
-
-class App {
-
-    public render(): VNode {
-        return vdom
-            <div>
-                <h1>Lyra Scratchpad</h1>
-                <p>Interactive preview directly below the editor.</p>
-                <Toggle/>
-                <Counter/>
-            </div>;
-    }
-}
-
-class Program {
-    public render(): VNode {
-        return vdom <App/>;
-    }
-}
 		</textarea>
             </div>
         </div>
+        <div
+            aria-label="Resize preview"
+            aria-orientation="horizontal"
+            class="preview-resize-handle"
+            id="preview-resize-handle"
+            role="separator"
+            tabindex="0"
+        ></div>
         <div class="preview">
             <div class="preview-header">Live Preview</div>
             <div id="preview"></div>
@@ -90,19 +54,43 @@ class Program {
     </div>
 
     <div class="output">
-        <div class="panel">
+        <div class="panel" id="output-panel-stdout">
             <h2>Output</h2>
             <div class="stdout" id="stdout"></div>
         </div>
-        <div class="panel">
+        <div
+            aria-label="Resize output panels"
+            aria-orientation="horizontal"
+            class="panel-resize-handle"
+            data-panel-handle="stdout-stderr"
+            role="separator"
+            tabindex="0"
+        ></div>
+        <div class="panel" id="output-panel-stderr">
             <h2>Errors</h2>
             <div class="stderr" id="stderr"></div>
         </div>
-        <div class="panel">
+        <div
+            aria-label="Resize output panels"
+            aria-orientation="horizontal"
+            class="panel-resize-handle"
+            data-panel-handle="stderr-ast"
+            role="separator"
+            tabindex="0"
+        ></div>
+        <div class="panel" id="output-panel-ast">
             <h2>AST</h2>
             <div id="ast"></div>
         </div>
-        <div class="panel">
+        <div
+            aria-label="Resize output panels"
+            aria-orientation="horizontal"
+            class="panel-resize-handle"
+            data-panel-handle="ast-tokens"
+            role="separator"
+            tabindex="0"
+        ></div>
+        <div class="panel" id="output-panel-tokens">
             <h2>Tokens</h2>
             <pre id="tokens"></pre>
         </div>

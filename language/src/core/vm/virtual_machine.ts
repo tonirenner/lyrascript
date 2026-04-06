@@ -44,6 +44,9 @@ export class VirtualMachine {
 					this.state.globals.assign(instruction.operand as string, value);
 					break;
 				}
+				case OpCode.DUP:
+					this.push(this.peek());
+					break;
 				case OpCode.POP:
 					this.pop();
 					break;

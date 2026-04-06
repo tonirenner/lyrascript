@@ -95,6 +95,15 @@ total = total + 1;
 this.value = this.value + 1;
 ```
 
+Numeric variables and numeric members also support prefix and postfix increment and decrement:
+
+```lyra
+++total;
+total++;
+--this.value;
+this.value--;
+```
+
 ## Operators
 
 ### Arithmetic
@@ -103,12 +112,24 @@ this.value = this.value + 1;
 + - * / %
 ```
 
+Numeric increment and decrement are also supported:
+
+```lyra
+++ --
+```
+
 Operator precedence is supported:
 
 ```lyra
 1 + 2 * 3
 (1 + 2) * 3
 ```
+
+For increment and decrement, the current semantics match the usual prefix/postfix behavior:
+
+- `++x` and `--x` update the target first and return the updated value
+- `x++` and `x--` return the old value and update the target afterwards
+- valid targets are writable numeric variables and writable numeric members
 
 ### Comparison
 

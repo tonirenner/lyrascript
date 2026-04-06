@@ -1,8 +1,0 @@
-import {App} from "/lyrascript/tests/app.lyra";
-
-class Program {
-
-    public render(): VNode {
-        return vdom <App/>;
-    }
-}

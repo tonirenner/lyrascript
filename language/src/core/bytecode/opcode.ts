@@ -4,6 +4,7 @@ export enum OpCode {
 	GET_GLOBAL = "GET_GLOBAL",
 	DEFINE_GLOBAL = "DEFINE_GLOBAL",
 	SET_GLOBAL = "SET_GLOBAL",
+	DUP = "DUP",
 	POP = "POP",
 	ADD = "ADD",
 	SUBTRACT = "SUBTRACT",

@@ -1,0 +1,434 @@
+import System;
+import Assert;
+import {Person, User} from "/lyrascript/scratchpad/examples/user.lyra";
+
+class MathTests {
+
+    @test ( title = "adds two numbers correctly" )
+    public add(): void {
+        Assert.isTrue(1 + 2 == 3, "expected 1 + 2 to equal 3");
+    }
+
+    @test ( title = "adds variables with correct precedence" )
+    public add(): void {
+        let a: number = 8;
+        let b: number = 3;
+
+        Assert.isTrue(a + b * 2 == 14, "expected multiplication before addition");
+        Assert.isTrue((a + b) * 2 == 22, "expected parentheses to change precedence");
+    }
+
+    @test ( title = "subtracts numbers correctly" )
+    public sub(): void {
+        Assert.isTrue(5 - 3 == 2, "expected 5 - 3 to equal 2");
+    }
+
+    @test ( title = "multiplies numbers correctly" )
+    public sub(): void {
+        Assert.isTrue(4 * 3 == 12, "expected 4 * 3 to equal 12");
+    }
+
+    @test ( title = "divides numbers correctly" )
+    public sub(): void {
+        Assert.isTrue(10 / 2 == 5, "expected 10 / 2 to equal 5");
+    }
+
+    @test ( title = "calculates modulo correctly" )
+    public sub(): void {
+        Assert.isTrue(10 % 3 == 1, "expected remainder of 10 % 3 to be 1");
+    }
+
+    @test ( title = "respects operator precedence" )
+    public sub(): void {
+        Assert.isTrue(1 + 2 * 3 == 7, "expected multiplication before addition");
+        Assert.isTrue((1 + 2) * 3 == 9, "expected parentheses to change precedence");
+    }
+}
+
+class ComparisonOperatorTests {
+
+    @test ( title = "evaluates less-than comparison correctly" )
+    public lessThan(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isTrue(a < b, "expected a to be less than b");
+    }
+
+    @test ( title = "evaluates less-than-or-equal comparison correctly" )
+    public lessEqual(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isTrue(a <= b, "expected a to be less than or equal to b");
+    }
+
+    @test ( title = "evaluates greater-than comparison correctly" )
+    public greaterThan(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isFalse(a > b, "expected a to not be greater than b");
+    }
+
+    @test ( title = "evaluates greater-than-or-equal comparison correctly" )
+    public greaterEqual(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isFalse(a >= b, "expected a to not be greater than or equal to b");
+    }
+
+    @test ( title = "evaluates equality comparison correctly" )
+    public equal(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isFalse(a == b, "expected values to be not equal");
+    }
+
+    @test ( title = "evaluates inequality comparison correctly" )
+    public notEqual(): void {
+        let a: number = 5;
+        let b: number = 10;
+
+        Assert.isTrue(a != b, "expected values to be not equal");
+    }
+}
+
+class LogicalOperatorsTests {
+
+    @test ( title = "logical AND returns true for true && true" )
+    public andCase1(): void {
+        let x: boolean = true;
+        let y: boolean = true;
+
+        Assert.isTrue(x && y, "expected logical AND to evaluate to true");
+    }
+
+    @test ( title = "logical AND returns false for true && false" )
+    public andCase2(): void {
+        let x: boolean = true;
+        let y: boolean = false;
+
+        Assert.isFalse(x && y, "expected logical AND to evaluate to false");
+    }
+
+    @test ( title = "logical OR returns true for true || false" )
+    public orCase1(): void {
+        let x: boolean = true;
+        let y: boolean = false;
+
+        Assert.isTrue(x || y, "expected logical OR to evaluate to true");
+    }
+
+    @test ( title = "logical NOT negates true to false" )
+    public notX(): void {
+        let x: boolean = true;
+
+        Assert.isFalse(!x, "expected !true to evaluate to false");
+    }
+
+    @test ( title = "logical NOT negates false to true" )
+    public notY(): void {
+        let y: boolean = false;
+
+        Assert.isTrue(!y, "expected !false to evaluate to true");
+    }
+}
+
+class CombinedExpressionsTests {
+
+    @test ( title = "evaluates combined logical and comparison expressions" )
+    public notY(): void {
+        let a: number = 5;
+        let b: number = 10;
+        let x: boolean = true;
+        let y: boolean = false;
+
+        Assert.isTrue(a < b && x, "expected combined AND expression to be true");
+        Assert.isFalse(a > b || y, "expected combined OR expression to be false");
+    }
+}
+
+class IfElseTests {
+
+    @test ( title = "executes if branch when condition is true" )
+    public _if(): void {
+        if ( true )
+        {
+            Assert.isTrue(true, "if branch should be executed");
+        }
+    }
+
+    @test ( title = "executes else branch when condition is false" )
+    public _else(): void {
+        if ( false )
+        {
+            Assert.isTrue(false, "if branch should not be executed");
+        }
+        else
+        {
+            Assert.isTrue(true, "else branch should be executed");
+        }
+    }
+
+    @test ( title = "executes else-if branch correctly" )
+    public _else_if(): void {
+        if ( false )
+        {
+            Assert.isTrue(false, "if branch should not be executed");
+        }
+        else if ( true )
+        {
+            Assert.isTrue(true, "else-if branch should be executed");
+        }
+    }
+}
+
+class NullableTests {
+
+    @test ( title = "allows null assignment to nullable variable" )
+    public nullableAcceptsNull(): void {
+        let x: number? = null;
+        Assert.isTrue(x == null, "expected nullable variable to be null");
+    }
+
+    @test ( title = "allows value assignment to nullable variable" )
+    public nullableAcceptsValue(): void {
+        let x: number? = 5;
+        Assert.isTrue(x == 5, "expected nullable variable to hold assigned value");
+    }
+
+    @test ( title = "rejects null assignment to non-nullable variable at type-check time" )
+    public nonNullableRejectsNull(): void {
+        // compile-time only
+        // let x: number = null;
+        Assert.isTrue(true, "type checker should reject null assignment");
+    }
+
+    @test ( title = "allows nullable class instances to be null" )
+    public nullableClass(): void {
+        let u: User? = null;
+        Assert.isTrue(u == null, "expected nullable class instance to be null");
+    }
+}
+
+class DefaultParameterTests {
+
+    public add(a: number, b: number = 2): number {
+        return a + b;
+    }
+
+    @test ( title = "uses default parameter when argument is omitted" )
+    public defaultValueUsed(): void {
+        Assert.isTrue(this.add(3) == 5, "expected default parameter value to be applied");
+    }
+
+    @test ( title = "overrides default parameter with explicit argument" )
+    public explicitOverridesDefault(): void {
+        Assert.isTrue(this.add(3, 4) == 7, "expected explicit argument to override default value");
+    }
+}
+
+class LambdaTests {
+
+    public add(a: number, b: number, fn: (number, number) -> number): number {
+        return fn(a, b);
+    }
+
+    @test ( title = "evaluates simple lambda expression correctly" )
+    public lambdaAdd(): void {
+        let f = { a: number, b: number -> a + b };
+        Assert.isTrue(f(2, 3) == 5, "expected lambda to return sum of arguments");
+    }
+
+    @test ( title = "accepts lambda as method argument" )
+    public lambdaAdd(): void {
+        Assert.isTrue(
+            this.add(2, 3, { a: number, b: number -> a + b }) == 5,
+            "expected lambda argument to be invoked correctly"
+        );
+    }
+
+    @test ( title = "supports passing lambda as argument" )
+    public lambdaAsArgument(): void {
+        // compile-time placeholder
+        Assert.isTrue(true, "lambda passing as argument is supported");
+    }
+}
+
+class StringNativeTests {
+
+    @test ( title = "converts string to uppercase correctly" )
+    public upper(): void {
+        let s: string = "hello";
+        Assert.isTrue(s.toUpperCase().toString() == "HELLO", "expected string to be uppercase");
+    }
+
+    @test ( title = "supports chained string method calls" )
+    public chaining(): void {
+        let s: string = "HeLLo";
+        let r = s.toUpperCase().toLowerCase().toString();
+
+        Assert.isTrue(r == "hello", "expected chained calls to return lowercase string");
+    }
+}
+
+class NumberNativeTests {
+
+    @test ( title = "converts numbers to strings correctly" )
+    public toStringValue(): void {
+        let n: number = 42;
+
+        Assert.isTrue(n.toString() == "42", "expected number to stringify correctly");
+    }
+
+    @test ( title = "supports unary minus on numbers" )
+    public unaryMinus(): void {
+        let n: number = 5;
+
+        Assert.isTrue((-n).toString() == "-5", "expected unary minus to negate the number");
+    }
+}
+
+class BooleanNativeTests {
+
+    @test ( title = "converts booleans to strings correctly" )
+    public toStringValue(): void {
+        let yes: boolean = true;
+        let no: boolean = false;
+
+        Assert.isTrue(yes.toString() == "true", "expected true to stringify correctly");
+        Assert.isTrue(no.toString() == "false", "expected false to stringify correctly");
+    }
+}
+
+class ArrayNativeTests {
+
+    @test ( title = "returns array length correctly" )
+    public length(): void {
+        let items: Array<number> = [1, 2, 3];
+
+        Assert.isTrue(items.length() == 3, "expected array length to match element count");
+    }
+
+    @test ( title = "supports array index access correctly" )
+    public indexAccess(): void {
+        let items: Array<string> = ["first", "second", "third"];
+
+        Assert.isTrue(items[1] == "second", "expected indexed access to return the matching element");
+    }
+
+    @test ( title = "supports push and get on arrays" )
+    public pushAndGet(): void {
+        let items: Array<number> = [1];
+        items.push(2);
+        items.push(3);
+
+        Assert.isTrue(items.get(0) == 1, "expected first array element to remain unchanged");
+        Assert.isTrue(items.get(2) == 3, "expected pushed element to be readable");
+    }
+
+    @test ( title = "removes array elements by index" )
+    public removeAt(): void {
+        let items: Array<number> = [1, 2, 3];
+        items.removeAt(1);
+
+        Assert.isTrue(items.length() == 2, "expected array length to shrink after removal");
+        Assert.isTrue(items.get(1) == 3, "expected remaining elements to shift left");
+    }
+}
+
+class ForeachTests {
+
+    @test ( title = "iterates over arrays with foreach" )
+    public sumArrayValues(): void {
+        let items: Array<number> = [1, 2, 3, 4];
+        let sum: number = 0;
+
+        foreach (item in items) {
+            sum = sum + item;
+        }
+
+        Assert.isTrue(sum == 10, "expected foreach to visit each array element once");
+    }
+}
+
+class MatchTests {
+
+    @test ( title = "matches explicit cases correctly" )
+    public explicitCase(): void {
+        let value: number = 2;
+        let result: string = "";
+
+        match (value) {
+            1: {
+                result = "one";
+            }
+            2: {
+                result = "two";
+            }
+            default: {
+                result = "other";
+            }
+        }
+
+        Assert.isTrue(result == "two", "expected matching case body to be executed");
+    }
+
+    @test ( title = "uses the default match case when no case matches" )
+    public defaultCase(): void {
+        let value: number = 99;
+        let result: string = "";
+
+        match (value) {
+            1: {
+                result = "one";
+            }
+            2: {
+                result = "two";
+            }
+            default: {
+                result = "other";
+            }
+        }
+
+        Assert.isTrue(result == "other", "expected default case to run when no explicit case matches");
+    }
+}
+
+class FieldMutationSubject {
+    public value: number = 0;
+
+    public increment(): void {
+        this.value = this.value + 1;
+    }
+}
+
+class FieldAssignmentTests {
+
+    @test ( title = "updates instance fields through assignment" )
+    public updatesInstanceField(): void {
+        let subject = new FieldMutationSubject();
+        subject.increment();
+        subject.increment();
+
+        Assert.isTrue(subject.value == 2, "expected instance field assignments to persist");
+    }
+}
+
+class InheritanceTests {
+
+    @test ( title = "calls inherited methods correctly" )
+    public inheritedMethod(): void {
+        let u = new User("Toni", 33);
+        Assert.isTrue(u.getName() == "Toni", "expected inherited getName to return correct value");
+        Assert.isTrue(u.getAge() == 33, "expected inherited getAge to return correct value");
+    }
+
+    @test ( title = "invokes static methods correctly" )
+    public staticMethod(): void {
+        Assert.isTrue(User.getCount() == 1, "expected static method to return correct value");
+    }
+}

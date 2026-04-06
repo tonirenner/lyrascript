@@ -64,10 +64,86 @@ main {
 }
 
 .editor {
+    --preview-height: 280px;
     border-right: 1px solid #2a2f3a;
     display: flex;
     flex-direction: column;
     min-height: 0;
+}
+
+.example-tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 46px;
+    padding: 0 12px;
+    border-bottom: 1px solid #2a2f3a;
+    background: #12161d;
+}
+
+.example-tabs-label {
+    flex: 0 0 auto;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7f8ea3;
+}
+
+.example-tabs-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.run-mode-toggle {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid #2a2f3a;
+    border-radius: 999px;
+    background: #0d1117;
+}
+
+.run-mode-button {
+    background: transparent;
+    color: #8ea0b8;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.run-mode-button:hover {
+    background: #1b2432;
+}
+
+.run-mode-button.is-active {
+    background: #f4efe5;
+    color: #111;
+    border-color: #f4efe5;
+}
+
+.example-tab {
+    flex: 0 0 auto;
+    background: #1a2230;
+    color: #b8c7da;
+    border: 1px solid #2e3a4d;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.example-tab:hover {
+    background: #243145;
+}
+
+.example-tab.is-active {
+    background: #f4efe5;
+    color: #111;
+    border-color: #f4efe5;
 }
 
 .editor-shell {
@@ -191,12 +267,49 @@ main {
 }
 
 .preview {
-    min-height: 220px;
-    border-top: 1px solid #2a2f3a;
+    flex: 0 0 var(--preview-height);
+    min-height: 140px;
     background: #f4efe5;
     color: #111;
     overflow: auto;
     padding: 14px;
+}
+
+.preview-resize-handle {
+    position: relative;
+    flex: 0 0 14px;
+    border-top: 1px solid #2a2f3a;
+    border-bottom: 1px solid #2a2f3a;
+    background: linear-gradient(180deg, #171b23 0%, #12161d 100%);
+    cursor: row-resize;
+}
+
+.preview-resize-handle::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 72px;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #5f6b7a 0%, #9fb2c8 50%, #5f6b7a 100%);
+    transform: translate(-50%, -50%);
+    opacity: 0.9;
+}
+
+.preview-resize-handle:hover::before,
+.preview-resize-handle:focus-visible::before,
+.editor.is-resizing .preview-resize-handle::before {
+    background: linear-gradient(90deg, #8eb8ff 0%, #f4efe5 50%, #8eb8ff 100%);
+}
+
+.preview-resize-handle:focus-visible {
+    outline: 2px solid #8eb8ff;
+    outline-offset: -2px;
+}
+
+.editor.is-resizing {
+    user-select: none;
 }
 
 .preview-header {
@@ -246,15 +359,47 @@ main {
 }
 
 .panel {
-    flex: 1;
+    flex: 1 1 0;
     padding: 10px;
     overflow: auto;
-    border-bottom: 1px solid #2a2f3a;
     min-height: 0;
 }
 
-.panel:last-child {
-    border-bottom: none;
+.panel-resize-handle {
+    position: relative;
+    flex: 0 0 14px;
+    border-top: 1px solid #2a2f3a;
+    border-bottom: 1px solid #2a2f3a;
+    background: linear-gradient(180deg, #171b23 0%, #12161d 100%);
+    cursor: row-resize;
+}
+
+.panel-resize-handle::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 72px;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #5f6b7a 0%, #9fb2c8 50%, #5f6b7a 100%);
+    transform: translate(-50%, -50%);
+    opacity: 0.9;
+}
+
+.panel-resize-handle:hover::before,
+.panel-resize-handle:focus-visible::before,
+.output.is-resizing .panel-resize-handle::before {
+    background: linear-gradient(90deg, #8eb8ff 0%, #f4efe5 50%, #8eb8ff 100%);
+}
+
+.panel-resize-handle:focus-visible {
+    outline: 2px solid #8eb8ff;
+    outline-offset: -2px;
+}
+
+.output.is-resizing {
+    user-select: none;
 }
 
 .panel h2 {
@@ -326,4 +471,26 @@ main {
 
 .ast-meta {
     color: #7f8ea3;
+}
+
+@media (max-width: 960px) {
+    main {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) minmax(260px, 40vh);
+    }
+
+    .editor {
+        border-right: none;
+        border-bottom: 1px solid #2a2f3a;
+    }
+
+    .example-tabs {
+        padding: 8px 12px;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .run-mode-toggle {
+        margin-left: 0;
+    }
 }

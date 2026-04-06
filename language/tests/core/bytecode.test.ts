@@ -37,6 +37,24 @@ result = -(result + 4);
 			.toBe(-5);
 	});
 
+	it("executes prefix and postfix increments for globals", () => {
+		const scope = executeBytecode(`
+let value: number = 1;
+let prefix = ++value;
+let postfix = value++;
+`);
+
+		expect(scope.get("value")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(3);
+		expect(scope.get("prefix")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(2);
+		expect(scope.get("postfix")
+		            .toNativeRuntimeValue(TYPE_ENUM.NUMBER).value)
+			.toBe(2);
+	});
+
 	it("executes if / else branches", () => {
 		const scope = executeBytecode(`
 let result: number = 0;

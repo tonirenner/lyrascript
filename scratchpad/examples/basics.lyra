@@ -1,0 +1,14 @@
+class Program {
+    public render(): VNode {
+        let greeting: string = "Hello Lyra";
+        let year: number = 2026;
+        let active: boolean = true;
+
+        return vdom
+            <div>
+                <h1>{greeting}</h1>
+                <p>Year: {year}</p>
+                <p>Active: {active.toString()}</p>
+            </div>;
+    }
+}

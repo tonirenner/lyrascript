@@ -201,6 +201,11 @@ export class BytecodeCompiler {
 	}
 
 	private compileUnary(node: ASTUnaryNode): void {
+		if (node.operator === GRAMMAR.INCREMENT || node.operator === GRAMMAR.DECREMENT) {
+			this.compileIncrementOrDecrement(node);
+			return;
+		}
+
 		this.compileExpression(node.argument);
 
 		switch (node.operator) {
@@ -214,6 +219,29 @@ export class BytecodeCompiler {
 				return;
 			default:
 				throwRuntimeError(`Unsupported bytecode unary operator ${node.operator}.`, node.span);
+		}
+	}
+
+	private compileIncrementOrDecrement(node: ASTUnaryNode): void {
+		if (node.argument.type !== ASTNodeType.IDENTIFIER) {
+			throwRuntimeError("Bytecode increment and decrement currently support only global identifiers.", node.span);
+		}
+
+		const variableName = node.argument.name;
+		const delta = node.operator === GRAMMAR.INCREMENT ? 1 : -1;
+
+		this.emit(OpCode.GET_GLOBAL, variableName);
+
+		if (node.position === ASTUnaryNode.POSTFIX) {
+			this.emit(OpCode.DUP);
+		}
+
+		this.emit(OpCode.LOAD_CONSTANT, this.addConstant(delta));
+		this.emit(OpCode.ADD);
+		this.emit(OpCode.SET_GLOBAL, variableName);
+
+		if (node.position === ASTUnaryNode.POSTFIX) {
+			this.emit(OpCode.POP);
 		}
 	}
 

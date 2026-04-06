@@ -1,0 +1,42 @@
+interface Named {
+    public getName(): string;
+}
+
+class User implements Named {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+}
+
+class Team implements Named {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+}
+
+class Program {
+    public render(): VNode {
+        let user: Named = new User("Toni");
+        let team: Named = new Team("Lyra Core");
+
+        return vdom
+            <div>
+                <h1>Interfaces</h1>
+                <p>Both values are stored as Named.</p>
+                <p>User: {user.getName()}</p>
+                <p>Team: {team.getName()}</p>
+            </div>;
+    }
+}

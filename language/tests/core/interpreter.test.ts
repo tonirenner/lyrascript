@@ -156,6 +156,36 @@ let result = counter.value;
 			.toBe(2);
 	});
 
+	it("supports prefix and postfix increment and decrement", () => {
+		const scope = executeSource(`
+class Counter {
+	public value: number = 3;
+}
+
+let number: number = 1;
+let prefix = ++number;
+let postfix = number++;
+
+let counter = new Counter();
+let memberPrefix = ++counter.value;
+let memberPostfix = counter.value--;
+let result = counter.value;
+`);
+
+		expect(scope.get("prefix").value)
+			.toBe(2);
+		expect(scope.get("postfix").value)
+			.toBe(2);
+		expect(scope.get("number").value)
+			.toBe(3);
+		expect(scope.get("memberPrefix").value)
+			.toBe(4);
+		expect(scope.get("memberPostfix").value)
+			.toBe(4);
+		expect(scope.get("result").value)
+			.toBe(3);
+	});
+
 	it("captures nested method frames on runtime errors", () => {
 		let thrown: unknown;
 

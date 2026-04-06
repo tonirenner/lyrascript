@@ -1,75 +1,48 @@
 ![LyraScript](icons/lyrascript.svg)
 
+LyraScript is a statically checked scripting language with its own parser, type checker, interpreter, and browser-oriented VDOM runtime.
 
-LyraScript is a modern scripting language with a static type system and an integrated VDOM runtime.
+The language reference is available in the [Handbook](./doc/handbook.md).
 
-It combines:
+## Overview
 
-- A custom parser and interpreter
-- A static TypeChecker
-- Class and interface support with generics
-- A minimal Virtual DOM runtime
-- A clean separation between language engine and host runtimeScope
+LyraScript currently includes:
 
-Lyra is written in TypeScript and designed to be both expressive and predictable.
+- classes, fields, methods, constructors, and inheritance
+- static type checking
+- arrays, lambdas, and control flow
+- VDOM syntax for browser-oriented UI work
+- a scratchpad for trying the language directly
 
----
+## Getting Started
 
-## ✨ Goals
-
-Lyra aims to:
-
-- Provide a clean, statically typed scripting language
-- Keep runtime and host runtimeScope strictly separated
-- Avoid implicit magic in state and rendering
-- Stay small, understandable, and hackable
-
----
-
-## 🧠 Architecture
-
-Lyra consists of two major layers:
-
-### 1. Language Engine
-
-- Parser
-- TypeChecker
-- Interpreter
-- Symbol & Type Registry
-
-This layer has no DOM knowledge and can execute in different environments.
-
-### 2. Application Runtime
-
-- VDOM renderer
-- LyraEvents binding
-- State system
-- Mount management
-
-This layer connects Lyra to the browser (or other hosts).
-
----
-
-## 🚀 Getting Started
-
-To install dependencies:
+Install dependencies:
 
 ```bash
 bun install
 ```
 
-To build:
+Build the project:
 
 ```bash
-bun execute lyra:build
+bun run lyra:build
+bun run scratchpad:build
 ```
 
-To execute in a browser:
+## Testing and Trying It Out
 
+To try the language, use the scratchpad only:
+
+```bash
+bun run scratchpad:build
 ```
-open playground/index.html
-```
 
-Or try online: https://lyrascript.github.io/
+Then open [scratchpad/index.html](/D:/_repositories/lyrascript/scratchpad/index.html) in a browser.
 
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+There you can write and run Lyra code and inspect output, errors, tokens, the AST, and the live VDOM preview.
+
+## Structure
+
+- [`language/`](/D:/_repositories/lyrascript/language): language core, type checker, interpreter, VM
+- [`scratchpad/`](/D:/_repositories/lyrascript/scratchpad): browser scratchpad for testing
+- [`doc/`](/D:/_repositories/lyrascript/doc): project documentation

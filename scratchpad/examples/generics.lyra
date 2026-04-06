@@ -1,0 +1,46 @@
+class Box<T> {
+    private value: T;
+
+    constructor(value: T) {
+        this.value = value;
+    }
+
+    public get(): T {
+        return this.value;
+    }
+}
+
+class Pair<T> {
+    private left: T;
+    private right: T;
+
+    constructor(left: T, right: T) {
+        this.left = left;
+        this.right = right;
+    }
+
+    public first(): T {
+        return this.left;
+    }
+
+    public second(): T {
+        return this.right;
+    }
+}
+
+class Program {
+    public render(): VNode {
+        let numberBox = new Box<number>(42);
+        let textBox = new Box<string>("Lyra");
+        let pair = new Pair<string>("alpha", "beta");
+
+        return vdom
+            <div>
+                <h1>Generics</h1>
+                <p>numberBox = {numberBox.get()}</p>
+                <p>textBox = {textBox.get()}</p>
+                <p>pair.first = {pair.first()}</p>
+                <p>pair.second = {pair.second()}</p>
+            </div>;
+    }
+}

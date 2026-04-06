@@ -22,6 +22,7 @@
 - [x] `while`
 - [x] `break`
 - [x] `continue`
+- [x] Prefix- und Postfix-Inkrement/Dekrement mit `++` und `--`
 - [x] VDOM syntax and embedded expressions
 
 #### Runtime and type system

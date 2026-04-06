@@ -38,8 +38,12 @@ export class VDOM {
 		this.instanceMap.delete(instance.id);
 	}
 
+	public tryFindNodeByComponent(instance: RuntimeInstanceType): VNode | null {
+		return this.instanceMap.get(instance.id) || null;
+	}
+
 	public findNodeByComponent(instance: RuntimeInstanceType): VNode {
-		const vNode: VNode | undefined = this.instanceMap.get(instance.id);
+		const vNode: VNode | null = this.tryFindNodeByComponent(instance);
 		if (!vNode) {
 			throw new Error(`Instance with id ${instance.id} not found.`);
 		}

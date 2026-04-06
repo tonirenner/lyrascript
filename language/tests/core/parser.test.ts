@@ -1,7 +1,15 @@
 import {describe, expect, it} from "bun:test";
 import {LyraParserError} from "../../src/core/infrastructure/errors.ts";
 import {Parser} from "../../src/core/parser.ts";
-import {ASTBinaryNode, ASTClassNode, ASTNodeType, ASTVariableNode, ASTWhileNode} from "../../src/core/syntax/ast.ts";
+import {
+	ASTBinaryNode,
+	ASTClassNode,
+	ASTExpressionNode,
+	ASTNodeType,
+	ASTUnaryNode,
+	ASTVariableNode,
+	ASTWhileNode
+} from "../../src/core/syntax/ast.ts";
 import {Source} from "../../src/core/syntax/source.ts";
 
 describe("Parser", () => {
@@ -70,6 +78,26 @@ while (true) {
 			.toBe(ASTNodeType.CONTINUE);
 		expect((whileNode as ASTWhileNode).body[1]?.type)
 			.toBe(ASTNodeType.BREAK);
+	});
+
+	it("parses prefix and postfix increment expressions", () => {
+		const ast = new Parser(new Source(`
+let value: number = 1;
+++value;
+value--;
+`)).parse();
+
+		const prefix = (ast.children[1] as ASTExpressionNode).expr as ASTUnaryNode;
+		const postfix = (ast.children[2] as ASTExpressionNode).expr as ASTUnaryNode;
+
+		expect(prefix.operator)
+			.toBe("++");
+		expect(prefix.position)
+			.toBe(ASTUnaryNode.PREFIX);
+		expect(postfix.operator)
+			.toBe("--");
+		expect(postfix.position)
+			.toBe(ASTUnaryNode.POSTFIX);
 	});
 
 	it("captures structured stack frames for parser errors", () => {

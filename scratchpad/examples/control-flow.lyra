@@ -1,0 +1,27 @@
+class Program {
+    public render(): VNode {
+        let count: number = 0;
+        let sum: number = 0;
+
+        while (count < 6) {
+            count = count + 1;
+
+            if (count == 2) {
+                continue;
+            }
+
+            sum = sum + count;
+
+            if (count == 4) {
+                break;
+            }
+        }
+
+        return vdom
+            <div>
+                <h1>Control Flow</h1>
+                <p>count = {count}</p>
+                <p>sum = {sum}</p>
+            </div>;
+    }
+}

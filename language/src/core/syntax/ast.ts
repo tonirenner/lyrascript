@@ -130,14 +130,19 @@ export class ASTMemberNode extends ASTNode {
 }
 
 export class ASTUnaryNode extends ASTNode {
+	static PREFIX: string = 'prefix';
+	static POSTFIX: string = 'postfix';
+
 	operator: string;
 	argument: ASTNode | ASTUnaryNode;
+	position: string;
 
-	constructor(operator: string, argument: ASTNode | ASTUnaryNode) {
+	constructor(operator: string, argument: ASTNode | ASTUnaryNode, position: string = ASTUnaryNode.PREFIX) {
 		super(ASTNodeType.UNARY);
 
 		this.operator = operator;
 		this.argument = argument;
+		this.position = position;
 		this.isExpression = true;
 	}
 }

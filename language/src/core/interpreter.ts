@@ -59,7 +59,7 @@ import {
 	ASTOperatorNode,
 	ASTParameterNode,
 	ASTReturnNode,
-	type ASTUnaryNode,
+	ASTUnaryNode,
 	ASTVariableNode,
 	type ASTWhileNode,
 	ASTVDomExpressionNode,
@@ -452,6 +452,9 @@ export class Interpreter implements ASTInterpreter {
 	}
 
 	public evalUnary(node: ASTUnaryNode): RuntimeValue {
+		if (node.operator === GRAMMAR.INCREMENT || node.operator === GRAMMAR.DECREMENT) {
+			return this.evalIncrementOrDecrement(node);
+		}
 
 		const value: RuntimeValue = this.evalExpression(node.argument)
 		                                .toNativeRuntimeValue();
@@ -582,16 +585,7 @@ export class Interpreter implements ASTInterpreter {
 					this.chainSuspension(signal.suspension, (resolvedValue: RuntimeValue): ExecutionResult => {
 						if (expr.left.type === ASTNodeType.MEMBER) {
 							const member = expr.left as ASTMemberNode;
-							const objectValue: RuntimeValue = this.evalExpression(member.object);
-							const instance = objectValue.asRuntimeInstance();
-
-							if (member.object.type === ASTNodeType.IDENTIFIER) {
-								instance.staticFields.set(member.property, resolvedValue);
-							} else {
-								instance.instanceFields.set(member.property, resolvedValue);
-							}
-
-							instance.invalidate(this.eventDispatcher);
+							this.assignMember(member, resolvedValue);
 
 							return CompletedExecution(resolvedValue);
 						}
@@ -610,28 +604,7 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		if (expr.left.type === ASTNodeType.MEMBER) {
-
-			const member = expr.left as ASTMemberNode;
-
-			const objectValue: RuntimeValue = this.evalExpression(member.object);
-			const instance = objectValue.asRuntimeInstance();
-
-			if (!instance) {
-				throwRuntimeError(`Assignment on non-instance`, expr.span);
-			}
-
-			if (member.object.type === ASTNodeType.IDENTIFIER) {
-
-				instance.staticFields.set(member.property, value);
-
-			} else {
-
-				instance.instanceFields.set(member.property, value);
-
-			}
-
-			instance.invalidate(this.eventDispatcher);
-
+			this.assignMember(expr.left as ASTMemberNode, value);
 			return value;
 		}
 
@@ -1250,6 +1223,73 @@ export class Interpreter implements ASTInterpreter {
 		}
 
 		return this.callInstanceMethod(iterator, method, args);
+	}
+
+	private evalIncrementOrDecrement(node: ASTUnaryNode): RuntimeValue {
+		const currentValue = this.readWritableTarget(node.argument)
+		                         .toNativeRuntimeValue(TYPE_ENUM.NUMBER);
+		const delta = node.operator === GRAMMAR.INCREMENT ? 1 : -1;
+		const nextValue = Value(currentValue.value + delta, TYPE_ENUM.NUMBER);
+
+		this.writeWritableTarget(node.argument, nextValue);
+
+		return node.position === ASTUnaryNode.POSTFIX
+		       ? currentValue
+		       : nextValue;
+	}
+
+	private readWritableTarget(node: ASTNode): RuntimeValue {
+		if (node.type === ASTNodeType.IDENTIFIER) {
+			return this.currentScope.get(node.name);
+		}
+
+		if (node instanceof ASTMemberNode) {
+			return this.evalMember(node);
+		}
+
+		throwRuntimeError(`Invalid assignment target`, node.span);
+	}
+
+	private writeWritableTarget(node: ASTNode, value: RuntimeValue): void {
+		if (node.type === ASTNodeType.IDENTIFIER) {
+			this.currentScope.assign(node.name, value);
+			return;
+		}
+
+		if (node instanceof ASTMemberNode) {
+			this.assignMember(node, value);
+			return;
+		}
+
+		throwRuntimeError(`Invalid assignment target`, node.span);
+	}
+
+	private assignMember(member: ASTMemberNode, value: RuntimeValue): void {
+		if (member.object.type === ASTNodeType.IDENTIFIER
+		    && this.objectRegistry.classes.has(member.object.name)) {
+			const runtimeClass = this.objectRegistry.classes.get(member.object.name);
+			const classInstance = this.objectRegistry.instances
+			                          .all()
+			                          .find(instance => instance.runtimeClass.className === runtimeClass.className);
+
+			if (!classInstance) {
+				throwRuntimeError(`Static assignment target ${member.object.name} not found`, member.span);
+			}
+
+			classInstance.staticFields.set(member.property, value);
+			classInstance.invalidate(this.eventDispatcher);
+			return;
+		}
+
+		const objectValue: RuntimeValue = this.evalExpression(member.object);
+		const instance = objectValue.asRuntimeInstance();
+
+		if (!instance) {
+			throwRuntimeError(`Assignment on non-instance`, member.span);
+		}
+
+		instance.instanceFields.set(member.property, value);
+		instance.invalidate(this.eventDispatcher);
 	}
 
 	private resolveMemberValue(expr: ASTMemberNode, value: RuntimeValue): RuntimeValue {
