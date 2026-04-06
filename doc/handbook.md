@@ -9,6 +9,7 @@ It is intended as a practical reference, not as a speculative design document.
 LyraScript is a statically checked scripting language with:
 
 - classes, fields, methods, constructors, and inheritance
+- interfaces with `implements` / `extends`
 - nullable types
 - arrays
 - lambdas
@@ -75,6 +76,37 @@ Generic type syntax is supported for class types:
 let items: Array<number> = [1, 2, 3];
 let names: Array<string> = ["a", "b"];
 ```
+
+### Interface types
+
+Interfaces can be used as type annotations:
+
+```lyra
+interface Named {
+    public getName(): string;
+}
+
+class User implements Named {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+}
+
+let user: Named = new User("Toni");
+```
+
+Current behavior:
+
+- classes can implement interfaces
+- interfaces can extend other interfaces
+- interface upcasts are supported
+- method calls on interface-typed values are supported
 
 ## Variables
 
@@ -336,6 +368,44 @@ Supported runtime behavior includes:
 - `super()` in constructors
 - `super.method()` in methods
 
+## Interfaces
+
+### Interface declaration
+
+```lyra
+interface Named {
+    public getName(): string;
+}
+```
+
+### implements
+
+```lyra
+class User implements Named {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+}
+```
+
+### extends
+
+```lyra
+interface Entity {
+    public getId(): number;
+}
+
+interface NamedEntity extends Entity {
+    public getName(): string;
+}
+```
+
 ## Member Access and Calls
 
 Member access:
@@ -355,6 +425,13 @@ Static calls are supported:
 
 ```lyra
 User.getCount();
+```
+
+Interface-typed values can be used for instance method calls:
+
+```lyra
+let user: Named = new User("Toni");
+user.getName();
 ```
 
 ## Functions and Lambdas
@@ -496,7 +573,6 @@ This area exists, but the language handbook should still be read primarily as a 
 The following are not established as complete language features yet:
 
 - `do-while`
-- fully documented interface semantics
 - fully documented generic semantics beyond current class-based usage
 - hard guarantees for every inferred typing edge case
 - interpreter-level visibility enforcement as a fully documented runtime rule

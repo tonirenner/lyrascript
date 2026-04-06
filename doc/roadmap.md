@@ -11,6 +11,7 @@
 - [x] Variable declarations and assignments
 - [x] Member access, method calls, and index access
 - [x] Classes, constructors, fields, methods, static members
+- [x] Interfaces with `implements` and `extends`
 - [x] Inheritance with `extends`
 - [x] `this`, `super()`, and `super.method()`
 - [x] Nullable types with `?`
@@ -34,6 +35,7 @@
 - [x] Runtime object registry and runtime state infrastructure
 - [x] Type checker for variables, parameters, return types, assignments, and readonly checks
 - [x] Visibility checks in the type checker
+- [x] Interface upcasts and interface-typed method calls
 - [x] Primitive autoboxing support for native runtime classes
 
 #### Loading and program pipeline
@@ -80,6 +82,10 @@
 - [x] AST tree builder extracted
 - [x] IDE-style AST tree expand/collapse behavior
 - [x] Live VDOM preview below the editor
+- [x] Scratchpad example tabs backed by local `.lyra` files
+- [x] Scratchpad program/test run mode toggle
+- [x] Resizable preview and output panels
+- [x] Improved scratchpad object output formatting
 
 ## Next
 
