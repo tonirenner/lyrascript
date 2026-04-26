@@ -37,7 +37,7 @@ To try the language, use the scratchpad only:
 bun run scratchpad:build
 ```
 
-Then open [scratchpad/index.html](/D:/_repositories/lyrascript/scratchpad/index.html) in a browser.
+Then open scratchpad/index.html in a browser or try it online https://lyrascript.github.io/.
 
 There you can write and run Lyra code and inspect output, errors, tokens, the AST, and the live VDOM preview.
 
